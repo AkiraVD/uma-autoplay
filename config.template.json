@@ -1,0 +1,150 @@
+{
+  "config_name": "Preset",
+  "trainee": "",
+  "scenario": "auto",
+  "priority_stat": [
+    "spd",
+    "sta",
+    "pwr",
+    "wit",
+    "guts"
+  ],
+  "priority_weights": [
+    1.25,
+    1.25,
+    1,
+    0,
+    -1
+  ],
+  "sleep_time_multiplier": 1,
+  "skip_training_energy": 25,
+  "never_rest_energy": 75,
+  "skip_infirmary_unless_missing_energy": 20,
+  "minimum_mood": "NORMAL",
+  "priority_weight": "LIGHT",
+  "minimum_mood_junior_year": "NORMAL",
+  "maximum_failure": 15,
+  "prioritize_g1_race": false,
+  "cancel_consecutive_race": true,
+  "max_race_retries": 1,
+  "reroll_sparks": true,
+  "tp_bottle_floor": 50,
+  "position_selection_enabled": false,
+  "enable_positions_by_race": false,
+  "preferred_position": "front",
+  "positions_by_race": {
+    "sprint": "front",
+    "mile": "front",
+    "medium": "late",
+    "long": "end"
+  },
+  "race_schedule": [
+    {
+      "name": "Satsuki Sho",
+      "year": "Classic Year",
+      "date": "Early Apr"
+    },
+    {
+      "name": "Tokyo Yushun Japanese Derby",
+      "year": "Classic Year",
+      "date": "Late May"
+    },
+    {
+      "name": "Kikuka Sho",
+      "year": "Classic Year",
+      "date": "Late Oct"
+    }
+  ],
+  "stat_caps": {
+    "spd": 1100,
+    "sta": 1100,
+    "pwr": 1100,
+    "guts": 900,
+    "wit": 900
+  },
+  "skill": {
+    "is_auto_buy_skill": true,
+    "skill_pts_check": 400,
+    "skill_distance": [
+      "sprint",
+      "mile"
+    ],
+    "skill_run_style": "front"
+  },
+  "event": {
+    "use_optimal_event_choice": true,
+    "event_choices": [
+      {
+        "event_name": "Ah, Friendship",
+        "character_name": "Kitasan Black (Fire at My Heels), Kitasan Black (Tracen Academy)",
+        "chosen": 2
+      },
+      {
+        "event_name": "Paying it Forward",
+        "character_name": "Kitasan Black (Fire at My Heels)",
+        "chosen": 1
+      },
+      {
+        "event_name": "Best Foot Forward!",
+        "character_name": "URA Finale",
+        "chosen": 2
+      },
+      {
+        "event_name": "Just an Acupuncturist, No Worries!",
+        "character_name": "Daiwa Scarlet",
+        "chosen": 3
+      }
+    ]
+  },
+  "claw_machine": {
+    "use_claw_machine": false,
+    "claw_1_timer": 1599,
+    "claw_2_timer": 900,
+    "claw_3_timer": 599
+  },
+  "window_name": "LDPlayer",
+  "unity": {
+    "spirit_gauge_points": 1.0,
+    "spirit_burst_points": 2.0,
+    "spirit_burst_ex_points": 3.0,
+    "burst_enabled_stats": []
+  },
+  "grand_concert": {
+    "song_priority": [
+      "Run for Our Dream!",
+      "Grow Up and Shine!",
+      "Precious Treasure Box",
+      "Fanfare for the Future!",
+      "Run n' Run!",
+      "Full Speed Ahead! Umadol Power☆",
+      "Here Comes Our Time",
+      "Our Blue Bird Days",
+      "Seven Colors Scenery",
+      "Zero Is Where the Center Stands!",
+      "Believe in Miracles!",
+      "Go This Way",
+      "Sunbeam Cheer",
+      "Dream Sky",
+      "Present March♪",
+      "Sky-Blue Spring",
+      "The World's at Our Whim",
+      "Hoppity Sunny Days♪",
+      "Ring Ring Diary",
+      "Hey, Guess What!",
+      "Getaway! Fallin' Love"
+    ],
+    "song_plan": [
+      4,
+      8,
+      12,
+      16,
+      18
+    ],
+    "lyrics_option": 5,
+    "hold_for_top_songs": 2,
+    "energy_technique_below": 50,
+    "performance_short_points": 0.75,
+    "performance_urgent_points": 4.0,
+    "always_buy_gold_skill": false
+  }
+}

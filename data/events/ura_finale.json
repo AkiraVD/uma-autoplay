@@ -1,0 +1,38 @@
+[
+  {
+    "EventName": "Exhilarating! What a Scoop!",
+    "EventOptions": {
+      "Top Option": "Stamina +10\nEtsuko Otonashi bond +5"
+    }
+  },
+  {
+    "EventName": "Exhilarating! What a Scoop!",
+    "EventOptions": {
+      "Bottom Option": "Guts +10\nEtsuko Otonashi bond +5"
+    }
+  },
+  {
+    "EventName": "A Trainer's Knowledge",
+    "EventOptions": {
+      "Top Option": "Power +10\nEtsuko Otonashi bond +5"
+    }
+  },
+  {
+    "EventName": "A Trainer's Knowledge",
+    "EventOptions": {
+      "Bottom Option": "Speed +10\nEtsuko Otonashi bond +5"
+    }
+  },
+  {
+    "EventName": "Best Foot Forward!",
+    "EventOptions": {
+      "Top Option": "Energy -10\nPower +20\nGuts +20\nBeeline Burst hint +1"
+    }
+  },
+  {
+    "EventName": "Best Foot Forward!",
+    "EventOptions": {
+      "Bottom Option": "Energy +30\nStamina +20\nBreath of Fresh Air hint +1"
+    }
+  }
+]

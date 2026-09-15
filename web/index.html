@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/agnes.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Uma Stable Bot</title>
+    <script>
+      // Apply the saved theme before the app loads, so a dark page does not
+      // flash white first. Key and default must match src/hooks/useTheme.ts.
+      (function () {
+        var theme = "dark";
+        try {
+          theme = localStorage.getItem("uma-theme") || "dark";
+        } catch (e) {}
+        var dark = theme === "dark" ||
+          (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (dark) document.documentElement.classList.add("dark");
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

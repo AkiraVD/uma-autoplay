@@ -1,0 +1,45 @@
+*venv*
+__pycache__
+config.json
+debug
+cache
+# Test runs write their logs here. (This used to be *test*, which also hid
+# tests/ itself and utils/xtest.py.)
+tests/logs/
+
+# Personal presets and backups; config.template.json is the schema of record.
+config.*.json
+!config.template.json
+
+# Design canvas working files
+design/
+
+# Local Claude Code guidance and skills, kept out of the repo
+CLAUDE.md
+.claude/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist_ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+config.json
+shots/

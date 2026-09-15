@@ -1,0 +1,317 @@
+{
+ "source": "UMAT grand_live_song_lessons.json via LiveRoute/uma-sim, as of 2026-08-31; totals match GameTora (252/201/150/275/196). segment = the concert cycle it unlocks in (0 = Junior).",
+ "songs": [
+  {
+   "name": "Believe in Miracles!",
+   "segment": 0,
+   "cost": {
+    "da": 0,
+    "pa": 21,
+    "vo": 0,
+    "vi": 0,
+    "co": 21
+   },
+   "on_learn": "Extra Stat Gain",
+   "concert_bonus": "Specialty Rate Up"
+  },
+  {
+   "name": "Full Speed Ahead! Umadol Power☆",
+   "segment": 0,
+   "cost": {
+    "da": 32,
+    "pa": 0,
+    "vo": 0,
+    "vi": 12,
+    "co": 0
+   },
+   "on_learn": "Speed",
+   "concert_bonus": "Friendship Training Effectiveness"
+  },
+  {
+   "name": "Getaway! Fallin' Love",
+   "segment": 0,
+   "cost": {
+    "da": 21,
+    "pa": 0,
+    "vo": 0,
+    "vi": 21,
+    "co": 0
+   },
+   "on_learn": "Extra Stat Gain",
+   "concert_bonus": "Support Chain Event Frequency Level"
+  },
+  {
+   "name": "Go This Way",
+   "segment": 0,
+   "cost": {
+    "da": 0,
+    "pa": 0,
+    "vo": 21,
+    "vi": 0,
+    "co": 21
+   },
+   "on_learn": "Extra Stat Gain",
+   "concert_bonus": "Support Chain Event Frequency Level"
+  },
+  {
+   "name": "Here Comes Our Time",
+   "segment": 0,
+   "cost": {
+    "da": 0,
+    "pa": 0,
+    "vo": 32,
+    "vi": 0,
+    "co": 12
+   },
+   "on_learn": "Power",
+   "concert_bonus": "Friendship Training Effectiveness"
+  },
+  {
+   "name": "Ring Ring Diary",
+   "segment": 0,
+   "cost": {
+    "da": 0,
+    "pa": 21,
+    "vo": 0,
+    "vi": 21,
+    "co": 0
+   },
+   "on_learn": "Extra Stat Gain",
+   "concert_bonus": "Support Chain Event Frequency Level"
+  },
+  {
+   "name": "Run n' Run!",
+   "segment": 0,
+   "cost": {
+    "da": 14,
+    "pa": 0,
+    "vo": 0,
+    "vi": 16,
+    "co": 14
+   },
+   "on_learn": "Skill Pts",
+   "concert_bonus": "Friendship Training Effectiveness"
+  },
+  {
+   "name": "Zero Is Where the Center Stands!",
+   "segment": 0,
+   "cost": {
+    "da": 21,
+    "pa": 0,
+    "vo": 0,
+    "vi": 21,
+    "co": 0
+   },
+   "on_learn": "Extra Stat Gain",
+   "concert_bonus": "Support Chain Event Frequency Level"
+  },
+  {
+   "name": "Hey, Guess What!",
+   "segment": 1,
+   "cost": {
+    "da": 42,
+    "pa": 0,
+    "vo": 0,
+    "vi": 21,
+    "co": 0
+   },
+   "on_learn": "Extra Stat Gain",
+   "concert_bonus": "Specialty Rate Up"
+  },
+  {
+   "name": "Our Blue Bird Days",
+   "segment": 1,
+   "cost": {
+    "da": 21,
+    "pa": 0,
+    "vo": 0,
+    "vi": 42,
+    "co": 0
+   },
+   "on_learn": "Extra Stat Gain",
+   "concert_bonus": "Specialty Rate Up"
+  },
+  {
+   "name": "Run for Our Dream!",
+   "segment": 1,
+   "cost": {
+    "da": 0,
+    "pa": 21,
+    "vo": 0,
+    "vi": 21,
+    "co": 0
+   },
+   "on_learn": "Extra Skill Pt Gain",
+   "concert_bonus": "Specialty Rate Up"
+  },
+  {
+   "name": "Grow Up and Shine!",
+   "segment": 2,
+   "cost": {
+    "da": 21,
+    "pa": 0,
+    "vo": 21,
+    "vi": 0,
+    "co": 21
+   },
+   "on_learn": "Extra Skill Pt Gain",
+   "concert_bonus": "Support Chain Event Frequency Level"
+  },
+  {
+   "name": "Hoppity Sunny Days♪",
+   "segment": 2,
+   "cost": {
+    "da": 0,
+    "pa": 42,
+    "vo": 21,
+    "vi": 0,
+    "co": 0
+   },
+   "on_learn": "Extra Stat Gain",
+   "concert_bonus": "Specialty Rate Up"
+  },
+  {
+   "name": "Seven Colors Scenery",
+   "segment": 2,
+   "cost": {
+    "da": 0,
+    "pa": 0,
+    "vo": 21,
+    "vi": 0,
+    "co": 42
+   },
+   "on_learn": "Extra Stat Gain",
+   "concert_bonus": "Specialty Rate Up"
+  },
+  {
+   "name": "Sunbeam Cheer",
+   "segment": 2,
+   "cost": {
+    "da": 0,
+    "pa": 42,
+    "vo": 0,
+    "vi": 0,
+    "co": 21
+   },
+   "on_learn": "Extra Stat Gain",
+   "concert_bonus": "Support Chain Event Frequency Level"
+  },
+  {
+   "name": "Dream Sky",
+   "segment": 3,
+   "cost": {
+    "da": 0,
+    "pa": 22,
+    "vo": 0,
+    "vi": 0,
+    "co": 22
+   },
+   "on_learn": "Wisdom",
+   "concert_bonus": "Friendship Training Effectiveness"
+  },
+  {
+   "name": "Fanfare for the Future!",
+   "segment": 3,
+   "cost": {
+    "da": 26,
+    "pa": 0,
+    "vo": 0,
+    "vi": 42,
+    "co": 0
+   },
+   "on_learn": "Guts",
+   "concert_bonus": "Friendship Training Effectiveness"
+  },
+  {
+   "name": "Precious Treasure Box",
+   "segment": 3,
+   "cost": {
+    "da": 42,
+    "pa": 0,
+    "vo": 0,
+    "vi": 26,
+    "co": 0
+   },
+   "on_learn": "Speed",
+   "concert_bonus": "Friendship Training Effectiveness"
+  },
+  {
+   "name": "Present March♪",
+   "segment": 3,
+   "cost": {
+    "da": 0,
+    "pa": 0,
+    "vo": 22,
+    "vi": 0,
+    "co": 22
+   },
+   "on_learn": "Power",
+   "concert_bonus": "Friendship Training Effectiveness"
+  },
+  {
+   "name": "Sky-Blue Spring",
+   "segment": 3,
+   "cost": {
+    "da": 12,
+    "pa": 0,
+    "vo": 0,
+    "vi": 32,
+    "co": 0
+   },
+   "on_learn": "Guts",
+   "concert_bonus": "Friendship Training Effectiveness"
+  },
+  {
+   "name": "The World's at Our Whim",
+   "segment": 3,
+   "cost": {
+    "da": 0,
+    "pa": 32,
+    "vo": 12,
+    "vi": 0,
+    "co": 0
+   },
+   "on_learn": "Stamina",
+   "concert_bonus": "Friendship Training Effectiveness"
+  },
+  {
+   "name": "Girls' Legend U (Normal Finale)",
+   "segment": 4,
+   "cost": {
+    "da": 0,
+    "pa": 0,
+    "vo": 0,
+    "vi": 0,
+    "co": 0
+   },
+   "on_learn": "All Attributes",
+   "concert_bonus": "Friendship Training Effectiveness"
+  },
+  {
+   "name": "Girls' Legend U (Special Finale)",
+   "segment": 4,
+   "cost": {
+    "da": 0,
+    "pa": 0,
+    "vo": 0,
+    "vi": 0,
+    "co": 0
+   },
+   "on_learn": "All Attributes",
+   "concert_bonus": "Friendship Training Effectiveness"
+  },
+  {
+   "name": "Make Debut!",
+   "segment": 4,
+   "cost": {
+    "da": 0,
+    "pa": 0,
+    "vo": 0,
+    "vi": 0,
+    "co": 0
+   },
+   "on_learn": "All Performance Points",
+   "concert_bonus": "Specialty Rate Up"
+  }
+ ]
+}

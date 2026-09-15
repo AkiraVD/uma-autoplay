@@ -1,0 +1,739 @@
+{
+  "Junior Year": {
+    "Asahi Hai Futurity Stakes": {
+      "date": "Early Dec",
+      "racetrack": "Hanshin",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Mile",
+        "meters": 1600
+      },
+      "sparks": [
+        "Speed",
+        "Guts"
+      ],
+      "fans": {
+        "required": 1000,
+        "gained": 7000
+      }
+    },
+    "Hanshin Juvenile Fillies": {
+      "date": "Early Dec",
+      "racetrack": "Hanshin",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Mile",
+        "meters": 1600
+      },
+      "sparks": [
+        "Speed",
+        "Power"
+      ],
+      "fans": {
+        "required": 1000,
+        "gained": 6500
+      }
+    },
+    "Hopeful Stakes": {
+      "date": "Late Dec",
+      "racetrack": "Nakayama",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Medium",
+        "meters": 2000
+      },
+      "sparks": [
+        "Speed",
+        "Power"
+      ],
+      "fans": {
+        "required": 1000,
+        "gained": 7000
+      }
+    }
+  },
+  "Classic Year": {
+    "Oka Sho": {
+      "date": "Early Apr",
+      "racetrack": "Hanshin",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Mile",
+        "meters": 1600
+      },
+      "sparks": [
+        "Hanshin Racecourse ○",
+        "Guts"
+      ],
+      "fans": {
+        "required": 4500,
+        "gained": 10500
+      }
+    },
+    "Satsuki Sho": {
+      "date": "Early Apr",
+      "racetrack": "Nakayama",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Medium",
+        "meters": 2000
+      },
+      "sparks": [
+        "Nakayama Racecourse ○",
+        "Power"
+      ],
+      "fans": {
+        "required": 4500,
+        "gained": 11000
+      }
+    },
+    "NHK Mile Cup": {
+      "date": "Early May",
+      "racetrack": "Tokyo",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Mile",
+        "meters": 1600
+      },
+      "sparks": [
+        "Speed",
+        "Power"
+      ],
+      "fans": {
+        "required": 5000,
+        "gained": 10500
+      }
+    },
+    "Japanese Oaks": {
+      "date": "Late May",
+      "racetrack": "Tokyo",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Medium",
+        "meters": 2400
+      },
+      "sparks": [
+        "Tokyo Racecourse ○",
+        "Stamina"
+      ],
+      "fans": {
+        "required": 6000,
+        "gained": 11000
+      }
+    },
+    "Tokyo Yushun Japanese Derby": {
+      "date": "Late May",
+      "racetrack": "Tokyo",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Medium",
+        "meters": 2400
+      },
+      "sparks": [
+        "Tokyo Racecourse ○",
+        "Guts"
+      ],
+      "fans": {
+        "required": 6000,
+        "gained": 20000
+      }
+    },
+    "Yasuda Kinen": {
+      "date": "Early Jun",
+      "racetrack": "Tokyo",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Mile",
+        "meters": 1600
+      },
+      "sparks": [
+        "Tokyo Racecourse ○",
+        "Speed"
+      ],
+      "fans": {
+        "required": 15000,
+        "gained": 13000
+      }
+    },
+    "Takarazuka Kinen": {
+      "date": "Late Jun",
+      "racetrack": "Hanshin",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Medium",
+        "meters": 2200
+      },
+      "sparks": [
+        "Summer Runner ○",
+        "Guts"
+      ],
+      "fans": {
+        "required": 20000,
+        "gained": 15000
+      }
+    },
+    "Japan Dirt Derby": {
+      "date": "Early Jul",
+      "racetrack": "Ooi",
+      "terrain": "Dirt",
+      "distance": {
+        "type": "Medium",
+        "meters": 2000
+      },
+      "sparks": [
+        "Oi Racecourse ○",
+        "Power"
+      ],
+      "fans": {
+        "required": 4000,
+        "gained": 4500
+      }
+    },
+    "Sprinters Stakes": {
+      "date": "Late Sep",
+      "racetrack": "Nakayama",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Sprint",
+        "meters": 1200
+      },
+      "sparks": [
+        "Oi Racecourse ○",
+        "Power"
+      ],
+      "fans": {
+        "required": 15000,
+        "gained": 13000
+      }
+    },
+    "Kikuka Sho": {
+      "date": "Late Oct",
+      "racetrack": "Kyoto",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Long",
+        "meters": 3000
+      },
+      "sparks": [
+        "Kyoto Racecourse ○",
+        "Stamina"
+      ],
+      "fans": {
+        "required": 7500,
+        "gained": 12000
+      }
+    },
+    "Shuka Sho": {
+      "date": "Late Oct",
+      "racetrack": "Kyoto",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Medium",
+        "meters": 2000
+      },
+      "sparks": [
+        "Kyoto Racecourse ○",
+        "Wit"
+      ],
+      "fans": {
+        "required": 7500,
+        "gained": 10000
+      }
+    },
+    "Tenno Sho Autumn": {
+      "date": "Late Oct",
+      "racetrack": "Tokyo",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Medium",
+        "meters": 2000
+      },
+      "sparks": [
+        "Fall Runner ○",
+        "Speed"
+      ],
+      "fans": {
+        "required": 20000,
+        "gained": 15000
+      }
+    },
+    "JBC Classic": {
+      "date": "Early Nov",
+      "racetrack": "Ooi",
+      "terrain": "Dirt",
+      "distance": {
+        "type": "Medium",
+        "meters": 2000
+      },
+      "sparks": [
+        "Stamina",
+        "Guts"
+      ],
+      "fans": {
+        "required": 12000,
+        "gained": 8000
+      }
+    },
+    "JBC Ladies' Classic": {
+      "date": "Early Nov",
+      "racetrack": "Ooi",
+      "terrain": "Dirt",
+      "distance": {
+        "type": "Mile",
+        "meters": 1800
+      },
+      "sparks": [
+        "Speed",
+        "Guts"
+      ],
+      "fans": {
+        "required": 12000,
+        "gained": 4100
+      }
+    },
+    "JBC Sprint": {
+      "date": "Early Nov",
+      "racetrack": "Ooi",
+      "terrain": "Dirt",
+      "distance": {
+        "type": "Sprint",
+        "meters": 1200
+      },
+      "sparks": [
+        "Power",
+        "Guts"
+      ],
+      "fans": {
+        "required": 12000,
+        "gained": 6000
+      }
+    },
+    "Queen Elizabeth II Cup": {
+      "date": "Early Nov",
+      "racetrack": "Kyoto",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Medium",
+        "meters": 2200
+      },
+      "sparks": [
+        "Non-Standard Distance ○",
+        "Stamina"
+      ],
+      "fans": {
+        "required": 10000,
+        "gained": 10500
+      }
+    },
+    "Japan Cup": {
+      "date": "Late Nov",
+      "racetrack": "Tokyo",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Medium",
+        "meters": 2400
+      },
+      "sparks": [
+        "Tokyo Racecourse ○",
+        "Stamina"
+      ],
+      "fans": {
+        "required": 25000,
+        "gained": 30000
+      }
+    },
+    "Mile Championship": {
+      "date": "Late Nov",
+      "racetrack": "Kyoto",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Mile",
+        "meters": 1600
+      },
+      "sparks": [
+        "Standard Distance ○",
+        "Speed"
+      ],
+      "fans": {
+        "required": 15000,
+        "gained": 11000
+      }
+    },
+    "Champions Cup": {
+      "date": "Early Dec",
+      "racetrack": "Chukyo",
+      "terrain": "Dirt",
+      "distance": {
+        "type": "Mile",
+        "meters": 1800
+      },
+      "sparks": [
+        "Chukyo Racecourse ○",
+        "Power"
+      ],
+      "fans": {
+        "required": 12000,
+        "gained": 10000
+      }
+    },
+    "Arima Kinen": {
+      "date": "Late Dec",
+      "racetrack": "Nakayama",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Long",
+        "meters": 2500
+      },
+      "sparks": [
+        "Nakayama Racecourse ○",
+        "Power"
+      ],
+      "fans": {
+        "required": 25000,
+        "gained": 30000
+      }
+    },
+    "Tokyo Daishoten": {
+      "date": "Late Dec",
+      "racetrack": "Ooi",
+      "terrain": "Dirt",
+      "distance": {
+        "type": "Medium",
+        "meters": 2000
+      },
+      "sparks": [
+        "Oi Racecourse ○",
+        "Power"
+      ],
+      "fans": {
+        "required": 12000,
+        "gained": 8000
+      }
+    }
+  },
+  "Senior Year": {
+    "February Stakes": {
+      "date": "Late Feb",
+      "racetrack": "Tokyo",
+      "terrain": "Dirt",
+      "distance": {
+        "type": "Mile",
+        "meters": 1600
+      },
+      "sparks": [
+        "Winter Runner ○",
+        "Power"
+      ],
+      "fans": {
+        "required": 12000,
+        "gained": 10000
+      }
+    },
+    "Osaka Hai": {
+      "date": "Late Mar",
+      "racetrack": "Hanshin",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Medium",
+        "meters": 2000
+      },
+      "sparks": [
+        "Standard Distance ○",
+        "Guts"
+      ],
+      "fans": {
+        "required": 20000,
+        "gained": 13500
+      }
+    },
+    "Takamatsunomiya Kinen": {
+      "date": "Late Mar",
+      "racetrack": "Chukyo",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Sprint",
+        "meters": 1200
+      },
+      "sparks": [
+        "Chukyo Racecourse ○",
+        "Speed"
+      ],
+      "fans": {
+        "required": 15000,
+        "gained": 13000
+      }
+    },
+    "Tenno Sho Spring": {
+      "date": "Late Apr",
+      "racetrack": "Kyoto",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Long",
+        "meters": 3200
+      },
+      "sparks": [
+        "Spring Runner ○",
+        "Stamina"
+      ],
+      "fans": {
+        "required": 20000,
+        "gained": 15000
+      }
+    },
+    "Victoria Mile": {
+      "date": "Early May",
+      "racetrack": "Tokyo",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Mile",
+        "meters": 1600
+      },
+      "sparks": [
+        "Speed",
+        "Power"
+      ],
+      "fans": {
+        "required": 10000,
+        "gained": 10500
+      }
+    },
+    "Yasuda Kinen": {
+      "date": "Early Jun",
+      "racetrack": "Tokyo",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Mile",
+        "meters": 1600
+      },
+      "sparks": [
+        "Tokyo Racecourse ○",
+        "Speed"
+      ],
+      "fans": {
+        "required": 15000,
+        "gained": 13000
+      }
+    },
+    "Takarazuka Kinen": {
+      "date": "Late Jun",
+      "racetrack": "Hanshin",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Medium",
+        "meters": 2200
+      },
+      "sparks": [
+        "Summer Runner ○",
+        "Guts"
+      ],
+      "fans": {
+        "required": 20000,
+        "gained": 15000
+      }
+    },
+    "Teio Sho": {
+      "date": "Late Jun",
+      "racetrack": "Ooi",
+      "terrain": "Dirt",
+      "distance": {
+        "type": "Medium",
+        "meters": 2000
+      },
+      "sparks": [
+        "Oi Racecourse ○",
+        "Power"
+      ],
+      "fans": {
+        "required": 12000,
+        "gained": 6000
+      }
+    },
+    "Sprinters Stakes": {
+      "date": "Late Sep",
+      "racetrack": "Nakayama",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Sprint",
+        "meters": 1200
+      },
+      "sparks": [
+        "Standard Distance ○",
+        "Speed"
+      ],
+      "fans": {
+        "required": 15000,
+        "gained": 13000
+      }
+    },
+    "Tenno Sho Autumn": {
+      "date": "Late Oct",
+      "racetrack": "Tokyo",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Medium",
+        "meters": 2000
+      },
+      "sparks": [
+        "Fall Runner ○",
+        "Speed"
+      ],
+      "fans": {
+        "required": 20000,
+        "gained": 15000
+      }
+    },
+    "JBC Classic": {
+      "date": "Early Nov",
+      "racetrack": "Ooi",
+      "terrain": "Dirt",
+      "distance": {
+        "type": "Medium",
+        "meters": 2000
+      },
+      "sparks": [
+        "Stamina",
+        "Guts"
+      ],
+      "fans": {
+        "required": 12000,
+        "gained": 8000
+      }
+    },
+    "JBC Ladies' Classic": {
+      "date": "Early Nov",
+      "racetrack": "Ooi",
+      "terrain": "Dirt",
+      "distance": {
+        "type": "Mile",
+        "meters": 1800
+      },
+      "sparks": [
+        "Speed",
+        "Guts"
+      ],
+      "fans": {
+        "required": 12000,
+        "gained": 4100
+      }
+    },
+    "JBC Sprint": {
+      "date": "Early Nov",
+      "racetrack": "Ooi",
+      "terrain": "Dirt",
+      "distance": {
+        "type": "Sprint",
+        "meters": 1200
+      },
+      "sparks": [
+        "Power",
+        "Guts"
+      ],
+      "fans": {
+        "required": 12000,
+        "gained": 6000
+      }
+    },
+    "Queen Elizabeth II Cup": {
+      "date": "Early Nov",
+      "racetrack": "Kyoto",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Medium",
+        "meters": 2200
+      },
+      "sparks": [
+        "Non-Standard Distance ○",
+        "Stamina"
+      ],
+      "fans": {
+        "required": 10000,
+        "gained": 10500
+      }
+    },
+    "Japan Cup": {
+      "date": "Late Nov",
+      "racetrack": "Tokyo",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Medium",
+        "meters": 2400
+      },
+      "sparks": [
+        "Tokyo Racecourse ○",
+        "Stamina"
+      ],
+      "fans": {
+        "required": 25000,
+        "gained": 30000
+      }
+    },
+    "Mile Championship": {
+      "date": "Late Nov",
+      "racetrack": "Kyoto",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Mile",
+        "meters": 1600
+      },
+      "sparks": [
+        "Standard Distance ○",
+        "Speed"
+      ],
+      "fans": {
+        "required": 15000,
+        "gained": 11000
+      }
+    },
+    "Champions Cup": {
+      "date": "Early Dec",
+      "racetrack": "Chukyo",
+      "terrain": "Dirt",
+      "distance": {
+        "type": "Mile",
+        "meters": 1800
+      },
+      "sparks": [
+        "Chukyo Racecourse ○",
+        "Power"
+      ],
+      "fans": {
+        "required": 12000,
+        "gained": 10000
+      }
+    },
+    "Arima Kinen": {
+      "date": "Late Dec",
+      "racetrack": "Nakayama",
+      "terrain": "Turf",
+      "distance": {
+        "type": "Long",
+        "meters": 2500
+      },
+      "sparks": [
+        "Nakayama Racecourse ○",
+        "Power"
+      ],
+      "fans": {
+        "required": 25000,
+        "gained": 30000
+      }
+    },
+    "Tokyo Daishoten": {
+      "date": "Late Dec",
+      "racetrack": "Ooi",
+      "terrain": "Dirt",
+      "distance": {
+        "type": "Medium",
+        "meters": 2000
+      },
+      "sparks": [
+        "Oi Racecourse ○",
+        "Power"
+      ],
+      "fans": {
+        "required": 12000,
+        "gained": 8000
+      }
+    }
+  }
+}
