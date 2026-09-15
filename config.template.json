@@ -102,7 +102,6 @@
     "claw_2_timer": 900,
     "claw_3_timer": 599
   },
-  "window_name": "LDPlayer",
   "unity": {
     "spirit_gauge_points": 1.0,
     "spirit_burst_points": 2.0,

@@ -263,7 +263,7 @@ def test_the_budget_comes_from_the_buy_screen():
   import utils.constants as C
   ok("the buy screen has its own region", hasattr(C, "SKILL_BUY_PTS_REGION"))
   ok("and it is not the lobby's", C.SKILL_BUY_PTS_REGION != C.SKILL_PTS_REGION)
-  ok("it carries the _REGION suffix so emulators shift it",
+  ok("it carries the _REGION suffix for its (left, top, width, height) format",
      "SKILL_BUY_PTS_REGION".endswith("_REGION"))
 
 def test_reading_failures_are_safe():

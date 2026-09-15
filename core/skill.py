@@ -524,9 +524,8 @@ def skill_names():
   incomplete cannot support the reasoning above, and silently degrading to one
   would be worse than not matching at all.
 
-  Returns [] when the database cannot be read - on an emulator, where the game
-  runs inside the emulator and writes no LocalLow copy on this machine, or on a
-  non-default install that needs UMA_MASTER_MDB set. Canonicalisation switches
+  Returns [] when the database cannot be read, such as on a non-default install
+  that needs UMA_MASTER_MDB set. Canonicalisation switches
   itself off there and is_skill_match falls back to comparing the config list
   directly, which is what it did before any of this existed.
   """

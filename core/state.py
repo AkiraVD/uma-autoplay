@@ -80,7 +80,7 @@ def reload_config():
   global PRIORITY_EFFECTS_LIST, SKIP_TRAINING_ENERGY, NEVER_REST_ENERGY, SKIP_INFIRMARY_UNLESS_MISSING_ENERGY, PREFERRED_POSITION
   global ENABLE_POSITIONS_BY_RACE, POSITIONS_BY_RACE, POSITION_SELECTION_ENABLED, SLEEP_TIME_MULTIPLIER
   global TRAINEE
-  global WINDOW_NAME, RACE_SCHEDULE, CONFIG_NAME, USE_OPTIMAL_EVENT_CHOICE, EVENT_CHOICES, USE_CLAW_MACHINE, CLAW_1_TIMER, CLAW_2_TIMER, CLAW_3_TIMER
+  global RACE_SCHEDULE, CONFIG_NAME, USE_OPTIMAL_EVENT_CHOICE, EVENT_CHOICES, USE_CLAW_MACHINE, CLAW_1_TIMER, CLAW_2_TIMER, CLAW_3_TIMER
 
   config = load_config()
 
@@ -144,7 +144,6 @@ def reload_config():
   POSITIONS_BY_RACE = config["positions_by_race"]
   POSITION_SELECTION_ENABLED = config["position_selection_enabled"]
   SLEEP_TIME_MULTIPLIER = config["sleep_time_multiplier"]
-  WINDOW_NAME = config["window_name"]
   RACE_SCHEDULE = sort_race_schedule(config["race_schedule"])
   CONFIG_NAME = config["config_name"]
   USE_OPTIMAL_EVENT_CHOICE = config["event"]["use_optimal_event_choice"]

@@ -12,10 +12,8 @@ a new menu gets its own profile rather than new arguments here.
 
 **Screen positions are stored as constant names, not values.** A profile holds
 the string "SKILL_SCROLL_UP_FROM_MOUSE_POS" and looks it up on
-`utils.constants` at the moment it is used. That is deliberate:
-`constants.adjust_constants_x_coords` rewrites those constants in place for
-emulator windows, and a dict built at import time would have captured the
-pre-shift value and quietly scrolled at the wrong x forever.
+`utils.constants` at the moment it is used, so a calibration change there
+reaches every profile.
 """
 import time
 

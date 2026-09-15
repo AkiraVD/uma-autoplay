@@ -92,14 +92,10 @@ Make sure these conditions are met:
 
 - Screen resolution must be 1920x1080
 - The game should be in fullscreen
-- Your Uma must have already won the trophy for each race (the bot will skips the race)
-- Turn off all confirmation pop-ups in game settings
-- The game must be in the career lobby screen (the one with the Tazuna hint icon)
-
-### Bluestacks Settings
-
-1. Set custom display size of 800x1080 and DPI to 160.
-2. Make sure to set the window name in the config to match your emulator’s window title exactly. (case-sensitive)
+- Your Uma must have already won the trophy for each race (the bot skips the race)
+- In the game's Options → Require Confirmation, turn off "When selecting Rest", "When selecting Recreation" and "When selecting Infirmary"
+- Start the career yourself (the bot doesn't start one), and set the story **Skip** button to ×2 at the start of each career: a new career resets it to Off
+- Then start the bot once the career has begun
 
 ### Start
 
@@ -130,11 +126,11 @@ The **Start bot**/**Stop bot** button in the top bar works like `f1`. Use it whe
 
 Both are skewed by your stat priority and weights, skip trainings above the failure threshold, and add scenario bonuses (Spirit gauge in Unity Cup, Performance points in Grand Concert).
 
-### Known Issue
+### Known Issues
 
-- Some Uma that has special event/target goals (like Restricted Train Goldship or ~~2 G1 Race Oguri Cap~~) may not working. For Oguri Cap G1 race event goal, you need to set the races in the race schedule that match the dates of her G1 goal events.
-- OCR might misread failure chance (e.g., reads 33% as 3%) and proceeds with training anyway.
-- The Acupuncturist event always gets its top option.
+- Trainees with unusual goals, such as Gold Ship's restricted training, have no special handling and haven't been tested.
+- The **Epithet** screen after a career isn't handled: press Confirm! yourself.
+- The game itself can hang on its "communicating" spinner when its server connection drops, and taps then do nothing. Restart the game and press Continue Career, then start the bot again.
 
 ### Contribute
 

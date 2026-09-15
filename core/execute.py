@@ -237,9 +237,6 @@ def click(img: str = None, confidence: float = 0.8, minSearch:float = 2, click: 
 TRAINING_KEYS = ["spd", "sta", "pwr", "guts", "wit"]
 
 def training_pos(key):
-  # Go through the module every time: adjust_constants_x_coords() rebinds these
-  # at runtime for emulator windows, so caching them would capture the value
-  # from before the offset was applied.
   return getattr(constants, f"{key.upper()}_TRAIN_MOUSE_POS")
 
 def select_training(key):
@@ -573,10 +570,10 @@ def select_event():
   debug(f"Event choices coordinates: {event_choices_icon}")
   debug(f"Clicking: {x}, {y}")
   click(boxes=(x, y, 1, 1), text=f"Selecting optimal choice: {event_name}")
-  # to avoid getting stuck at acpuncturist event
-  # adding this to check the event_name has Acupuncturist then select top choice
-  if "Acupuncturist" in event_name:
-    click(boxes=event_choices_icon, text="Event found, selecting top choice.")
+  # The Acupuncturist used to get a forced top-choice click right after this,
+  # one second after the scored pick, before the screen had changed. Its
+  # follow-up screen has no Effects panel and already falls back to the top
+  # option, which ends the event (2026-09-15, scored #2 kept, stats confirmed).
   return True
 
 def race_day():
@@ -602,8 +599,7 @@ def race_day():
   for i in range(2):
     if state.stop_event.is_set():
       return
-    if not click(img="assets/buttons/race_btn.png", minSearch=get_secs(2)):
-      click(img="assets/buttons/bluestacks/race_btn.png", minSearch=get_secs(2))
+    click(img="assets/buttons/race_btn.png", minSearch=get_secs(2))
     sleep(0.5)
 
   race_prep()
@@ -626,8 +622,7 @@ def race_select(prioritize_g1 = False, img = None):
         for i in range(2):
           if state.stop_event.is_set():
             return False
-          if not click(img="assets/buttons/race_btn.png", minSearch=get_secs(2)):
-            click(img="assets/buttons/bluestacks/race_btn.png", minSearch=get_secs(2))
+          click(img="assets/buttons/race_btn.png", minSearch=get_secs(2))
           sleep(0.5)
         return True
       drag_scroll(constants.RACE_SCROLL_BOTTOM_MOUSE_POS, -270)
@@ -652,8 +647,7 @@ def race_select(prioritize_g1 = False, img = None):
         for i in range(2):
           if state.stop_event.is_set():
             return False
-          if not click(img="assets/buttons/race_btn.png", minSearch=get_secs(2)):
-            click(img="assets/buttons/bluestacks/race_btn.png", minSearch=get_secs(2))
+          click(img="assets/buttons/race_btn.png", minSearch=get_secs(2))
           sleep(0.5)
         return True
       drag_scroll(constants.RACE_SCROLL_BOTTOM_MOUSE_POS, -270)
@@ -1354,8 +1348,7 @@ def career_lobby():
         continue
       ura()
       for i in range(2):
-        if not click(img="assets/buttons/race_btn.png", minSearch=get_secs(2)):
-          click(img="assets/buttons/bluestacks/race_btn.png", minSearch=get_secs(2))
+        click(img="assets/buttons/race_btn.png", minSearch=get_secs(2))
         sleep(0.5)
 
       race_prep()

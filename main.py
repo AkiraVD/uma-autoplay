@@ -4,13 +4,10 @@ import sys
 import threading
 import uvicorn
 import pyautogui
-import utils.control as control
 import utils.hotkey as hotkeys
 import utils.window as window
-import time
 import traceback
 
-import utils.constants as constants
 from utils.log import info, warning, error, debug
 
 from core.execute import career_lobby
@@ -25,25 +22,8 @@ def focus_umamusume():
   try:
     target_window = window.find(window.GAME_TITLE)
     if not target_window:
-      if not state.WINDOW_NAME:
-        error("Window name cannot be empty! Please set window name in the config.")
-        return False
-      info(f"Couldn't get the steam version window, trying {state.WINDOW_NAME}.")
-      target_window = window.find(state.WINDOW_NAME)
-      if not target_window:
-        error(f"Couldn't find target window named \"{state.WINDOW_NAME}\". Please double check your window name config.")
-        return False
-
-      constants.adjust_constants_x_coords()
-      window.activate(target_window)
-      control.press("esc")
-      control.press("f11")
-      time.sleep(5)
-      close_btn = pyautogui.locateCenterOnScreen("assets/buttons/bluestacks/close_btn.png", confidence=0.8, minSearchTime=2)
-      if close_btn:
-        control.click(close_btn)
-      return True
-
+      error(f"Couldn't find the {window.GAME_TITLE} window. Start the game from Steam first.")
+      return False
     window.activate(target_window)
   except Exception as e:
     error(f"Error focusing window: {e}")

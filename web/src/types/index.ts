@@ -66,7 +66,6 @@ export const ConfigSchema = z.object({
   stat_caps: StatSchema,
   skill: SkillSchema,
   event: EventSchema,
-  window_name: z.string(),
   grand_concert: GrandConcertSchema,
 });
 

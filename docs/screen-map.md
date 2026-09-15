@@ -1,9 +1,10 @@
 # Screen map (observed by driving the game manually)
 
 All coordinates are **screen pixels at 1920x1080, Steam client**. The game
-viewport is the vertical strip `x = 150..950` (`GAME_SCREEN_REGION`). Emulator
-users get `+405` on x via `constants.adjust_constants_x_coords()`, so anything
-added here must use the `_REGION` / `_BBOX` / `_MOUSE_POS` suffix convention.
+viewport is the vertical strip `x = 150..950` (`GAME_SCREEN_REGION`). Anything
+added here must use the `_REGION` / `_BBOX` / `_MOUSE_POS` suffix convention,
+which says which rectangle format a constant uses. (Emulator support, and its
+`+405` x-shift, was removed on 2026-09-15.)
 
 Captured live on a Junior Year Pre-Debut run (Agnes Tachyon, URA Finale).
 
@@ -221,10 +222,8 @@ returned to the lobby (`header: Training -> Career`).
 ## What this changes in the code
 
 - `utils/constants.py`: add `SPD/STA/PWR/GUTS/WIT_TRAIN_MOUSE_POS = (x, 886)`.
-  The `_MOUSE_POS` suffix is required so `adjust_constants_x_coords()` shifts
-  them for emulator windows. Read them as `constants.FOO` at call time, not into
-  a module-level dict at import, or the emulator offset is captured before it is
-  applied.
+  Read them as `constants.FOO` at call time, not into a module-level dict at
+  import.
 - `core/execute.py::check_training()`: drop `locateCenterOnScreen` on the icon
   templates; iterate the fixed positions and verify via the banner.
 - `core/execute.py::do_train()`: same, using the two-click execute above.
@@ -239,9 +238,7 @@ Bonus, free once the banner is being read: `"<Facility> Lvl <N>"` also yields th
 
 # Implemented
 
-- `utils/constants.py` - `SPD/STA/PWR/GUTS/WIT_TRAIN_MOUSE_POS` (the `_MOUSE_POS`
-  suffix makes `adjust_constants_x_coords()` shift them; verified they become
-  `(742, 886) ... (1172, 886)` at `+405`) and `TRAINING_BANNER_REGION`.
+- `utils/constants.py` - `SPD/STA/PWR/GUTS/WIT_TRAIN_MOUSE_POS` and `TRAINING_BANNER_REGION`.
 - `core/state.py` - `check_selected_training() -> (key, level)`, fuzzy-matching
   the banner text so OCR reading `Wit` as `WRt` still resolves. Returns
   `(None, 0)` off the training screen, which is how callers detect that.

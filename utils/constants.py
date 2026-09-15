@@ -51,10 +51,8 @@ SKILL_SCROLL_DISTANCE = 400
 # The three things read off a row of the skill buy screen, each as an offset
 # from that row's buy button: (dx, dy, width, height).
 #
-# Deliberately NOT suffixed _REGION. adjust_constants_x_coords shifts every
-# _REGION constant by the emulator offset, and these are relative to a button
-# whose position is already found on screen - shifting them would move the crop
-# off the row entirely.
+# Deliberately NOT suffixed _REGION: these are relative to a button whose
+# position is already found on screen, not absolute screen rectangles.
 #
 # Measured on a live buy screen at 1920x1080 (Grass Wonder, Junior Pre-Debut).
 # Buttons sat at x=784 with a row pitch of 156.
@@ -164,8 +162,7 @@ UNITY_RAIL_BBOX=(800, 145, 950, 715)
 RECREATION_BADGE_BBOX=(555, 875, 705, 975)
 # The training screen prints the stat gains above the stat row: a bubble and
 # an orange number per column, which sum to the actual gain. Plain x centres
-# rather than a suffixed rect, so adjust_constants_x_coords cannot shift them
-# - the emulator layout has not been checked for this reader.
+# rather than a suffixed rect.
 GAIN_STRIP_Y = (630, 706)
 GAIN_COLUMN_HALF = 58
 GAIN_COLUMN_X = {"spd": 337, "sta": 432, "pwr": 527, "guts": 622, "wit": 717, "skill": 795}
@@ -281,7 +278,7 @@ LESSON_POINTS_VI_BBOX = (646, 90, 716, 124)
 LESSON_POINTS_CO_BBOX = (748, 90, 818, 124)
 # Card 1's cost row read as one line: the type icons read as "Da", "Pa"... and
 # the numbers fall into five slots by x. Split points are offsets from the
-# row's left edge, so they need no emulator shift of their own. A lone "0" is
+# row's left edge. A lone "0" is
 # the only thing that goes missing, so an empty slot is a 0.
 LESSON_COST_TEXT_REGION = (425, 364, 395, 32)
 LESSON_COST_SLOT_EDGES = (80, 158, 237, 315)
@@ -312,60 +309,6 @@ ENERGY_BBOX=(440, 120, 800, 160)
 RACE_BUTTON_IN_RACE_BBOX_LANDSCAPE=(800, 950, 1150, 1050)
 
 GAME_SCREEN_REGION = (150, 0, 800, 1080)
-
-OFFSET_APPLIED = False
-def adjust_constants_x_coords(offset=405):
-  """Shift all region tuples' x-coordinates by `offset`."""
-
-  global OFFSET_APPLIED
-  if OFFSET_APPLIED:
-    return
-
-  g = globals()
-  for name, value in list(g.items()):
-    if (
-      name.endswith("_REGION")   # only touch REGION constants
-      and isinstance(value, tuple)
-      and len(value) >= 2
-    ):
-      # Adjust only the x-coordinates (0 and 2)
-      new_value = (
-        value[0] + offset,
-        value[1],
-        value[2],
-        value[3],
-      )
-      # Drop None if length was originally 3
-      g[name] = tuple(x for x in new_value if x is not None)
-
-    if (
-      name.endswith("_MOUSE_POS")   # only touch REGION constants
-      and isinstance(value, tuple)
-      and len(value) >= 2
-    ):
-      # Adjust only the x-coordinates (0 and 2)
-      new_value = (
-        value[0] + offset,
-        value[1],
-      )
-      # Drop None if length was originally 3
-      g[name] = tuple(x for x in new_value if x is not None)
-
-    if (
-      name.endswith("_BBOX")   # only touch REGION constants
-      and isinstance(value, tuple)
-      and len(value) >= 2
-    ):
-      # Adjust only the x-coordinates (0 and 2)
-      new_value = (
-        value[0] + offset,
-        value[1],
-        value[2] + offset,
-        value[3],
-      )
-      # Drop None if length was originally 3
-      g[name] = tuple(x for x in new_value if x is not None)
-  OFFSET_APPLIED = True
 
 # Load all races once to be used when selecting them
 RACES = ""

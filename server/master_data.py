@@ -13,7 +13,8 @@ What it can and can't give:
   story asset bundles), so those come from data/events, the same files
   core/event_outcomes.py reads.
 
-Without master.mdb (an emulator install, say) both fall back to the local files.
+Without master.mdb (a non-default install without UMA_MASTER_MDB, say) both fall
+back to the local files.
 """
 import json
 import os

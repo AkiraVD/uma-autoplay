@@ -8,9 +8,6 @@ type Props = {
 };
 
 export default function AdvancedSection({ config, updateConfig }: Props) {
-  // window_name isn't here on purpose: it only names the *emulator* window for
-  // focus_umamusume()'s fallback, and this setup runs the Steam client, which
-  // is found by its own title. The config key stays for that fallback.
   const { sleep_time_multiplier } = config;
 
   return (

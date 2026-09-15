@@ -44,7 +44,7 @@ MDB_PATH = Path(masterdb.master_path())
 COMMAND = {"spd": 101, "pwr": 102, "guts": 103, "sta": 105, "wit": 106}
 ENERGY_TARGET = 10
 
-# Used when master.mdb is not there (an emulator install). Copied from the
+# Used when master.mdb cannot be found (a non-default install without UMA_MASTER_MDB). Copied from the
 # database rather than guessed, so the fallback agrees with the real thing.
 FALLBACK = {"spd": -21, "sta": -19, "pwr": -20, "guts": -22, "wit": 5}
 

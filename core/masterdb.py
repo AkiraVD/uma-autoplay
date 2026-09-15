@@ -10,8 +10,8 @@ copied before it is opened, because opening the live one can leave -wal/-shm
 beside it and take locks on a database the game is using.
 
 Everything here fails soft. A missing or unreadable database returns nothing and
-the caller falls back to data/, so a different install path or an emulator loses
-the extra coverage rather than the feature.
+the caller falls back to data/, so a different install path loses the extra
+coverage rather than the feature.
 """
 import os
 import re
