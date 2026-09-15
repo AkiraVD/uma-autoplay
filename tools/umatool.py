@@ -264,9 +264,9 @@ LAUNCH_CODES = """\
   LAUNCH-E01      could not hand the steam:// URL to Steam (Steam missing?)
   LAUNCH-E02      no "Umamusume" window within --timeout seconds"""
 CLOSE_CODES = """\
-  CLOSE-OK    window closed, process exited
+  CLOSE-OK    window closed, process exited (ended with a signal if the game ignored the close)
   CLOSE-NONE  no game window was open
-  CLOSE-E01   process still alive after --timeout seconds"""
+  CLOSE-E01   process still alive after --timeout seconds and SIGTERM/SIGKILL"""
 
 
 def _game_window():
@@ -279,10 +279,15 @@ def cmd_close(a):
   if not win:
     print(f"CLOSE-NONE\n{CLOSE_CODES}")
     return
-  if not window.close(win, a.timeout):
+  how = window.close(win, a.timeout)
+  if not how:
     print(f"CLOSE-E01 pid {win.pid} after {a.timeout:.0f}s\n{CLOSE_CODES}")
-    return
-  print("CLOSE-OK")
+    # Non-zero, so the Tools tab's "exit 1" shows the close failed.
+    raise SystemExit(1)
+  if how == "terminated":
+    print(f"CLOSE-OK (the game ignored the close request for {a.timeout:.0f}s; ended pid {win.pid})")
+  else:
+    print("CLOSE-OK")
 
 
 def cmd_launch(a):

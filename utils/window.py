@@ -141,11 +141,25 @@ def _alive(win):
     return any(w.handle == win.handle for w in _listed())
   return any(handle == win.handle for handle, _ in _x_named_children())
 
+def _wait_gone(win, seconds):
+  deadline = time.time() + seconds
+  while time.time() < deadline:
+    if not _alive(win):
+      return True
+    time.sleep(0.5)
+  return not _alive(win)
+
 def close(win, timeout=30):
   """Close the window the way its X button does, then wait for the process to
   exit (or, when the window names no process, for the window to go).
 
-  Returns True once it is gone, False if it is still there after `timeout`."""
+  On Linux the game under Proton can ignore that request: on 2026-09-15 it sat
+  on its Scout screen for the full 30 s after WM_DELETE_WINDOW, with no quit
+  prompt. So when the process is known and still alive after `timeout`, it is
+  sent SIGTERM, then SIGKILL. The career is kept server-side either way.
+
+  Returns "closed" when it went on request, "terminated" when the process had
+  to be ended, or None if it is still there."""
   if WINDOWS:
     import ctypes
     k32 = ctypes.windll.kernel32
@@ -156,17 +170,26 @@ def close(win, timeout=30):
     win.native.close()
     timed_out = k32.WaitForSingleObject(proc, int(timeout * 1000)) == 0x102  # WAIT_TIMEOUT
     k32.CloseHandle(proc)
-    return not timed_out
+    return None if timed_out else "closed"
   if win.managed:
     _wmctrl("-i", "-c", win.handle)
   else:
     _x_close(win.handle)
-  deadline = time.time() + timeout
-  while time.time() < deadline:
-    if not _alive(win):
-      return True
-    time.sleep(0.5)
-  return False
+  if _wait_gone(win, timeout):
+    return "closed"
+  if not win.pid:
+    return None
+  import signal
+  for sig, wait in ((signal.SIGTERM, 10), (signal.SIGKILL, 5)):
+    try:
+      os.kill(win.pid, sig)
+    except ProcessLookupError:
+      return "terminated"
+    except PermissionError:
+      return None
+    if _wait_gone(win, wait):
+      return "terminated"
+  return None
 
 def launch_game():
   """Hand steam://rungameid to Steam, which starts itself if needed.
