@@ -6,7 +6,8 @@ score a template, find a coloured blob, cut a template candidate and measure
 whether it actually separates from the negatives.
 
 Read-only by default. The only subcommands that touch the game are `launch`
-(starts it, never clicks), `close`, `click` and `scan`, and `scan` refuses to click the already-selected facility because on the
+(starts it, never clicks), `close`, `click`, `advance`, `skiprace` and `scan`,
+and `scan` refuses to click the already-selected facility because on the
 training screen that executes the training instead of selecting it.
 
 Run from the repo root:
@@ -370,57 +371,105 @@ def cmd_skiprace(a):
   print(f"gave up after {a.timeout}s and {clicks} skip clicks")
 
 
-def cmd_advance(a):
-  """Click through dialogue/results screens until the career lobby is back.
+ADVANCE_CODES = """\
+  ADVANCE-OK   career lobby reached
+  ADVANCE-E01  not in the lobby after --timeout seconds
+  ADVANCE-E02  no career in progress (Career opened the career setup); start one yourself
+  ADVANCE-E03  still on the home screen after tapping Career 3 times"""
 
-  The lobby is identified by the Tazuna hint, the same signal career_lobby()
-  uses. Buttons are re-located every pass because they move between screens,
-  and a screen with no button at all is advanced with a tap, which is how the
-  scenario dialogues progress.
+# Inspiration is a full-screen "GO!" disc with no Next and no dialogue tap
+# target, so tapping the dialogue position there does nothing at all.
+ADVANCE_BUTTONS = ["assets/buttons/next_btn.png", "assets/buttons/next2_btn.png",
+                   "assets/buttons/inspiration_btn.png",
+                   "assets/buttons/close_btn.png", "assets/buttons/ok_btn.png",
+                   "assets/buttons/ok_2_btn.png"]
+
+
+def _best(scr, path):
+  """Best score of one template on a BGR frame, and the centre of that hit."""
+  tpl = cv2.imread(os.path.join(REPO, path))
+  if tpl is None:
+    return 0.0, None
+  res = cv2.matchTemplate(scr, tpl, cv2.TM_CCOEFF_NORMED)
+  _, mx, _, loc = cv2.minMaxLoc(res)
+  h, w = tpl.shape[:2]
+  return mx, (loc[0] + w // 2, loc[1] + h // 2)
+
+
+def advance_decision(scr):
+  """What `advance` does with one BGR frame: (action, point, detail).
+
+  action is "lobby" (done), "resume" (Continue Career's Resume), "career" (the
+  home screen's Career button), "setup" (stop: no career in progress),
+  "button" (Next, OK, Close, Inspiration) or "tap" (dialogue).
+
+  Started from the title screen, the old loop only knew the career lobby, so it
+  tapped the character art on the home screen until its timeout (2026-09-15).
+  Scores measured that day: the team rank badge is 0.94-1.00 on the home
+  screen and also 0.95 on the career setup screens, which alone have a Back
+  button (0.98 there, 0.59 on the home screen). The lobby hint scores 0.80 on
+  the Date Changed dialog, hence 0.85 rather than 0.80 for the lobby.
+  """
+  import utils.constants as constants
+  mx, _ = _best(scr, "assets/ui/tazuna_hint.png")
+  if mx >= 0.85:
+    return "lobby", None, f"tazuna {mx:.2f}"
+  mx, _ = _best(scr, "assets/ui/continue_career.png")
+  if mx >= 0.90:
+    rmx, point = _best(scr, "assets/buttons/resume_btn.png")
+    if rmx >= 0.90:
+      return "resume", point, f"continue_career {mx:.2f}, resume_btn {rmx:.2f}"
+  mx, _ = _best(scr, "assets/ui/team_rank.png")
+  if mx >= 0.85:
+    bmx, _ = _best(scr, "assets/buttons/back_btn.png")
+    if bmx >= 0.90:
+      return "setup", None, f"team_rank {mx:.2f}, back_btn {bmx:.2f}"
+    return "career", constants.CAREER_BUTTON_MOUSE_POS, f"team_rank {mx:.2f}"
+  for path in ADVANCE_BUTTONS:
+    bmx, point = _best(scr, path)
+    if bmx >= 0.90:
+      return "button", point, f"{os.path.basename(path)} {bmx:.2f}"
+  return "tap", (553, 400), "no button"
+
+
+def cmd_advance(a):
+  """Click through to the career lobby, from the title screen, the home screen,
+  or any dialogue/results screen inside a career.
+
+  Each frame goes through advance_decision(). Buttons are re-located every pass
+  because they move between screens, and a screen with no button at all is
+  advanced with a tap, which is how the scenario dialogues progress.
   """
   import utils.control as control
-  # Inspiration is a full-screen "GO!" disc with no Next and no dialogue tap
-  # target, so tapping the dialogue position there does nothing at all.
-  buttons = ["assets/buttons/next_btn.png", "assets/buttons/next2_btn.png",
-             "assets/buttons/inspiration_btn.png",
-             "assets/buttons/close_btn.png", "assets/buttons/ok_btn.png",
-             "assets/buttons/ok_2_btn.png"]
-  tazuna = cv2.imread(os.path.join(REPO, "assets/ui/tazuna_hint.png"))
+  labels = {"resume": "Continue Career: Resume", "career": "home screen: Career",
+            "button": "button", "tap": "no button, tapped to advance dialogue"}
   t0 = time.time()
   steps = 0
+  career_taps = 0
   while time.time() - t0 < a.timeout:
-    img = _grab()
-    scr = _bgr(img)
-    if tazuna is not None:
-      res = cv2.matchTemplate(scr, tazuna, cv2.TM_CCOEFF_NORMED)
-      if res.max() >= 0.80:
-        out = os.path.join(SHOTS, time.strftime("lobby_%H%M%S.png"))
-        _grab(out)
-        print(f"lobby reached after {steps} clicks (tazuna {res.max():.2f}) -> {out}")
-        return
-    hit = None
-    for path in buttons:
-      tpl = cv2.imread(path)
-      if tpl is None:
-        continue
-      res = cv2.matchTemplate(scr, tpl, cv2.TM_CCOEFF_NORMED)
-      _, mx, _, loc = cv2.minMaxLoc(res)
-      if mx >= 0.90:
-        h, w = tpl.shape[:2]
-        hit = (loc[0] + w // 2, loc[1] + h // 2, os.path.basename(path), mx)
-        break
-    control.moveTo(960, 540)
-    time.sleep(0.1)
-    if hit:
-      x, y, name, mx = hit
-      control.click(x, y)
-      print(f"  {steps + 1}: {name} {mx:.2f} at ({x},{y})")
-    else:
-      control.click(553, 400)
-      print(f"  {steps + 1}: no button, tapped to advance dialogue")
+    action, point, detail = advance_decision(_bgr(_grab()))
+    if action == "lobby":
+      out = os.path.join(SHOTS, time.strftime("lobby_%H%M%S.png"))
+      _grab(out)
+      print(f"ADVANCE-OK after {steps} clicks ({detail}) -> {out}")
+      return
+    if action == "setup":
+      print(f"ADVANCE-E02 ({detail})\n{ADVANCE_CODES}")
+      raise SystemExit(1)
+    if action == "career":
+      if career_taps >= 3:
+        print(f"ADVANCE-E03 ({detail})\n{ADVANCE_CODES}")
+        raise SystemExit(1)
+      career_taps += 1
+    # Glide onto the target, then press: a pointer that jumped straight there
+    # did not register on the race preview (2026-09-15).
+    control.moveTo(*point, duration=0.225)
+    control.click()
+    print(f"  {steps + 1}: {labels[action]} ({detail}) at {point}")
     steps += 1
-    time.sleep(a.interval)
-  print(f"still not in the lobby after {a.timeout}s and {steps} clicks")
+    time.sleep(max(a.interval, 4) if action in ("resume", "career") else a.interval)
+  print(f"ADVANCE-E01 after {a.timeout:.0f}s and {steps} clicks\n{ADVANCE_CODES}")
+  raise SystemExit(1)
 
 
 def cmd_click(a):

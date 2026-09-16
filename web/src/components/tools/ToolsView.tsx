@@ -64,7 +64,7 @@ const GROUPS: { title: string; note?: string; tools: Tool[] }[] = [
     title: "Career helpers",
     note: "These click the game, so they only run while the bot is stopped.",
     tools: [
-      { name: "advance", label: "Advance to lobby", hint: "Tap through dialogue and results until the career lobby", icon: FastForward, locked: true },
+      { name: "advance", label: "Advance to lobby", hint: "From the title or home screen, resume the career, then tap through to the career lobby", icon: FastForward, locked: true },
       { name: "skiprace", label: "Skip race", hint: "Press skip until the race results", icon: SkipForward, locked: true },
       { name: "scan", label: "Facility scan", hint: "Visit every training facility and report the Unity icons", icon: Radar, locked: true },
     ],
