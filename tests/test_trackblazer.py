@@ -95,23 +95,59 @@ def test_catalogue_loads():
      all(e.get("name") and e.get("category") and e.get("cost") is not None for e in cat))
 
 def test_item_lookup():
-  scroll = T.item("Scroll")
-  ok("Scroll is in the catalogue", scroll is not None)
+  """The catalogue holds the game's real names - there is no bare "Scroll"."""
+  scroll = T.item("Wit Scroll")
+  ok("Wit Scroll is in the catalogue", scroll is not None)
   ok("and costs 30 for +15", scroll and scroll["cost"] == 30
-     and scroll["effect"]["amount"] == 15, scroll)
+     and scroll["effect"][0]["amount"] == 15, scroll)
+  ok("the old guessed name is gone", T.item("Scroll") is None)
   ok("an unknown item is None, not a guess", T.item("Nonesuch") is None)
 
 def test_items_of_category():
   stats = T.items_of("stat")
-  ok("three stat items", len(stats) == 3, [e["name"] for e in stats])
+  ok("fifteen stat items: five stats x three tiers", len(stats) == 15, len(stats))
   ok("cheapest first", [e["cost"] for e in stats] == sorted(e["cost"] for e in stats),
      [e["cost"] for e in stats])
+
+def test_ankle_weights_name_their_own_facility():
+  """Guards the facility id map, which was read wrong once.
+
+  master.mdb numbers facilities 101 spd, 102 pwr, 103 guts, 105 sta, 106 wit -
+  not the tidy 101..105 run it resembles. Reading it as a run put Stamina Ankle
+  Weights on wit and Power's on sta. Every weight boosts the stat in its own
+  name, so that is the invariant worth pinning.
+  """
+  for stat, name in (("spd", "Speed Ankle Weights"), ("sta", "Stamina Ankle Weights"),
+                     ("pwr", "Power Ankle Weights"), ("guts", "Guts Ankle Weights")):
+    entry = T.item(name)
+    boost = next((e for e in (entry or {}).get("effect", [])
+                  if e["kind"] == "training_bonus"), None)
+    ok(f"{name} boosts {stat}", bool(boost) and boost.get("facility") == stat, boost)
+  ok("and there is no Wit Ankle Weights", T.item("Wit Ankle Weights") is None)
+
+def test_the_energy_drink_trap():
+  """The dearer of the two energy drinks restores nothing at all.
+
+  Energy Drink MAX EX (50) raises the cap by 8 and restores no energy, where
+  Energy Drink MAX (30) raises it by 4 and restores 5. A buying routine
+  reaching for "energy" must not pick the expensive one.
+  """
+  ex = T.item("Energy Drink MAX EX")
+  ok("MAX EX is flagged a trap", bool(ex) and ex.get("trap") is True)
+  ok("and restores no energy",
+     bool(ex) and not any(e["kind"] == "energy" for e in ex["effect"]), ex and ex["effect"])
+  cheap = T.item("Energy Drink MAX")
+  ok("while the cheaper one does restore",
+     bool(cheap) and any(e["kind"] == "energy" for e in cheap["effect"]))
 
 def test_affordable():
   """Dearest first: coins expire with the career, so there is nothing to save for."""
   cheap = T.affordable(15, "stat")
-  ok("15 coins buys the Manual, not the Scroll",
-     [e["name"] for e in cheap] == ["Manual", "Notepad"], [e["name"] for e in cheap])
+  names = [e["name"] for e in cheap]
+  ok("15 coins buys the Manuals before the Notepads",
+     names[:5] == ["Speed Manual", "Stamina Manual", "Power Manual",
+                   "Guts Manual", "Wit Manual"], names)
+  ok("and offers nothing dearer than 15", all(e["cost"] <= 15 for e in cheap))
   ok("0 coins buys nothing", T.affordable(0, "stat") == [])
   everything = T.affordable(10_000)
   ok("a big purse offers the whole catalogue", len(everything) == len(T.catalogue()))
@@ -119,11 +155,20 @@ def test_affordable():
      everything[0]["cost"] >= everything[-1]["cost"],
      (everything[0]["cost"], everything[-1]["cost"]))
 
+def test_every_item_has_a_hold_limit():
+  """The game caps holdings at five of any one item. Nothing models that yet."""
+  cat = T.catalogue()
+  ok("all 53 items present", len(cat) == 53, len(cat))
+  ok("each carries limit 5", all(e.get("limit") == 5 for e in cat))
+
 for test in [test_points_confirmed_on_screen, test_points_by_grade,
-             test_placement_scales_the_points, test_an_unknown_grade_scores_zero,
+             test_placement_scales_the_points, test_coins_do_not_scale_with_grade,
+             test_an_unknown_grade_scores_zero,
              test_coins_stop_at_sixth, test_dirt_targets_are_lower_early,
              test_climax_vp, test_catalogue_loads, test_item_lookup,
-             test_items_of_category, test_affordable]:
+             test_items_of_category, test_ankle_weights_name_their_own_facility,
+             test_the_energy_drink_trap, test_affordable,
+             test_every_item_has_a_hold_limit]:
   print(f"\n-- {test.__name__}")
   test()
 

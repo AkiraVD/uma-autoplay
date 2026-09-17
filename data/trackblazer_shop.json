@@ -1,107 +1,872 @@
 {
   "_comment": [
-    "Trackblazer's shop (the Climax Store). Item names, costs and effects were",
-    "read from uma.guide, GameTora and umamusu.wiki on 2026-09-17; where the",
-    "three disagreed the range is kept in 'cost_range' rather than averaged away.",
-    "'effect' is a machine-readable shape; 'text' is roughly what the game shows.",
+    "Trackblazer's shop (the Climax Store), generated from the game's own master.mdb on 2026-09-17:",
+    "single_mode_free_shop_item for names, costs and hold limits, single_mode_free_shop_effect for",
+    "effects. Cross-checked against GameTora's list and against the live shop, which matched on every",
+    "cost seen. This replaces the earlier hand-built file, whose names were guesses ('Scroll' rather",
+    "than the five real 'Speed Scroll'...'Wit Scroll').",
     "",
-    "PARTIALLY VERIFIED against the live shop on 2026-09-17 (Junior Early Sep,",
-    "first shop after the debut race). Seven items were on offer and all seven",
-    "matched on cost; entries carrying 'verified' are those. The shop shows only",
-    "7 slots at a time, so this file is the universe of items and the shop is a",
-    "rotating subset - do not expect to match it wholesale.",
+    "'cost' is the LIST price. The shop discounts newly restocked rows by 10-20%, printing the old",
+    "price struck through, so what is charged can be lower - read it from the coin counter, which",
+    "deducts on tick, not by OCR of the row (the strike-through corrupts it).",
     "",
-    "'live_name' is what the game prints when it differs from the generic name:",
-    "stat items are stat-prefixed ('Speed Notepad'), so a reader must strip a",
-    "leading stat word before looking a row up by name."
+    "Facility ids in effects are the game's: 101 spd, 102 pwr, 103 guts, 105 sta, 106 wit."
   ],
-  "coins_by_placement": {"1": 100, "2": 60, "3": 60, "4": 30, "5": 30, "6+": 0},
-  "shop_slots": 7,
-  "refresh_turns": 6,
-  "refresh_turns_note": [
-    "Unconfirmed, and possibly wrong. Each row carries its own 'N turn(s)'",
-    "label: the seven live rows read 1,1,1,2,2,2,2 at the same moment, which a",
-    "single shop-wide 6-turn refresh does not describe. Whether the per-row",
-    "number counts down to that item expiring or to a restock is unknown."
+  "coins_by_placement": {
+    "1": 100,
+    "2": 60,
+    "3": 60,
+    "4": 30,
+    "5": 30,
+    "6+": 0
+  },
+  "coins_note": "Flat across every grade - single_mode_free_coin_race pays the same for all nine grade codes.",
+  "shop_slots_seen": [
+    7,
+    10
   ],
+  "restock_turns": 6,
+  "restock_note": "single_mode_free_shop gives fixed windows: turns 13-18, 19-24, 25-30 ... 73-78. Restocks ADD to the shelf; the per-row 'N turn(s)' is that item's expiry.",
   "win_item_turns": 3,
-  "unlocks": "after the debut race",
+  "hold_limit": 5,
+  "discount_percent_range": [
+    10,
+    20
+  ],
+  "unlocks": "after the debut race (shop windows start at turn 13)",
   "items": [
-    {"name": "Notepad", "category": "stat", "cost": 10,
-     "effect": {"kind": "stat", "amount": 3}, "text": "+3 to one stat",
-     "live_name": "Speed Notepad", "verified": "2026-09-17 live shop"},
-    {"name": "Manual", "category": "stat", "cost": 15,
-     "effect": {"kind": "stat", "amount": 7}, "text": "+7 to one stat",
-     "live_name": "Guts Manual", "verified": "2026-09-17 live shop"},
-    {"name": "Scroll", "category": "stat", "cost": 30,
-     "effect": {"kind": "stat", "amount": 15}, "text": "+15 to one stat",
-     "live_name": "Wit Scroll", "verified": "2026-09-17 live shop"},
-
-    {"name": "Vita Drink (small)", "category": "energy", "cost": 35,
-     "effect": {"kind": "energy", "amount": 20}, "text": "+20 Energy"},
-    {"name": "Vita Drink (medium)", "category": "energy", "cost": 55,
-     "effect": {"kind": "energy", "amount": 40}, "text": "+40 Energy"},
-    {"name": "Vita Drink (large)", "category": "energy", "cost": 75,
-     "effect": {"kind": "energy", "amount": 65}, "text": "+65 Energy"},
-    {"name": "Royal Kale Juice", "category": "energy", "cost": 70,
-     "effect": {"kind": "energy", "amount": 100, "mood": -1},
-     "text": "+100 Energy, -1 Mood", "verified": "2026-09-17 live shop"},
-
-    {"name": "Cupcake (small)", "category": "mood", "cost": 30,
-     "effect": {"kind": "mood", "amount": 1}, "text": "+1 Mood"},
-    {"name": "Cupcake (large)", "category": "mood", "cost": 55,
-     "effect": {"kind": "mood", "amount": 2}, "text": "+2 Mood"},
-
-    {"name": "Megaphone (small)", "category": "training", "cost": 40,
-     "effect": {"kind": "training_bonus", "percent": 20, "turns": 4},
-     "text": "+20% training for 4 turns",
-     "live_name": "Coaching Megaphone", "verified": "2026-09-17 live shop"},
-    {"name": "Megaphone (medium)", "category": "training", "cost": 55,
-     "effect": {"kind": "training_bonus", "percent": 40, "turns": 3},
-     "text": "+40% training for 3 turns"},
-    {"name": "Megaphone (large)", "category": "training", "cost": 70,
-     "effect": {"kind": "training_bonus", "percent": 60, "turns": 2},
-     "text": "+60% training for 2 turns"},
-    {"name": "Ankle Weights", "category": "training", "cost": 50,
-     "effect": {"kind": "training_bonus", "percent": 50, "turns": 1, "single_facility": true},
-     "text": "+50% to one training for 1 turn",
-     "live_name": "Guts Ankle Weights", "verified": "2026-09-17 live shop (cost only)",
-     "effect_unverified": true,
-     "live_text": "Increase training gains/Energy cost",
-     "effect_note": "The game's row names an Energy cost this entry does not, and shows no percentage or duration. The numbers above are still the guide values."},
-
-    {"name": "Cleat Hammer (small)", "category": "race", "cost": 25,
-     "effect": {"kind": "race_bonus", "percent": 20, "turns": 1},
-     "text": "+20% Race Bonus, 1 turn"},
-    {"name": "Cleat Hammer (large)", "category": "race", "cost": 40,
-     "effect": {"kind": "race_bonus", "percent": 35, "turns": 1},
-     "text": "+35% Race Bonus, 1 turn"},
-    {"name": "Glow Stick", "category": "race", "cost": 15,
-     "effect": {"kind": "fan_bonus", "percent": 50}, "text": "Race fan gain +50%",
-     "live_name": "Glow Sticks", "verified": "2026-09-17 live shop"},
-
-    {"name": "Cat Food", "category": "bond", "cost": 10,
-     "effect": {"kind": "bond", "scope": "one"}, "text": "bond with one support"},
-    {"name": "Grilled Carrots", "category": "bond", "cost": 40,
-     "effect": {"kind": "bond", "scope": "all"}, "text": "bond with all supports"},
-
-    {"name": "Remedy", "category": "heal", "cost": 15,
-     "effect": {"kind": "heal", "scope": "one"}, "text": "clear one bad condition"},
-    {"name": "Miracle Cure", "category": "heal", "cost": 40,
-     "effect": {"kind": "heal", "scope": "all"}, "text": "clear all bad conditions"},
-
-    {"name": "Shuffle", "category": "utility", "cost": 20,
-     "effect": {"kind": "shuffle_supports"}, "text": "shuffle support card placement"},
-    {"name": "No-Fail Charm", "category": "utility", "cost": 40,
-     "effect": {"kind": "no_fail", "turns": 1}, "text": "trainings cannot fail for 1 turn"},
-    {"name": "Facility Application", "category": "facility", "cost": 150,
-     "effect": {"kind": "facility_level", "amount": 1}, "text": "+1 facility level"},
-
-    {"name": "Mirror", "category": "condition", "cost": 150,
-     "effect": {"kind": "condition", "name": "Charming"}, "text": "gain a good condition",
-     "cost_range": [150, 280]},
-    {"name": "Scholar's Hat", "category": "condition", "cost": 280,
-     "effect": {"kind": "condition", "name": "Fast Learner"}, "text": "gain a good condition",
-     "unverified": true}
+    {
+      "name": "Speed Notepad",
+      "item_id": 1001,
+      "category": "stat",
+      "cost": 10,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "stat",
+          "stat": "spd",
+          "amount": 3
+        }
+      ],
+      "text": "spd +3"
+    },
+    {
+      "name": "Stamina Notepad",
+      "item_id": 1002,
+      "category": "stat",
+      "cost": 10,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "stat",
+          "stat": "sta",
+          "amount": 3
+        }
+      ],
+      "text": "sta +3"
+    },
+    {
+      "name": "Power Notepad",
+      "item_id": 1003,
+      "category": "stat",
+      "cost": 10,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "stat",
+          "stat": "pwr",
+          "amount": 3
+        }
+      ],
+      "text": "pwr +3"
+    },
+    {
+      "name": "Guts Notepad",
+      "item_id": 1004,
+      "category": "stat",
+      "cost": 10,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "stat",
+          "stat": "guts",
+          "amount": 3
+        }
+      ],
+      "text": "guts +3"
+    },
+    {
+      "name": "Wit Notepad",
+      "item_id": 1005,
+      "category": "stat",
+      "cost": 10,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "stat",
+          "stat": "wit",
+          "amount": 3
+        }
+      ],
+      "text": "wit +3"
+    },
+    {
+      "name": "Speed Manual",
+      "item_id": 1101,
+      "category": "stat",
+      "cost": 15,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "stat",
+          "stat": "spd",
+          "amount": 7
+        }
+      ],
+      "text": "spd +7"
+    },
+    {
+      "name": "Stamina Manual",
+      "item_id": 1102,
+      "category": "stat",
+      "cost": 15,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "stat",
+          "stat": "sta",
+          "amount": 7
+        }
+      ],
+      "text": "sta +7"
+    },
+    {
+      "name": "Power Manual",
+      "item_id": 1103,
+      "category": "stat",
+      "cost": 15,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "stat",
+          "stat": "pwr",
+          "amount": 7
+        }
+      ],
+      "text": "pwr +7"
+    },
+    {
+      "name": "Guts Manual",
+      "item_id": 1104,
+      "category": "stat",
+      "cost": 15,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "stat",
+          "stat": "guts",
+          "amount": 7
+        }
+      ],
+      "text": "guts +7"
+    },
+    {
+      "name": "Wit Manual",
+      "item_id": 1105,
+      "category": "stat",
+      "cost": 15,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "stat",
+          "stat": "wit",
+          "amount": 7
+        }
+      ],
+      "text": "wit +7"
+    },
+    {
+      "name": "Speed Scroll",
+      "item_id": 1201,
+      "category": "stat",
+      "cost": 30,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "stat",
+          "stat": "spd",
+          "amount": 15
+        }
+      ],
+      "text": "spd +15"
+    },
+    {
+      "name": "Stamina Scroll",
+      "item_id": 1202,
+      "category": "stat",
+      "cost": 30,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "stat",
+          "stat": "sta",
+          "amount": 15
+        }
+      ],
+      "text": "sta +15"
+    },
+    {
+      "name": "Power Scroll",
+      "item_id": 1203,
+      "category": "stat",
+      "cost": 30,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "stat",
+          "stat": "pwr",
+          "amount": 15
+        }
+      ],
+      "text": "pwr +15"
+    },
+    {
+      "name": "Guts Scroll",
+      "item_id": 1204,
+      "category": "stat",
+      "cost": 30,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "stat",
+          "stat": "guts",
+          "amount": 15
+        }
+      ],
+      "text": "guts +15"
+    },
+    {
+      "name": "Wit Scroll",
+      "item_id": 1205,
+      "category": "stat",
+      "cost": 30,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "stat",
+          "stat": "wit",
+          "amount": 15
+        }
+      ],
+      "text": "wit +15"
+    },
+    {
+      "name": "Vita 20",
+      "item_id": 2001,
+      "category": "energy",
+      "cost": 35,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "energy",
+          "amount": 20
+        }
+      ],
+      "text": "Energy +20"
+    },
+    {
+      "name": "Vita 40",
+      "item_id": 2002,
+      "category": "energy",
+      "cost": 55,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "energy",
+          "amount": 40
+        }
+      ],
+      "text": "Energy +40"
+    },
+    {
+      "name": "Vita 65",
+      "item_id": 2003,
+      "category": "energy",
+      "cost": 75,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "energy",
+          "amount": 65
+        }
+      ],
+      "text": "Energy +65"
+    },
+    {
+      "name": "Royal Kale Juice",
+      "item_id": 2101,
+      "category": "energy",
+      "cost": 70,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "energy",
+          "amount": 100
+        },
+        {
+          "kind": "mood",
+          "amount": -1
+        }
+      ],
+      "text": "Energy +100, Mood -1"
+    },
+    {
+      "name": "Energy Drink MAX",
+      "item_id": 2201,
+      "category": "max_energy",
+      "cost": 30,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "max_energy",
+          "amount": 4
+        },
+        {
+          "kind": "energy",
+          "amount": 5
+        }
+      ],
+      "text": "Max Energy +4, Energy +5"
+    },
+    {
+      "name": "Energy Drink MAX EX",
+      "item_id": 2202,
+      "category": "max_energy",
+      "cost": 50,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "max_energy",
+          "amount": 8
+        }
+      ],
+      "text": "Max Energy +8",
+      "trap": true,
+      "note": "Raises max Energy by 8 and restores nothing. The cheaper Energy Drink MAX (30) both raises the cap by 4 and restores 5. seriru's JP guide is explicit: \"you must not buy it\"."
+    },
+    {
+      "name": "Plain Cupcake",
+      "item_id": 2301,
+      "category": "mood",
+      "cost": 30,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "mood",
+          "amount": 1
+        }
+      ],
+      "text": "Mood +1"
+    },
+    {
+      "name": "Berry Sweet Cupcake",
+      "item_id": 2302,
+      "category": "mood",
+      "cost": 55,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "mood",
+          "amount": 2
+        }
+      ],
+      "text": "Mood +2"
+    },
+    {
+      "name": "Yummy Cat Food",
+      "item_id": 3001,
+      "category": "bond",
+      "cost": 10,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "bond",
+          "scope": "one",
+          "character": 9002,
+          "amount": 5
+        }
+      ],
+      "text": "bond +5 (one character)"
+    },
+    {
+      "name": "Grilled Carrots",
+      "item_id": 3101,
+      "category": "bond",
+      "cost": 40,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "bond",
+          "scope": "all",
+          "character": null,
+          "amount": 5
+        }
+      ],
+      "text": "bond +5 (all supports)"
+    },
+    {
+      "name": "Pretty Mirror",
+      "item_id": 4001,
+      "category": "condition",
+      "cost": 150,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "gain_condition",
+          "condition": "Charming"
+        }
+      ],
+      "text": "become Charming"
+    },
+    {
+      "name": "Reporter's Binoculars",
+      "item_id": 4002,
+      "category": "condition",
+      "cost": 150,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "gain_condition",
+          "condition": "Hot Topic"
+        }
+      ],
+      "text": "become Hot Topic"
+    },
+    {
+      "name": "Master Practice Guide",
+      "item_id": 4003,
+      "category": "condition",
+      "cost": 150,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "gain_condition",
+          "condition": "Practice Perfect"
+        }
+      ],
+      "text": "become Practice Perfect"
+    },
+    {
+      "name": "Scholar's Hat",
+      "item_id": 4004,
+      "category": "condition",
+      "cost": 280,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "gain_condition",
+          "condition": "Fast Learner"
+        }
+      ],
+      "text": "become Fast Learner"
+    },
+    {
+      "name": "Fluffy Pillow",
+      "item_id": 4101,
+      "category": "heal",
+      "cost": 15,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "cure_condition",
+          "condition": "Night Owl"
+        }
+      ],
+      "text": "cure Night Owl"
+    },
+    {
+      "name": "Pocket Planner",
+      "item_id": 4102,
+      "category": "heal",
+      "cost": 15,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "cure_condition",
+          "condition": "Slacker"
+        }
+      ],
+      "text": "cure Slacker"
+    },
+    {
+      "name": "Rich Hand Cream",
+      "item_id": 4103,
+      "category": "heal",
+      "cost": 15,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "cure_condition",
+          "condition": "Skin Outbreak"
+        }
+      ],
+      "text": "cure Skin Outbreak"
+    },
+    {
+      "name": "Smart Scale",
+      "item_id": 4104,
+      "category": "heal",
+      "cost": 15,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "cure_condition",
+          "condition": "Slow Metabolism"
+        }
+      ],
+      "text": "cure Slow Metabolism"
+    },
+    {
+      "name": "Aroma Diffuser",
+      "item_id": 4105,
+      "category": "heal",
+      "cost": 15,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "cure_condition",
+          "condition": "Migraine"
+        }
+      ],
+      "text": "cure Migraine"
+    },
+    {
+      "name": "Practice Drills DVD",
+      "item_id": 4106,
+      "category": "heal",
+      "cost": 15,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "cure_condition",
+          "condition": "Practice Poor"
+        }
+      ],
+      "text": "cure Practice Poor"
+    },
+    {
+      "name": "Miracle Cure",
+      "item_id": 4201,
+      "category": "heal",
+      "cost": 40,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "cure_condition",
+          "condition": "Night Owl"
+        },
+        {
+          "kind": "cure_condition",
+          "condition": "Slacker"
+        },
+        {
+          "kind": "cure_condition",
+          "condition": "Skin Outbreak"
+        },
+        {
+          "kind": "cure_condition",
+          "condition": "Slow Metabolism"
+        },
+        {
+          "kind": "cure_condition",
+          "condition": "Migraine"
+        },
+        {
+          "kind": "cure_condition",
+          "condition": "Practice Poor"
+        }
+      ],
+      "text": "cure Night Owl, cure Slacker, cure Skin Outbreak, cure Slow Metabolism, cure Migraine, cure Practice Poor"
+    },
+    {
+      "name": "Speed Training Application",
+      "item_id": 5001,
+      "category": "facility",
+      "cost": 150,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "facility_level",
+          "facility": "spd",
+          "amount": 1
+        }
+      ],
+      "text": "spd training level +1"
+    },
+    {
+      "name": "Stamina Training Application",
+      "item_id": 5002,
+      "category": "facility",
+      "cost": 150,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "facility_level",
+          "facility": "sta",
+          "amount": 1
+        }
+      ],
+      "text": "sta training level +1"
+    },
+    {
+      "name": "Power Training Application",
+      "item_id": 5003,
+      "category": "facility",
+      "cost": 150,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "facility_level",
+          "facility": "pwr",
+          "amount": 1
+        }
+      ],
+      "text": "pwr training level +1"
+    },
+    {
+      "name": "Guts Training Application",
+      "item_id": 5004,
+      "category": "facility",
+      "cost": 150,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "facility_level",
+          "facility": "guts",
+          "amount": 1
+        }
+      ],
+      "text": "guts training level +1"
+    },
+    {
+      "name": "Wit Training Application",
+      "item_id": 5005,
+      "category": "facility",
+      "cost": 150,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "facility_level",
+          "facility": "wit",
+          "amount": 1
+        }
+      ],
+      "text": "wit training level +1"
+    },
+    {
+      "name": "Reset Whistle",
+      "item_id": 7001,
+      "category": "utility",
+      "cost": 20,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "shuffle_supports"
+        }
+      ],
+      "text": "shuffle support placement"
+    },
+    {
+      "name": "Coaching Megaphone",
+      "item_id": 8001,
+      "category": "training",
+      "cost": 40,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "training_bonus",
+          "percent": 20,
+          "turns": 4
+        }
+      ],
+      "text": "training gain +20% for 4 turn(s)"
+    },
+    {
+      "name": "Motivating Megaphone",
+      "item_id": 8002,
+      "category": "training",
+      "cost": 55,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "training_bonus",
+          "percent": 40,
+          "turns": 3
+        }
+      ],
+      "text": "training gain +40% for 3 turn(s)"
+    },
+    {
+      "name": "Empowering Megaphone",
+      "item_id": 8003,
+      "category": "training",
+      "cost": 70,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "training_bonus",
+          "percent": 60,
+          "turns": 2
+        }
+      ],
+      "text": "training gain +60% for 2 turn(s)"
+    },
+    {
+      "name": "Speed Ankle Weights",
+      "item_id": 9001,
+      "category": "training",
+      "cost": 50,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "training_bonus",
+          "facility": "spd",
+          "percent": 50,
+          "turns": 1
+        },
+        {
+          "kind": "energy_cost_up",
+          "facility": "spd",
+          "percent": 20,
+          "turns": 1
+        }
+      ],
+      "text": "spd training gain +50% for 1 turn(s), spd energy cost +20%"
+    },
+    {
+      "name": "Stamina Ankle Weights",
+      "item_id": 9002,
+      "category": "training",
+      "cost": 50,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "training_bonus",
+          "facility": "sta",
+          "percent": 50,
+          "turns": 1
+        },
+        {
+          "kind": "energy_cost_up",
+          "facility": "sta",
+          "percent": 20,
+          "turns": 1
+        }
+      ],
+      "text": "sta training gain +50% for 1 turn(s), sta energy cost +20%"
+    },
+    {
+      "name": "Power Ankle Weights",
+      "item_id": 9003,
+      "category": "training",
+      "cost": 50,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "training_bonus",
+          "facility": "pwr",
+          "percent": 50,
+          "turns": 1
+        },
+        {
+          "kind": "energy_cost_up",
+          "facility": "pwr",
+          "percent": 20,
+          "turns": 1
+        }
+      ],
+      "text": "pwr training gain +50% for 1 turn(s), pwr energy cost +20%"
+    },
+    {
+      "name": "Guts Ankle Weights",
+      "item_id": 9004,
+      "category": "training",
+      "cost": 50,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "training_bonus",
+          "facility": "guts",
+          "percent": 50,
+          "turns": 1
+        },
+        {
+          "kind": "energy_cost_up",
+          "facility": "guts",
+          "percent": 20,
+          "turns": 1
+        }
+      ],
+      "text": "guts training gain +50% for 1 turn(s), guts energy cost +20%"
+    },
+    {
+      "name": "Good-Luck Charm",
+      "item_id": 10001,
+      "category": "training",
+      "cost": 40,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "no_fail",
+          "turns": 1
+        }
+      ],
+      "text": "training failure 0% for 1 turn(s)"
+    },
+    {
+      "name": "Artisan Cleat Hammer",
+      "item_id": 11001,
+      "category": "race",
+      "cost": 25,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "race_bonus",
+          "percent": 20,
+          "turns": 1
+        }
+      ],
+      "text": "race stat gain +20%"
+    },
+    {
+      "name": "Master Cleat Hammer",
+      "item_id": 11002,
+      "category": "race",
+      "cost": 40,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "race_bonus",
+          "percent": 35,
+          "turns": 1
+        }
+      ],
+      "text": "race stat gain +35%"
+    },
+    {
+      "name": "Glow Sticks",
+      "item_id": 11003,
+      "category": "race",
+      "cost": 15,
+      "limit": 5,
+      "effect": [
+        {
+          "kind": "fan_bonus",
+          "percent": 50,
+          "turns": 1
+        }
+      ],
+      "text": "race fan gain +50%"
+    }
   ]
 }

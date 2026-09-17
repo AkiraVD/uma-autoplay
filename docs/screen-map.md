@@ -1116,6 +1116,51 @@ pressed, and using on purchase is the opt-in. A buying routine should step the
 quantity up only for the `stat` category and press **Close** (419,997) for
 everything else, then come back to the Training Items modal later.
 
+#### Read the name, never the price
+
+Measured against a saved shop frame with the project's own reader. **Item names
+OCR perfectly** - three of three exact, including the 26-character
+`Speed Training Application`. So a shop reader should identify a row by its
+name and look the item up in the catalogue; no icon templates are needed, and
+none have been cut.
+
+**The price does not read reliably**, because a discounted row prints the old
+price struck through beside the new one and the strike-through corrupts the
+read:
+
+    '~50- 40'     50 -> 40
+    '-40- 32'     40 -> 32
+    '458 120'     150 -> 120, and "150" came back as "458"
+
+So the price must come from the catalogue, not from OCR. What is actually
+charged can then be confirmed exactly: tick the row and read the coin counter,
+which deducts before any commit (1,240 -> 1,225 on a 15-coin tick). That turns
+an unreliable read into arithmetic.
+
+**Discounts are 10-20%**, per GameTora - every one measured here was 20%, which
+is only the top of the range, so nothing should assume a flat multiplier.
+
+#### Why there are no icon assets
+
+Worth recording so nobody repeats the search. The item icons are not
+obtainable:
+
+- Game8 and GameTora both serve lazy-loaded base64 placeholder GIFs in place of
+  item images, so no web source yields them.
+- `master.mdb` holds no icon reference for shop items: `single_mode_free_shop_item`
+  has only `motion_id` (an animation), and `item_data`'s 194 rows are the
+  general inventory, not these.
+- The art does ship locally, as `UnityFS` bundles (Unity 2022.3.62f2) among
+  171,347 files in `UmamusumePrettyDerby_Data/Persistent/dat/`, but the `meta`
+  index beside them is encrypted - header `fd 45 78 d1 b1 54 ff d7`, no SQLite
+  magic, no readable strings - so there is no way to find the right bundle
+  short of brute-forcing all of them, and it would need UnityPy installed.
+- Even extracted, a source texture would not match the rendered row, which
+  composites the icon onto a patterned tile with an `x1` overlay. It would fail
+  `umatool sep` the same way a downloaded icon would.
+
+Since the names OCR cleanly, none of this is worth doing.
+
 The shop restocked between visits with a completely different lineup (Junior:
 Royal Kale Juice, Wit Scroll, Guts Ankle Weights...; Senior: Wit Manual, Guts
 Manual, Guts Scroll, Good-Luck Charm...), and the Senior visit was badged
