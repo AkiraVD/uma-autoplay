@@ -920,8 +920,152 @@ The Track Pts counter reads cleanly at a generous crop; a tight one returned
 `core/gains.py`'s template bank - expect to read this counter by digit
 templates rather than easyocr.
 
+### Inside a career: the lobby (2026-09-17, Junior Pre-Debut)
+
+Measured on a live Trackblazer career, Maruzensky, Junior Year Pre-Debut.
+
+- **The lobby HUD is not called "Track Pts".** The badge sits top-left under
+  the turn counter, a gold ribbon with a star: `Junior Result Pts` over
+  `0 pts`, roughly (150-310, 160-245), label at ~(228,185) and value at
+  ~(225,225). No `/300` and no progress bar - the year prefix changes, the
+  target never shows. "Track Pts" with a bar came from the How to Play
+  mock-up, so prefer "<Year> Result Pts" for anything read off the lobby.
+- That badge lands in the region the training banner reader OCRs: the log
+  carries `Training banner not recognized: 'junior result pts 0 pts'`.
+  Harmless so far, but it is the first thing to suspect if a Trackblazer
+  career starts misreading the banner.
+- The right rail runs at x~1838: Jukebox 75, Sparks 230, Log 390, Career
+  Profile 540, Agenda 700, Item Request 855, Menu 1010, with a red "!" at
+  (1893,820) and a "NEW" tag at (1793,948).
+- **"Item Request" is not the shop**, and what it is is still unknown. It is
+  greyed with a red "!" and inert at Junior Pre-Debut: clicks at (1837,850)
+  and (1838,822) changed nothing, while (1838,230) switched the panel to
+  Sparks in the same session, so input was reaching the game. It was still
+  greyed after the debut race, when the real shop had already opened
+  elsewhere, so the "!" is not stock waiting to be spent.
+
+### Inside a career: after the debut race (2026-09-17, Junior Early Sep)
+
+The debut race is what changes the lobby. Measured with the bot stopped.
+
+- **The shop is a lobby facility button**, taking the locked "?" slot in the
+  facility grid between Recreation and Races. Click (622,952) - verified. It
+  carries its own coin balance at ~(645,998) and a pink "N turn(s)" badge at
+  ~(672,915).
+- **The rival-race marker is a "VS" badge on the Races button**, at ~(717,915);
+  the Races button itself centres ~(760,970).
+- **A "Training Items" button appears** at ~(713,650), left of Full Stats
+  (~(795,650)). On the shop screen the same pair sits at ~(715,290) and
+  ~(795,290).
+- The Result Pts badge counts up (70 pts after one win) and the rank pill under
+  the portrait moved Debut -> **Bronze** at (344,666).
+
+#### The shop screen
+
+| Element | Position |
+|---|---|
+| Shop Coins value | ~(742,352) |
+| item list bbox | ~(275, 400, 840, 810) |
+| scrollbar | x ~842 |
+| row 1 name / cost / effect | y 429 / 466 / 492 |
+| row pitch | **121 px** (names 429, 550, 671, 792) |
+| row checkbox | x ~765, first row y ~459 |
+| row "N turn(s)" | x ~765, first row y ~422 |
+| NEW badge / icon | ~(300,412) / ~(330,462) |
+| Confirm / Reset | (552,913) / (771,913) |
+| Back | (216,1039) |
+| prompt text | (552,843) |
+
+#### Catalogue cross-check against `data/trackblazer_shop.json`
+
+First live reading of the shop the file asked for. The whole stock was read by
+dragging (550,700) -> (550,450) three times; the third drag changed nothing, so
+the list had bottomed out. **Every one of the seven costs matches the file.**
+
+| # | On screen | Cost | Effect shown | Turns | vs the file |
+|---|---|---|---|---|---|
+| 1 | Royal Kale Juice | 70 | Energy +100, Mood -1 | 1 | exact: name, cost, effect |
+| 2 | Wit Scroll | 30 | Wit +15 | 1 | "Scroll" 30, +15 one stat |
+| 3 | Guts Ankle Weights | 50 | Increase training gains/Energy cost | 1 | "Ankle Weights" 50 - cost only |
+| 4 | Guts Manual | 15 | Guts +7 | 2 | "Manual" 15, +7 one stat |
+| 5 | Speed Notepad | 10 | Speed +3 | 2 | "Notepad" 10, +3 one stat |
+| 6 | Glow Sticks | 15 | Race fan gain +50% | 2 | "Glow Stick" 15, "race reward boost" |
+| 7 | Coaching Megaphone | 40 | Training stat gain +20% for 4 turns | 2 | "Megaphone (small)" 40, +20% for 4 turns |
+
+What this changes:
+
+- **The shop shows 7 items; the catalogue holds 25.** So the file is the
+  universe of items and the shop is a rotating subset of it - it is not a list
+  to be matched wholesale.
+- **Live names are stat-prefixed** ("Speed Notepad", "Guts Manual", "Wit
+  Scroll", "Guts Ankle Weights") where the catalogue holds the bare noun.
+  `core/trackblazer.py::item()` matches exact names and its docstring already
+  says to canonicalise "once the shop rows have been read off a real screen" -
+  they now have been, so that is the next edit there.
+- **The Megaphone tiers have real names, not sizes.** The 40-coin one is
+  "Coaching Megaphone", matching the file's guessed "Megaphone (small)" on both
+  cost and effect. The 55 and 70 tiers are still unnamed.
+- **Glow Stick's `unverified` flag can be cleared**, and its vague "race reward
+  boost" replaced with the game's own wording, **"Race fan gain +50%"**.
+- **Ankle Weights is the one effect mismatch.** The file says "+50% to one
+  training for 1 turn"; the game says "Increase training gains/Energy cost",
+  naming an Energy cost the file does not mention and no percentage. The row
+  text may simply be abbreviated - treat the file's numbers as unconfirmed.
+- **"N turn(s)" is per item, not a shop-wide refresh.** The seven rows read
+  1,1,1,2,2,2,2 at the same moment, which the file's single `refresh_turns: 6`
+  does not describe. Whether it counts down to expiry or to restock is
+  unresolved.
+
+Scroll calibration for a future reader: a 250 px drag moved the list exactly
+two rows (242 px), a travel ratio of ~0.97, and three drags cover the stock.
+
+#### Training Items
+
+The lobby's "Training Items" button (713,650) opens a modal listing what has
+been bought, and it is where items are actually spent. Empty on this career -
+"You do not own the selected training items." - so its populated form still
+needs a purchase before it can be read. Close (419,997), Confirm Use
+(686,997), prompt "Choose how many to use." (552,936), panel roughly
+(258,32)-(848,1052). The same button repeats on the shop screen (715,290) and
+on the Race List (188,217).
+
+#### The Race List, and the rival race
+
+Reached from the lobby's Races button (760,970). Its "VS" badge is not
+decoration: it marks a turn that offers a rival race.
+
+| Element | Position |
+|---|---|
+| title "Race List" | (216,17) |
+| banner grade badge / race name | (681,196) / (681,255) |
+| **"Rival Race!" pill** + its (i) | (665,348) / (782,348) |
+| Full Gate N Runners | (620,383) |
+| weather / season row | (620,411) |
+| "Held" + date | (600,465) |
+| **Result Pts pill** | (305,467) |
+| turn nav: « ‹ label › » | (285,546) (347,546) (552,547) (758,546) (820,546) |
+| row 1 **"VS RIVAL RACE!" ribbon** | ~(750,603) |
+| row 1 picture tile / track line | (361,657) / (612,627) |
+| row 1 pts / coins / fans | (543,663) / (640,663) / (545,690) |
+| row 1 aptitude chips | (773,659) and (773,686) |
+| row pitch | **128 px** (row 1 name 627, row 2 name 755) |
+| Predictions / Race / Back | (346,913) / (552,913) / (216,1039) |
+
+This confirms the earlier research note that a race row carries everything race
+selection needs, in one place: grade badge, track line
+(`G3 Sapporo Turf 1800m (Mile) Right`), `+ 60 pts`, a coin `+ 100`,
+`+3,100 fans`, and Turf / Mile aptitude chips.
+
+**First live check of `core/trackblazer.py`'s tables, and they hold:**
+
+- The G3 row pays **`+60 pts`**, matching `POINTS_BY_GRADE["G3"] = 60`.
+- The row's coin reward reads **`+100`**, consistent with
+  `COINS_BY_PLACEMENT[1] = 100` - though the row does not say which placement
+  it is quoting, so read that as consistent rather than confirmed.
+- The Junior goal reads **`60 Result Pts`**, matching
+  `TARGETS["turf"]["junior"] = 60`.
+
 ### Still unverified - only exists inside a career
 
-The shop / Climax Store and its 6-turn refresh and costs, rival races and their
-red/blue VS icon, race route epithets, and where the Track Pts HUD actually sits
-in the lobby (so far only seen in a tutorial mock-up).
+The shop / Climax Store itself and its 6-turn refresh and costs, rival races
+and their red/blue VS icon, and race route epithets.
