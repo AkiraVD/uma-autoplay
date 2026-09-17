@@ -146,7 +146,7 @@ def tools_status():
 @app.post("/tools/run/{name}")
 def tools_run(name: str, body: dict = Body(default={})):
   """Start one of server/tools.py's whitelisted commands."""
-  job, problem = tools.start(name, (body or {}).get("at"))
+  job, problem = tools.start(name, (body or {}).get("at"), (body or {}).get("text"))
   if problem:
     raise HTTPException(status_code=problem[0], detail=problem[1])
   return job

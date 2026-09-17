@@ -484,6 +484,27 @@ def cmd_click(a):
   print(f"clicked ({x},{y}) -> {out}")
 
 
+def cmd_type(a):
+  """Type text into whatever field is already focused, then capture.
+
+  The headless display has no keyboard a person can reach, so a text field on
+  :1 could only ever be filled from here. Focusing is Click at X,Y's job; this
+  only sends the keys. Typed one character at a time through utils.control,
+  which resolves each to an X keysym, so this is printable ASCII only and a
+  character that will not resolve is reported rather than silently dropped.
+  """
+  import utils.control as control
+  bad = [c for c in a.text if not (32 <= ord(c) <= 126)]
+  if bad:
+    print(f"TYPE-E01 cannot type {bad!r}: printable ASCII only.")
+    raise SystemExit(1)
+  control.press(list(a.text), interval=a.interval)
+  time.sleep(a.after)
+  out = os.path.join(SHOTS, time.strftime("type_%H%M%S.png"))
+  _grab(out)
+  print(f"typed {len(a.text)} character(s) -> {out}")
+
+
 def cmd_scan(a):
   """Visit every facility and report the Unity icons on each.
 
@@ -580,6 +601,12 @@ def main():
   s.add_argument("at", help="X,Y")
   s.add_argument("--after", type=float, default=2.0)
   s.set_defaults(func=cmd_click)
+
+  s = sub.add_parser("type", help="type text into the focused field, then capture")
+  s.add_argument("text", help="the text to type (printable ASCII)")
+  s.add_argument("--interval", type=float, default=0.06, help="seconds between keys")
+  s.add_argument("--after", type=float, default=1.0)
+  s.set_defaults(func=cmd_type)
 
   s = sub.add_parser("launch", help="start the game via Steam (or bring its window to front), then capture")
   s.add_argument("--timeout", type=float, default=180)

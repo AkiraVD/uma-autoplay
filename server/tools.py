@@ -35,11 +35,21 @@ COMMANDS = {
   "skiprace": {"label": "Skip race", "argv": [UMATOOL, "skiprace"], "timeout": 200, "blocked": True},
   "click": {"label": "Click at X,Y", "argv": [UMATOOL, "click"], "timeout": 60, "blocked": True,
             "needs_at": True},
+  # The headless display has no keyboard, so a text field on it can only be
+  # filled from here. Focusing the field is Click at X,Y's job; this only sends
+  # the keys. Same gate as click: it touches the game, so it is refused while
+  # the bot runs.
+  "type": {"label": "Type text", "argv": [UMATOOL, "type"], "timeout": 90, "blocked": True,
+           "needs_text": True},
   "scan": {"label": "Facility scan", "argv": [UMATOOL, "scan"], "timeout": 120, "blocked": True},
 }
 
 MAX_LINES = 400
 AT = re.compile(r"^\s*(\d{1,4})\s*,\s*(\d{1,4})\s*$")
+# Printable ASCII only: utils/xtest.py turns each character into an X keysym by
+# its own name, so anything else resolves to keycode 0 and types nothing.
+TYPEABLE = re.compile(r"[ -~]+")
+MAX_TYPE = 120
 # umatool and health print the PNG they saved; the page shows the last one.
 SHOT = re.compile(r"shots/([\w.-]+\.png)")
 
@@ -69,7 +79,7 @@ def screen_jpeg(quality=85):
   img.save(buf, "JPEG", quality=quality)
   return buf.getvalue(), img.size
 
-def start(name, at=None):
+def start(name, at=None, text=None):
   """Start a command. Returns (job, None), or (None, (http_status, message))."""
   global _job
   spec = COMMANDS.get(name)
@@ -89,6 +99,19 @@ def start(name, at=None):
     if not (0 <= x < 1920 and 0 <= y < 1080):
       return None, (400, f"TOOL-E04 {x},{y} is outside the 1920x1080 screen.")
     argv.append(f"{x},{y}")
+  if spec.get("needs_text"):
+    # Checked here rather than trusted from the page: this reaches the game
+    # over the tailnet, and utils.control resolves one X keysym per character,
+    # so anything outside printable ASCII would be silently dropped instead of
+    # typed. argv is a list and never a shell string, so the risk is a wrong
+    # keystroke, not an injection - but a bad character should still say so.
+    if not isinstance(text, str) or not text:
+      return None, (400, "TOOL-E13 give the text to type.")
+    if len(text) > MAX_TYPE:
+      return None, (400, f"TOOL-E14 that is {len(text)} characters; the limit is {MAX_TYPE}.")
+    if not TYPEABLE.fullmatch(text):
+      return None, (400, "TOOL-E15 printable ASCII only - the game's keyboard cannot send the rest.")
+    argv.append(text)
 
   with _lock:
     if _job and _job["state"] == "running":

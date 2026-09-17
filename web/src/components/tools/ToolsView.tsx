@@ -3,6 +3,7 @@ import {
   Camera,
   FastForward,
   HeartPulse,
+  Keyboard,
   Loader2,
   MousePointerClick,
   Power,
@@ -17,6 +18,7 @@ import {
 
 import { URL } from "@/constants";
 import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 
 // What /tools/status returns; see server/tools.py.
@@ -72,6 +74,11 @@ const GROUPS: { title: string; note?: string; tools: Tool[] }[] = [
 ];
 
 const CLICK: Tool = { name: "click", label: "Click at X,Y", hint: "Tap one point on the game screen, then capture", icon: MousePointerClick, locked: true };
+// The headless display has no keyboard, so a text field on it can only be
+// filled from here. Focusing the field is Click at X,Y's job; this only sends
+// the keys, so printable ASCII is all the game's keyboard can take.
+const TYPE: Tool = { name: "type", label: "Type text", hint: "Type into the field you already tapped", icon: Keyboard, locked: true };
+const MAX_TYPE = 120;
 
 const POLL_MS = 1500;
 const CARD = "bg-card p-5 rounded-xl shadow-lg border border-border/20";
@@ -181,6 +188,7 @@ export default function ToolsView() {
   const [fault, setFault] = useState<string | null>(null);
   const [refusal, setRefusal] = useState<string | null>(null);
   const [at, setAt] = useState("");
+  const [text, setText] = useState("");
   const outputRef = useRef<HTMLPreElement>(null);
 
   const refresh = useCallback(async () => {
@@ -308,6 +316,17 @@ export default function ToolsView() {
                       </div>
                     </DialogContent>
                   </Dialog>
+                  {/* Typing goes to whatever field is focused, so tap it with Click
+                      at X,Y first. Printable ASCII only - the game's keyboard
+                      cannot send the rest. */}
+                  <Input
+                    className="h-9 w-full sm:w-72"
+                    placeholder="Text to type into the focused field"
+                    maxLength={MAX_TYPE}
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                  />
+                  {button(TYPE, { text }, !text)}
                 </div>
               )}
             </div>
