@@ -11,9 +11,9 @@ history (`git log -p docs/TODO.md`) and the measured screen layouts are in
   and a per-discipline circle/triangle/cross row in the confirmation modal.
   Beating a harder team raises team rank, which drives facility levels; losing
   it lowers them.
-- **Trackblazer: plays, and finishes Climax races.** Rounds 1 and 2 ran end to
-  end unattended on 2026-09-18. See the Trackblazer section below for what is
-  still left. Feasible by OCR - UMAT has a
+- **Trackblazer: plays, and finishes Climax races.** All three rounds ran end
+  to end unattended on 2026-09-18, holding `RANK 1`. See the Trackblazer
+  section below for what is still left. Feasible by OCR - UMAT has a
   full OCR implementation - but not a liftable module: they fork the whole bot
   per scenario, and the genuinely new parts are the shop database (now
   generated from master.mdb), item purchase and item use.
@@ -134,8 +134,9 @@ now measured; `screen-map.md` has the geometry. What exists:
 
 Still to do:
 
-- ~~**A Climax race cannot be finished.**~~ It can. Rounds 1 and 2 both ran
-  unattended on 2026-09-18 with no new templates: `race_day()` pressed
+- ~~**A Climax race cannot be finished.**~~ It can. All three rounds ran
+  unattended on 2026-09-18 with no new templates (presses at 01:35:13,
+  01:39:05, 01:42:59, `RANK 1` held throughout): `race_day()` pressed
   `assets/trackblazer/ts_climax_race_btn.png` (its second branch - the generic
   `race_day_btn.png` does not match, exactly as that function's comment says),
   and the whole race collapsed into a single `Next.` The game's own readback
