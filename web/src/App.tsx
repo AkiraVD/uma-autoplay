@@ -2,8 +2,8 @@ import { useState } from "react";
 
 import rawConfig from "../../config.json";
 import { useConfig } from "./hooks/useConfig";
-import { useImportConfig } from "./hooks/useImportConfig";
-import { saveConfigFile } from "./utils/saveConfigFile";
+import { useConfigStore } from "./hooks/useConfigStore";
+import ConfigStore from "./components/config-store/ConfigStore";
 
 import type { Config } from "./types";
 
@@ -42,10 +42,10 @@ function App() {
     window.history.replaceState(null, "", next === "config" ? window.location.pathname : `#${next}`);
   };
   const { config, setConfig, saveConfig } = useConfig(defaultConfig);
-  const { fileInputRef, openFileDialog, handleImport } = useImportConfig({
-    config,
-    setConfig,
-  });
+  // Presets live in uma_configs/ next to the bot rather than behind the
+  // browser's file dialogs, so the same list shows up on every device.
+  const [storeOpen, setStoreOpen] = useState(false);
+  const store = useConfigStore({ config, setConfig });
 
   const { config_name } = config;
 
@@ -103,23 +103,38 @@ function App() {
             value={config_name}
             onChange={(e) => updateConfig("config_name", e.target.value)}
           />
-          <Button variant="outline" onClick={openFileDialog}>
-            Load
-          </Button>
-          <input
-            type="file"
-            accept=".json,application/json"
-            ref={fileInputRef}
-            onChange={handleImport}
-            className="hidden"
-          />
-          <Button variant="outline" onClick={() => saveConfigFile(config)}>
-            Save
+          <Button
+            variant="outline"
+            onClick={() => {
+              store.setError(null);
+              store.refresh();
+              setStoreOpen(true);
+            }}
+          >
+            Saved configs
+            {store.saved.length > 0 && (
+              <span className="ml-1.5 text-xs text-muted-foreground">
+                {store.saved.length}
+              </span>
+            )}
           </Button>
           <Button className="font-semibold" onClick={saveConfig}>
             Apply
           </Button>
         </div>
+        <ConfigStore
+          open={storeOpen}
+          onOpenChange={setStoreOpen}
+          saved={store.saved}
+          busy={store.busy}
+          error={store.error}
+          configName={config_name}
+          onLoad={async (name) => {
+            if (await store.load(name)) setStoreOpen(false);
+          }}
+          onSave={(name) => store.save(name)}
+          onDelete={(name) => store.remove(name)}
+        />
         {/* Related settings sit together: who the career trains and how she races,
             when a turn rests, training, skills, then races, events and timing,
             with the long Grand Concert settings across the full width. */}

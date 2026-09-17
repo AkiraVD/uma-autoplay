@@ -10,6 +10,10 @@ tests/logs/
 # Personal presets and backups; config.template.json is the schema of record.
 config.*.json
 !config.template.json
+# The config page saves every preset here, whichever device it is opened from.
+uma_configs/
+# The owned-support-card scan: account data regenerated locally, not repo data.
+data/support_cards_owned.json
 
 # Design canvas working files
 design/

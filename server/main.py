@@ -7,7 +7,7 @@ import sys
 import time
 
 from server.utils import load_config, save_config
-from server import master_data, images, tools
+from server import configs, master_data, images, tools
 import core.state as state
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools"))
@@ -31,6 +31,44 @@ def get_config():
 def update_config(new_config: dict):
   save_config(new_config)
   return {"status": "success", "data": new_config}
+
+# Saved presets, all in uma_configs/ beside config.json; see server/configs.py.
+# These have to stay above the "/{path:path}" fallback at the bottom of the
+# file, or a GET would be answered with the page instead of the list.
+
+@app.get("/configs")
+def list_saved_configs():
+  return configs.listing()
+
+@app.get("/configs/{name}")
+def read_saved_config(name: str):
+  path = configs.path_for(name)
+  if path is None:
+    raise HTTPException(status_code=400, detail="CFG-E01 that name can't be used as a filename.")
+  if not path.exists():
+    raise HTTPException(status_code=404, detail=f"CFG-E02 no saved config called '{name}'.")
+  try:
+    return configs.read(path)
+  except Exception as e:
+    raise HTTPException(status_code=422, detail=f"CFG-E03 '{name}' isn't readable JSON ({e}).")
+
+@app.post("/configs/{name}")
+def write_saved_config(name: str, body: dict = Body(...)):
+  path = configs.path_for(name)
+  if path is None:
+    raise HTTPException(status_code=400, detail="CFG-E01 that name can't be used as a filename.")
+  configs.write(path, body)
+  return {"status": "success", "name": path.stem}
+
+@app.delete("/configs/{name}")
+def delete_saved_config(name: str):
+  path = configs.path_for(name)
+  if path is None:
+    raise HTTPException(status_code=400, detail="CFG-E01 that name can't be used as a filename.")
+  if not path.exists():
+    raise HTTPException(status_code=404, detail=f"CFG-E02 no saved config called '{name}'.")
+  configs.delete(path)
+  return {"status": "success", "name": path.stem}
 
 @app.get("/data/races")
 def race_data():

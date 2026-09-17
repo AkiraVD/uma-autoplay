@@ -14,14 +14,16 @@ type Props = {
 
 const CONCERTS = ["1st (Junior Dec)", "2nd (Classic Jun)", "3rd (Classic Dec)", "4th (Senior Jun)", "Before Senior Early Dec"];
 
-// "Closer Together", Senior Early November. The gold hint needs that character
-// as the trainee or a support card.
+// "Closer Together", Senior Early November. Each line is one skill pair: the
+// panel offers the white skill, the gold one is its upgrade. The characters are
+// the trainees that can learn each skill in the game's own data (2026-09-16);
+// no support card teaches any of them.
 const LYRICS = [
-  "1 - Full Speed! (Smart Falcon, dirt)",
-  "2 - Concentration (Mihono Bourbon)",
-  "3 - Trackblazer (Silence Suzuka)",
-  "4 - Come What May (Agnes Tachyon)",
-  "5 - Lane Legerdemain (anyone)",
+  "1 - Full Tilt / Full Speed!",
+  "2 - Focus / Concentration (Bourbon, Suzuka)",
+  "3 - Rosy Outlook / Trackblazer (Bourbon)",
+  "4 - All I've Got / Come What May (Winning Ticket, Mejiro Ardan)",
+  "5 - Go with the Flow / Lane Legerdemain (Air Groove, Eishin Flash)",
 ];
 
 function NumberField({ label, hint, value, min, max, step, onChange }: {
