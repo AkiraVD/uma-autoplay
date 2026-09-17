@@ -1504,9 +1504,16 @@ def career_lobby():
         do_recreation()
         continue
 
-    print("year_parts", year_parts)
-    # If Prioritize G1 Race is true, check G1 race every turn
-    if state.PRIORITIZE_G1_RACE and "Pre-Debut" not in year and len(year_parts) > 3 and year_parts[3] not in ["Jul", "Aug"]:
+    # The race schedule is consulted every turn, whatever prioritize_g1_race
+    # says. That flag used to gate this whole block, which made it the on/off
+    # switch for the schedule rather than anything to do with G1s; it now only
+    # affects goal races, and only on turns this block did not already race.
+    #
+    # do_race's first argument is passed straight to race_select, where it
+    # means "find the race by its picture" rather than "prefer a G1" - so a
+    # scheduled race always passes True, or the name would be ignored and the
+    # aptitude search would pick something else.
+    if "Pre-Debut" not in year and len(year_parts) > 3 and year_parts[3] not in ["Jul", "Aug"]:
       race_done = False
       for race_list in state.RACE_SCHEDULE:
         if state.stop_event.is_set():
@@ -1514,7 +1521,7 @@ def career_lobby():
         if len(race_list):
           if race_list['year'] in year and race_list['date'] in year:
             debug(f"Race now, {race_list['name']}, {race_list['year']} {race_list['date']}")
-            if do_race(state.PRIORITIZE_G1_RACE, img=race_list['name']):
+            if do_race(True, img=race_list['name']):
               race_done = True
               break
             else:

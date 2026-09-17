@@ -1084,8 +1084,17 @@ def decide_race_for_goal(year, turn, criteria, keywords):
   #     info(f'Race {schedule_race["name"]} is in {schedule_turn} turns, skipping race for now.')
   #     return no_race
 
-  # Oguri Special Case:
-  if "Progress" in criteria_text and any(word in criteria_text for word in ["G1", "GI"]):
+  # A goal naming a G1 - Oguri's "Progress: 2 G1 wins" and the like - can be
+  # met by a particular race rather than whatever the aptitude search lands on.
+  # This is the only thing prioritize_g1_race now controls: with it off, a
+  # mission takes any race it can run, which is the safer default because
+  # naming a race means selecting it by picture, and only G1s have pictures
+  # (43 of 212 career races; no G2 or G3 has one).
+  #
+  # The caller reaches this only on turns the race schedule did not already
+  # race, so a scheduled race always wins over a goal race on the same day.
+  if state.PRIORITIZE_G1_RACE and "Progress" in criteria_text and any(
+      word in criteria_text for word in ["G1", "GI"]):
     race_list = constants.RACE_LOOKUP.get(year, [])
     if not race_list:
       return no_race
