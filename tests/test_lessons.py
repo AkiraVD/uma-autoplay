@@ -489,7 +489,7 @@ def test_counts_survive_a_restart():
   L._note_year("Classic Year Early Aug")
   L._songs[2] = 3
   L.resume()
-  ok("an F1 restart keeps the song counts", L._songs.get(2) == 3)
+  ok("a stop and start keeps the song counts", L._songs.get(2) == 3)
   L._note_year("")
   L._note_year("Classic Year Late Aug")
   ok("an unreadable year changes nothing", L._songs.get(2) == 3)

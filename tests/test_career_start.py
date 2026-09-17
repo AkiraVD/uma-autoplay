@@ -117,7 +117,7 @@ def test_skip_is_set_once_per_career():
   ok("the lobby sets it behind a flag", 'if not _career_start["skip_set"]' in source)
   ok("and the flag is cleared when a career completes",
      '_career_start["skip_set"] = False' in source)
-  ok("the helper bails on stop_event, so F1 still works",
+  ok("the helper bails on stop_event, so the stop control still works",
      "stop_event.is_set()" in source[source.index("def set_skip_x2"):
                                      source.index("def set_skip_x2") + 900])
 

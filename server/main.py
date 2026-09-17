@@ -129,7 +129,7 @@ def bot_status():
 
 @app.post("/bot/{action}")
 def bot_action(action: str):
-  """Start or stop the bot, the same as pressing F1."""
+  """Start or stop the bot, the same as pressing Pause."""
   if action not in ("start", "stop"):
     raise HTTPException(status_code=404)
   if set_bot_running is None:

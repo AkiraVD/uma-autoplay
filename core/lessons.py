@@ -165,7 +165,7 @@ def reset():
 def resume():
   """Forget this sitting only; called whenever the bot is started.
 
-  The song counts survive an F1 pause. They are what keeps one concert's
+  The song counts survive a stop and start. They are what keeps one concert's
   points from being drained into the one before it, and a restart mid-career
   used to zero them - the next visit then bought the worst song on the board.
   """

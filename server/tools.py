@@ -76,7 +76,7 @@ def start(name, at=None):
   if spec is None:
     return None, (404, f"TOOL-E01 unknown command {name!r}.")
   if spec.get("blocked") and state.is_bot_running:
-    return None, (409, f"TOOL-E02 {spec['label']} touches the game. Stop the bot with F1 first.")
+    return None, (409, f"TOOL-E02 {spec['label']} touches the game. Stop the bot first.")
 
   argv = [sys.executable, *spec["argv"]]
   if name == "shot":

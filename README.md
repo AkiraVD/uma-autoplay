@@ -74,13 +74,13 @@ python3 -m venv .venv
 On Linux:
 - Use an X11 session. Screen capture does not work on Wayland.
 - Clicks go through a virtual mouse on `/dev/uinput`, so the game sees a real device. A normal desktop login can already write to it. If yours can't, the bot falls back to pyautogui and logs why.
-- `f1` is heard through the X server, so no root is needed.
+- The `Pause` key is heard through the X server, so no root is needed.
 - `master.mdb` is found in the Steam library automatically. Set `UMA_MASTER_MDB` if yours lives somewhere else.
 
 To play in the background, with the game on a hidden display so your desktop stays free:
 1. `bash tools/headless/start-display.sh` (asks for your sudo password; starts a second X server, `:1`, on the NVIDIA GPU).
 2. In Steam, set the game's launch options to `DISPLAY=:1 %command%`, then start the game. It won't appear on your screen.
-3. `./run_background.sh`, then press `f1` on your desktop or **Start bot** on the web page.
+3. `./run_background.sh`, then press `Pause` on your desktop or **Start bot** on the web page.
 
 The start script has to be run again after a reboot.
 
@@ -107,7 +107,7 @@ python main.py
 
 On Linux: `./run_auto_uma.sh`
 
-Press `f1`, or use the **Start bot** button on the web page, to start/stop the bot.
+Press `Pause`, or use the **Start bot** button on the web page, to start/stop the bot.
 
 ### Web page
 
@@ -117,7 +117,7 @@ Open `http://127.0.0.1:8000/` in your browser. The page has three views:
 - **Live Log**: the bot's log as it plays.
 - **Tools**: health check, screenshot, "which screen is this", launch/close the game, advance or skip a race, and click anywhere on the game screen. Anything that clicks is refused while the bot is running.
 
-The **Start bot**/**Stop bot** button in the top bar works like `f1`. Use it when the page is opened from another device (for example over Tailscale), where `f1` can't reach the bot. The page has a light and a dark theme.
+The **Start bot**/**Stop bot** button in the top bar works like `Pause`. Use it when the page is opened from another device (for example over Tailscale), where a key press can't reach the bot. The page has a light and a dark theme.
 
 ### Training Logic
 

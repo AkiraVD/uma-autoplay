@@ -16,7 +16,11 @@ from server.main import app
 import server.main as server_main
 from update_config import update_config
 
-hotkey = "f1"
+# Pause/Break. The listener hears this on the whole desktop through the X RECORD
+# extension, without grabbing it, so whatever key this is toggles the bot from
+# any window. F1 was the old binding and too easy to hit by accident - plenty of
+# programs use it for help. Nothing on this desktop reacts to Pause.
+hotkey = "pause"
 
 def focus_umamusume():
   try:
@@ -48,7 +52,7 @@ def main():
     debug("[BOT] Stopped.")
     # career_lobby() can return on its own - the lobby-lost guard, or a run
     # that finished. Nothing else cleared this, so is_bot_running stayed True
-    # with a dead thread behind it and the next F1 was read as "stop": the bot
+    # with a dead thread behind it and the next press was read as "stop": the bot
     # needed two presses to start again, and /logs/data reported it running.
     state.is_bot_running = False
 
@@ -91,8 +95,9 @@ def _set_bot_running_locked(want):
   return "running" if running else ("stopping" if alive else "stopped")
 
 def set_bot_running(want):
-  """Start (True) or stop (False) the bot. F1 and the config page's Start/Stop
-  button both come here, so they cannot disagree about what is running."""
+  """Start (True) or stop (False) the bot. The hotkey and the config page's
+  Start/Stop button both come here, so they cannot disagree about what is
+  running."""
   with state.bot_lock:
     return _set_bot_running_locked(want)
 
@@ -151,7 +156,7 @@ if __name__ == "__main__":
   update_config()
   start_log_viewer()
   threading.Thread(target=hotkey_listener, daemon=True).start()
-  # The config page's Start/Stop button, which works where F1 cannot reach -
-  # from another device, or through a tunnel.
+  # The config page's Start/Stop button, which works where a key press cannot
+  # reach - from another device, or through a tunnel.
   server_main.set_bot_running = set_bot_running
   start_server()

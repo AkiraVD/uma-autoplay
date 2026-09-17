@@ -4,7 +4,7 @@ Read-only. It never clicks, types or changes a setting, so it is safe to run
 while the bot plays. It answers what otherwise takes a screenshot, a log tail
 and a handful of shell commands:
 
-  - is exactly one bot process running, and is the bot toggled on (F1)?
+  - is exactly one bot process running, and is the bot toggled on (Pause)?
   - is the log still moving, and is the turn counter still moving?
   - has the bot itself complained recently (loops, give-ups, tracebacks)?
   - is the X display answering, and is the game window there and in front?
@@ -261,7 +261,7 @@ def run_checks(shot=True, display=None):
     checks.append(check(OK, "BOT", "bot process", "not checked off Linux"))
   elif not pids:
     checks.append(check(FAIL, "BOT-E01", "bot process", "no main.py running from this repo",
-                        "Start it with ./run_auto_uma.sh, then press F1."))
+                        "Start it with ./run_auto_uma.sh, then press Pause."))
   elif len(pids) > 1:
     checks.append(check(FAIL, "BOT-E02", "bot process", f"{len(pids)} bots running, pids {pids}",
                         "Two bots fight over the mouse. Stop all but one."))
@@ -272,10 +272,10 @@ def run_checks(shot=True, display=None):
   if "state" in status:
     toggled_on = status["state"] == "running"
     if toggled_on:
-      checks.append(check(OK, "BOT", "bot toggle", "on (F1)"))
+      checks.append(check(OK, "BOT", "bot toggle", "on (Pause)"))
     else:
-      checks.append(check(WARN, "BOT-W01", "bot toggle", "off (F1)",
-                          "The bot is idle. Press F1 with the game in front to start it."))
+      checks.append(check(WARN, "BOT-W01", "bot toggle", "off (Pause)",
+                          "The bot is idle. Press Pause, or Start bot on the config page."))
   elif pids:
     checks.append(check(WARN, "SRV-W01", "config server", f"no answer on :8000 ({status['error']})"))
 

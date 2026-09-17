@@ -64,7 +64,7 @@ export default function BotToggle() {
       size="sm"
       variant={running ? "destructive" : "default"}
       disabled={busy || botState === null || botState === "stopping"}
-      title={fault ?? (running ? "Stop the bot (same as F1)" : "Start the bot (same as F1)")}
+      title={fault ?? (running ? "Stop the bot (same as Pause)" : "Start the bot (same as Pause)")}
       onClick={() => send(running ? "stop" : "start")}
     >
       <Icon className={`size-4 ${Icon === Loader2 ? "animate-spin" : ""}`} />

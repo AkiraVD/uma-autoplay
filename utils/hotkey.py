@@ -19,7 +19,7 @@ _events = {}
 _lock = threading.Lock()
 
 def wait(key):
-  """Block until `key` ("f1") is pressed. Presses made before the call are ignored.
+  """Block until `key` ("pause") is pressed. Presses before the call are ignored.
 
   Raises RuntimeError on Linux when the X server cannot be listened to."""
   if sys.platform == "win32":
@@ -38,6 +38,28 @@ def _listen(key):
       _events[key] = event
     return _events[key]
 
+def _keycode(local, XK, key):
+  """The keycode for a key name, trying the spellings X keysyms actually use.
+
+  Keysym names are case-sensitive and not uniform: "F1" is upper case, "Pause"
+  is capitalised, "Scroll_Lock" is capitalised per word. `key.upper()` alone
+  happened to resolve "f1" and returned 0 for every other spelling, which then
+  read as "no keycode for this key on this keyboard" - a wrong-spelling bug
+  wearing a missing-key error message.
+  """
+  tried = []
+  for name in (key, key.upper(), key.capitalize(),
+               "_".join(part.capitalize() for part in key.split("_"))):
+    if name in tried:
+      continue
+    tried.append(name)
+    keysym = XK.string_to_keysym(name)
+    if keysym:
+      keycode = local.keysym_to_keycode(keysym)
+      if keycode:
+        return keycode
+  return 0
+
 def _start_record(key, event):
   """Open a RECORD context for key presses and pump it on a daemon thread.
 
@@ -53,7 +75,7 @@ def _start_record(key, event):
   name = os.environ.get("UMA_HOTKEY_DISPLAY") or None
   try:
     local = display.Display(name)
-    keycode = local.keysym_to_keycode(XK.string_to_keysym(key.upper()))
+    keycode = _keycode(local, XK, key)
     local.close()
     recorder = display.Display(name)
   except Exception as e:

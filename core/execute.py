@@ -6,7 +6,7 @@ from PIL import ImageGrab
 pyautogui.useImageNotFoundException(False)
 # The corner fail-safe aborts the whole run with FailSafeException if the mouse
 # is ever parked in a screen corner - including when a person nudges it while
-# the bot is mid-move. F1 already stops the bot, so this only cost us a career.
+# the bot is mid-move. Pause already stops the bot, so this only cost us a career.
 pyautogui.FAILSAFE = False
 
 import os
@@ -1343,7 +1343,7 @@ def career_lobby():
       # Tapping used to be gated behind the same "every 5th check" as the
       # back-out probes, so a scenario dialogue advanced one beat per five
       # cycles - measured at ~43s each. That is invisible when a person clicks
-      # through the prologue and presses F1 at the lobby, which is how careers
+      # through the prologue and starts the bot at the lobby, which is how careers
       # 1-6 were started; the first career this bot opened by itself spent ~70
       # minutes getting from Start Career to the lobby, 86 taps for 14 turns.
       # The expensive part is the two template searches, so keep those on the

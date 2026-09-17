@@ -3,8 +3,8 @@
 #
 # The game renders on the headless display from tools/headless/start-display.sh
 # (Steam launch options: DISPLAY=:1 %command%). The bot reads and clicks that
-# display through XTEST, so your desktop, mouse and keyboard stay free, and F1 is
-# still heard on your desktop. run_auto_uma.sh is the foreground version.
+# display through XTEST, so your desktop, mouse and keyboard stay free, and the
+# Pause key is still heard on your desktop. run_auto_uma.sh is the foreground one.
 cd "$(dirname "$0")" || exit 1
 
 GAME_DISPLAY="${UMA_GAME_DISPLAY:-:1}"
@@ -28,5 +28,5 @@ if [ -n "$running" ]; then
   exit 1
 fi
 
-echo "Playing on display $GAME_DISPLAY. F1 on $DESKTOP_DISPLAY starts and stops the bot."
+echo "Playing on display $GAME_DISPLAY. Pause on $DESKTOP_DISPLAY starts and stops the bot."
 exec env DISPLAY="$GAME_DISPLAY" UMA_INPUT=xtest UMA_HOTKEY_DISPLAY="$DESKTOP_DISPLAY" "$PY" main.py
