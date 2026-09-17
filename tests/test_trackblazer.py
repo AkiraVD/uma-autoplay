@@ -37,10 +37,32 @@ def test_points_by_grade():
     ok(f"{grade} pays {expected}", T.points_for(grade) == expected, T.points_for(grade))
 
 def test_placement_scales_the_points():
+  """The curve is master.mdb's single_mode_free_win_point, not the guides'.
+
+  The guides said 3rd kept 0.6 and 4th-5th 0.3, and this test used to assert
+  that. The game's own table gives 1.0 / 0.6 / 0.4 / 0.2 / 0.2 and a tenth from
+  6th, identically for every one of its nine grade codes.
+  """
   ok("2nd keeps 60%", T.points_for("G1", 2) == 60, T.points_for("G1", 2))
-  ok("4th keeps 30%", T.points_for("G1", 4) == 30, T.points_for("G1", 4))
+  ok("3rd keeps 40%, not 60%", T.points_for("G1", 3) == 40, T.points_for("G1", 3))
+  ok("4th keeps 20%, not 30%", T.points_for("G1", 4) == 20, T.points_for("G1", 4))
+  ok("5th keeps 20% too", T.points_for("G1", 5) == 20, T.points_for("G1", 5))
   ok("6th keeps a tenth", T.points_for("G1", 6) == 10, T.points_for("G1", 6))
   ok("and so does anything worse", T.points_for("G1", 15) == 10, T.points_for("G1", 15))
+  # A G3 third place: 60 * 0.4. Worth pinning because the grades share one
+  # curve, so a bug in either table shows up here rather than only on G1s.
+  ok("a G3 third pays 24", T.points_for("G3", 3) == 24, T.points_for("G3", 3))
+
+def test_coins_do_not_scale_with_grade():
+  """single_mode_free_coin_race pays the same for every grade code.
+
+  coins_for takes no grade at all, which is the point: a Pre-OP win and a G1
+  win both pay 100. Racing for coins and racing for points want different
+  races, and this is the line that says so.
+  """
+  ok("a win pays 100 whatever the grade", T.coins_for(1) == 100, T.coins_for(1))
+  ok("2nd and 3rd both pay 60", T.coins_for(2) == 60 and T.coins_for(3) == 60)
+  ok("4th and 5th both pay 30", T.coins_for(4) == 30 and T.coins_for(5) == 30)
 
 def test_an_unknown_grade_scores_zero():
   """A grade the race list did not parse must not be priced as a guess."""

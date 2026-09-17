@@ -2,17 +2,19 @@
 
 Global's third permanent scenario (2026-03-12). Races replace the career goals:
 each year wants a number of points, and the Umamusume's own goals are switched
-off. The points have two names in game - the HUD says **Track Pts**, the body
-text says Result Points - so this module says "points" and the log says
-"Track Pts", which is what a person reading the screen will see. Guides call
-them "Grade Points"; that name appears nowhere in the game.
+off. The in-career HUD calls them "<Year> Result Pts" (the badge top-left of
+the lobby reads "Junior Result Pts / 70 pts"); the How to Play mock-up says
+"Track Pts" and the guides say "Grade Points", neither of which the lobby
+shows. Prefer "Result Pts" for anything read off a real screen.
 
-**This module is data and arithmetic only.** Nothing here reads the screen or
-clicks, because the shop, the rival-race marker and the in-lobby points counter
-only exist inside a running career and have not been seen yet. Adding geometry
-by guesswork is how the skill-buy offsets ended up wrong, so the readers wait
-for a real career. docs/screen-map.md has what is measured; docs/TODO.md has
-what is left.
+**This module is data and arithmetic only**, by choice rather than for want of
+measurements: the shop, the rival-race VS badge and the points HUD were all
+measured on a live career on 2026-09-17 and are written up in
+docs/screen-map.md, but the readers and the clicking live with the rest of the
+screen code. docs/TODO.md has what is left.
+
+The numbers below come from the game's own master.mdb rather than from guides:
+single_mode_free_win_point for points, single_mode_free_coin_race for coins.
 """
 import json
 import os
@@ -21,17 +23,32 @@ from utils.log import warning
 
 SHOP_FILE = os.path.join("data", "trackblazer_shop.json")
 
-# Points a race is worth at 1st place, by grade. Confirmed on screen: the race
-# rows on the How to Play page show G1 races at "+100 pts".
+# Points a race is worth at 1st place, by grade. master.mdb's
+# single_mode_free_win_point pays grade codes 100/200/300/400 as 100/80/60/40,
+# matching these five names, and confirmed on screen: a G3 race row showed
+# "+60 pts".
+#
+# It also holds lower tiers - codes 500/600/700 pay 20 and 800/900 pay 10 - but
+# what those print on the race row is not known, and the race table's grade
+# codes do not map one-to-one onto the badges (734 races share code 100). So
+# they stay out, and points_for() keeps returning 0 for a grade it cannot name.
 POINTS_BY_GRADE = {"G1": 100, "G2": 80, "G3": 60, "OP": 40, "Pre-OP": 20}
 
-# What a placement keeps of that. 1st takes all; 6th and worse keep a tenth.
-# From the guides - only the 1st-place row is confirmed on screen.
-PLACEMENT_KEPT = {1: 1.0, 2: 0.6, 3: 0.6, 4: 0.3, 5: 0.3}
+# What a placement keeps of that. From single_mode_free_win_point, which gives
+# the identical curve for every grade: 1st takes all, 2nd 0.6, 3rd 0.4, 4th and
+# 5th 0.2, and 6th to 18th a tenth.
+#
+# The guides said 3rd kept 0.6 and 4th-5th 0.3, which this file used to copy.
+# That over-paid 3rd and 4th-5th by half - a G1 third place is 40 points, not
+# 60 - so any "is this race worth a turn" decision built on it was skewed
+# toward racing.
+PLACEMENT_KEPT = {1: 1.0, 2: 0.6, 3: 0.4, 4: 0.2, 5: 0.2}
 PLACEMENT_KEPT_TAIL = 0.1
 
-# Shop coins by placement. Confirmed on screen for 1st: the race rows show a
-# green coin "+100" beside the points star.
+# Shop coins by placement, from single_mode_free_coin_race. Unlike the points
+# above, coins do NOT scale with grade: all nine grade codes give the same
+# 100/60/30/0, so a Pre-OP win pays exactly what a G1 win pays. Racing for
+# coins and racing for points therefore want different races.
 COINS_BY_PLACEMENT = {1: 100, 2: 60, 3: 60, 4: 30, 5: 30}
 COINS_TAIL = 0
 
@@ -99,9 +116,14 @@ def catalogue(force=False):
 def item(name):
   """One catalogue entry by exact name, or None.
 
-  Exact rather than fuzzy on purpose: the shop rows have not been read off a
-  real screen yet, so there is no measured OCR damage to match against. Once
-  there is, canonicalise here the way core/skill.py does for skill names.
+  Exact matching no longer fits what the shop actually prints. The rows were
+  read on 2026-09-17 and stat items carry a stat prefix - "Speed Notepad",
+  "Guts Manual", "Wit Scroll", "Guts Ankle Weights" - where this catalogue
+  holds the bare noun, and master.mdb lists all five stat variants separately.
+  So a caller passing a row straight off the screen gets None today.
+
+  Canonicalise here the way core/skill.py does for skill names, once the shop
+  reader exists and there is measured OCR damage to match against.
   """
   for entry in catalogue():
     if entry.get("name") == name:

@@ -1029,6 +1029,61 @@ needs a purchase before it can be read. Close (419,997), Confirm Use
 (258,32)-(848,1052). The same button repeats on the shop screen (715,290) and
 on the Race List (188,217).
 
+#### Buying and using an item (2026-09-17, Senior Early Nov)
+
+Walked end to end on a live career: bought a Wit Manual for 15 of 1,240 coins
+and used it, and the lobby's Wit went 444 -> 451. Both halves are proven.
+
+**The purchase is four screens deep, not two.** Confirm is not the commit:
+
+| Step | Screen (title bar) | Press |
+|---|---|---|
+| 1 | `Shop` shelf | row checkbox, x ~765 at the row's y |
+| 2 | `Shop` shelf | **Confirm** (552,913) |
+| 3 | **`Confirm Exchange`** | **Exchange** (686,997) |
+| 4 | **`Exchange Complete`** | quantity **+** (797,222), then **Confirm Use** (686,997) |
+| 5 | **`Confirm Use`** | **Use Training Items** (686,997) |
+
+**Three different green buttons sit at (686,997)** across steps 3, 4 and 5, and
+the Cancel/Close beside them is always (419,997). They can only be told apart
+by the title bar, so a reader must match on the title and never on position.
+The Training Items modal reuses the same pair again.
+
+**Two previews make verification cheap**, and both are better signals than
+button colour:
+
+- Ticking a row deducts the cost from the coin counter immediately, before any
+  commit - 1,240 became 1,225 on the tick, and stayed 1,225 after. So a
+  selection can be confirmed by re-reading the counter.
+- The quantity stepper shows `Held 1 > 0` and the `Confirm Use` screen shows
+  the whole stat block with `Wit 444 (+7)` and `+0` on the rest.
+
+Other measured bits: the stepper is **-** (706,222), the count (751,222), **+**
+(797,222); the item tile on the `Confirm Use` screen is (327,767) showing
+`1/1`; `Confirm Exchange` carries a **"Do not show again"** checkbox at
+(449,887), which should be left alone - ticking it removes step 3 for this
+save only, so the bot's screen sequence would stop matching a fresh install.
+
+**A bought item leaves the shelf.** After the purchase the Wit Manual row was
+gone entirely and the rows below shifted up, revealing a new one. So the
+lineup is "what is still for sale", not a fixed list with held counts.
+
+Buying and using are joined: step 4 rolls straight into the use flow, so an
+item bought and used in one visit never passes through the Training Items
+modal at all. That modal is only for items bought on an earlier turn.
+
+The shop restocked between visits with a completely different lineup (Junior:
+Royal Kale Juice, Wit Scroll, Guts Ankle Weights...; Senior: Wit Manual, Guts
+Manual, Guts Scroll, Good-Luck Charm...), and the Senior visit was badged
+**ON SALE!** at (318,357) with the shopkeeper saying "We're having a sale!" -
+matching uma.guide's note that a refresh can discount the new items.
+
+Per-row `N turn(s)` is **item expiry**, confirmed twice over: the Senior rows
+read 3,3,2,2 where the Junior rows read 1,1,1,2 at their own moment, and the
+values do not match effect durations either (Coaching Megaphone showed 2 while
+its effect lasts 4). The 6-turn cycle in `single_mode_free_shop` is the
+restock, which adds to the shelf.
+
 #### The Race List, and the rival race
 
 Reached from the lobby's Races button (760,970). Its "VS" badge is not
