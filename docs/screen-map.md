@@ -1219,12 +1219,30 @@ Underway`, with the title bar reading `TS CLIMAX`. The goal line is
 `Win the Twinkle Star Climax series` with `Current Rank <trophy> RANK -`; the
 rank is a badge rather than text, so OCR returns the literal word "RANK".
 
-**There is no turn counter.** The box that normally holds "N turn(s) left" is
-replaced by a red **Race Day** pill, so anything parsing turns left has nothing
-to read here.
+**On a Climax race day there is no turn counter**: the box that normally holds
+"N turn(s) left" is replaced by a red **Race Day** pill, so anything parsing
+turns left has nothing to read. `check_turn()` returns the string `"Race Day"`
+here, not a number - worth knowing, because `decide_race_for_goal` compares
+`turn` against integers and would raise on it if it were ever reached.
 
-**The facility row is replaced.** No Rest, Training, Infirmary, Recreation or
-Races - only three buttons:
+**Between the races the ordinary lobby comes back.** After round 1 the counter
+read `1 turn(s) left` and the full facility row returned - Rest, Training,
+Skills, Infirmary, Recreation, Shop - with Races relabelled **TS Climax** and
+carrying a padlock. So the layout below describes the race day only; a normal
+turn sits between rounds and trains as usual.
+
+**The RANKING badge tracks the series**: after a 5th place it read `5th`,
+`3 pt(s)`, `1/3 Races`, which confirms `CLIMAX_VP[5] = 3` against the live
+game. The results screen also showed 3rd=6, 4th=4, 5th=3 and 6th=3 side by
+side, matching the whole table.
+
+**Climax races pay no shop coins.** The balance was 1,033 before round 1 and
+1,033 after, where `COINS_BY_PLACEMENT[5]` would have predicted +30. The
+rewards screen shows a medal icon worth 600 of something, but it is not the
+Climax Store coin, so `coins_for()` must not be applied to these three races.
+
+**The facility row on a race day is replaced.** No Rest, Training, Infirmary,
+Recreation or Races - only three buttons:
 
 | Element | Position |
 |---|---|
