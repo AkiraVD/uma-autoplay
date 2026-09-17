@@ -941,6 +941,59 @@ def camp_action(results, year_text, energy_level):
       return "wit"
   return None
 
+# The year strings the game shows once a career's last races have started. URA,
+# Unity and Grand Concert all write "Finale Underway"; Trackblazer writes its
+# own.
+CAREER_END_PHASES = ("Finale Underway", "TS Climax Races Underway")
+
+def career_ending(year_text):
+  """True on the last five training turns of a career.
+
+  The window is found by the year string rather than by the turn counter,
+  because the counter cannot do the job at either end of it:
+
+    Senior Year Early Dec      1
+    Senior Year Late Dec       2
+    <phase> Underway           3, 4, 5 - one training turn before each of the
+                               three finale races
+
+  Inside the finale the counter always reads 1: it counts down to the next race
+  day, not to the end of the career, so it cannot tell those three turns apart.
+  And in Trackblazer's climax it reads -1, which is outside TURNS_LEFT_RANGE and
+  means the box was unreadable - a rule keyed on the number would never fire
+  there at all.
+
+  Only the Senior December counts. Junior and Classic have Decembers of their
+  own, two thirds and one third of a career from the finale, where energy
+  banked by a rest still has turns to be spent on.
+  """
+  text = year_text or ""
+  if any(phase in text for phase in CAREER_END_PHASES):
+    return True
+  return "Senior Year" in text and "Dec" in text
+
+def final_stretch_action(results):
+  """The best safe training on a career-ending turn, or None to rest after all.
+
+  A rest banks about REST_ENERGY_ESTIMATE (50) for turns that are about to stop
+  existing, while a training spends about DEFAULT_COST (21). With one turn left
+  a rest can repay at most a fifth of what it banks, and even five turns out the
+  ceiling is around 105 against the 50 banked plus whatever is already in the
+  tank. So on these turns anything trainable beats resting, and unlike the camp
+  rescue there is no reason to prefer wit: energy handed back has nothing left
+  to fund, so the strongest board wins instead.
+
+  Risk is still refused. Only facilities clearing MAX_FAILURE (or carrying an
+  Extreme burst, which zeroes the failure chance) qualify, because a failed
+  training here costs an injury and the finals with it - worth more than the
+  stats of any single turn.
+  """
+  safe = {key: data for key, data in (results or {}).items()
+          if int(data["failure"]) <= state.MAX_FAILURE or has_extreme_burst(data)}
+  if not safe:
+    return None
+  return max(safe.items(), key=training_score)[0]
+
 def gold_push_action(results, energy_level):
   """The safest facility paying a Performance type the 18th song is short of.
 
@@ -1111,6 +1164,17 @@ def do_something(results):
       info(f"Summer camp, {left} turn(s) left: resting would waste a camp turn,"
            " so taking WIT instead.")
       return "wit"
+
+    # The same argument at the other end of the career: these turns do not come
+    # again, so a rest banks energy the career will never get to spend.
+    if career_ending(year):
+      final = final_stretch_action(filtered)
+      if final:
+        info(f"{year}: resting this late banks energy the career cannot spend,"
+             f" so taking {final.upper()} instead.")
+        return final
+      info(f"{year}: nothing clears the {state.MAX_FAILURE}% failure bar, so"
+           " resting rather than risking an injury before the last races.")
   return result
 
 # helper functions

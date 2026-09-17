@@ -63,8 +63,12 @@ Worth deriving properly if the behaviour ever looks wrong:
 ## Smaller open items
 
 - **A career that ends with chain steps left** has spent outings on a chain it
-  never cashed. `outings.steps_remaining()` exists but nothing calls it, and
-  turns-left-in-career is not derived anywhere.
+  never cashed. `outings.steps_remaining()` exists but nothing calls it.
+  `logic.career_ending()` now names the last five turns off the year string,
+  which is the signal such a check would hang from; an exact turns-left count
+  is still not derived anywhere, and the turn counter cannot supply one - it
+  counts down to the next race day rather than the end of the career, and reads
+  -1 (unreadable) throughout Trackblazer's climax.
 - **Only one friend card has ever been seen in a deck.** With two the panel
   lists both and the reader takes the first row.
 - **`LOG_PANEL_REGION` assumes the Log tab is selected** in the right-hand
