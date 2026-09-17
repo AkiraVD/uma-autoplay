@@ -122,6 +122,27 @@ templates = {
   # never inside a career. Seeing it means the career is over and this loop is
   # looking at something it has no business driving.
   "team_rank": "assets/ui/team_rank.png",
+  # The game's own bottom navigation - Enhance / Story / Home / Race / Scout -
+  # cut from the Scout tile, the one of the five whose art carries no event
+  # badge. It is on every screen the game shows outside a career (home,
+  # Scenario Select, trainee select) and on none inside one, so it means the
+  # same thing as the team rank badge while also catching the screens that
+  # carry no badge. Scores 0.930-1.000 on the five out-of-career frames against
+  # a best negative of 0.693 (continue_career) over 87 fixture frames.
+  #
+  # It earns its place because DIALOG_ADVANCE_ALT_MOUSE_POS (756, 980) lands on
+  # the Scout tile, which is the gacha. Any unreadable screen carrying this bar
+  # had the blind tap opening Scout every other cycle and then backing out of
+  # it again - which is what "it keeps going to the gacha menu after a career"
+  # was. Stopping here means the tap never happens on those screens at all.
+  "game_nav": "assets/ui/game_nav_scout.png",
+  # The login bonus, which both the daily reset and the end of a career land
+  # on. Nothing in this dict matched it, so it was the one screen in the
+  # post-career walk that fell through to the blind taps. Its banner is
+  # unmistakable: 1.000 against a best negative of 0.252 over the same 87
+  # frames. Deliberately not keyed on skip_btn.png - that is the race skip,
+  # which race_prep() uses inside a career.
+  "login_bonus": "assets/ui/login_bonus.png",
   # The daily reset (22:00 local, career 4) drops a "Date Changed - It's a new
   # day!" dialog over the lobby; its OK reloads the game to the login bonus and
   # the home screen, with the career still there behind "Continue Career".
@@ -490,13 +511,70 @@ _repeated_event = {"name": None, "count": 0}
 REPEAT_LAST_OPTION = 3
 REPEAT_GIVE_UP = 6
 _career_end = {"skills_done": False, "any_skill_done": False}
+# The story Skip setting resets to Off with every new career, and nothing set
+# it, so the intro was tapped line by line at ~9 s each and read as a stall.
+_career_start = {"skip_set": False}
+
+SKIP_STATES = {"off": "assets/buttons/skip_off.png",
+               "x1": "assets/buttons/skip_x1.png",
+               "x2": "assets/buttons/skip_x2.png"}
+
+def set_skip_x2(max_presses=3):
+  """Cycle the story Skip button to x2. Returns True once it reads x2.
+
+  The button cycles Off -> x1 -> x2. The state is read between presses rather
+  than counted from a known start: each state matches its own template at
+  1.000 with the nearest other at 0.832 (measured live 2026-09-17), and a
+  single missed press would otherwise leave the career on x1 throughout.
+  """
+  for _ in range(max_presses):
+    if state.stop_event.is_set() or not state.is_bot_running:
+      return False
+    found = None
+    for name, path in SKIP_STATES.items():
+      if match_template(path, region=constants.SKIP_BUTTON_BBOX):
+        found = name
+        break
+    if found == "x2":
+      return True
+    if found is None:
+      debug("Story Skip button not on screen; leaving it alone.")
+      return False
+    x, y = constants.SKIP_BUTTON_MOUSE_POS
+    click(boxes=(x, y, 1, 1), text=f"Story Skip reads {found}; pressing for x2.")
+    sleep(1)
+  return False
 # Consecutive Recreation frames showing neither the confirmation nor a friend
 # row. Almost always the panel mid-animation rather than a friend-less deck.
 _recreation = {"waits": 0}
 
+CHOICE_VERTICAL_GAP = 112
+
+def option_count(icon_top):
+  """How many options this event offers, from where its first one sits.
+
+  The list is bottom-anchored (constants.LAST_EVENT_CHOICE_ICON_TOP), so the
+  first option moves up one row per extra option. Measured across the logs:
+  736 = 1 option, 624 = 2, 513 = 3, 290 = 5.
+  """
+  span = constants.LAST_EVENT_CHOICE_ICON_TOP - icon_top
+  return max(1, round(span / CHOICE_VERTICAL_GAP) + 1)
+
+def choice_point(icon, chosen):
+  """Where to click for option `chosen` (1-based): (x, y, count, chosen).
+
+  A configured choice can exceed the options actually on screen. "Closer
+  Together" opens with a one-option prompt before its five lyric lines, and
+  grand_concert.lyrics_option = 2 then clicked 112px below that single option,
+  hit nothing, and left the event to re-prompt - eight times across the logs.
+  Clamping keeps the click on the list.
+  """
+  count = option_count(icon[1])
+  picked = max(1, min(chosen, count))
+  return icon[0], icon[1] + (picked - 1) * CHOICE_VERTICAL_GAP, count, picked
+
 def select_event():
   event_choices_icon = pyautogui.locateOnScreen("assets/icons/event_choice_1.png", confidence=0.9, minSearchTime=0.2, region=constants.GAME_SCREEN_REGION)
-  choice_vertical_gap = 112
 
   if not event_choices_icon:
     return False
@@ -565,9 +643,10 @@ def select_event():
     click(boxes=event_choices_icon, text="Event found, selecting top choice.")
     return True
 
-  x = event_choices_icon[0]
-  y = event_choices_icon[1] + ((chosen - 1) * choice_vertical_gap)
-  debug(f"Event choices coordinates: {event_choices_icon}")
+  x, y, count, picked = choice_point(event_choices_icon, chosen)
+  if picked != chosen:
+    debug(f"Option {chosen} was asked for, but this prompt shows {count}; taking {picked}.")
+  debug(f"Event choices coordinates: {event_choices_icon} ({count} option(s))")
   debug(f"Clicking: {x}, {y}")
   click(boxes=(x, y, 1, 1), text=f"Selecting optimal choice: {event_name}")
   # The Acupuncturist used to get a forced top-choice click right after this,
@@ -892,9 +971,20 @@ def career_lobby():
     # Before select_event: its radio buttons look exactly like event choices,
     # so the event handler would take one and leave Confirm unpressed.
     if matches["quick_mode"]:
-      click(img="assets/buttons/confirm_btn.png", minSearch=get_secs(2),
-            region=constants.GAME_SCREEN_REGION,
-            text="Confirming Quick Mode settings (leaving the default).")
+      # "Shorten all events" is the second of the four radios. It is also the
+      # game's default, but a default is not a guarantee across accounts or
+      # patches, so pick it rather than assume it. Clicking a radio only moves
+      # the pending choice - Confirm is what commits, so this is safe to press
+      # even when it is already selected.
+      x, y = constants.QUICK_MODE_SHORTEN_ALL_MOUSE_POS
+      click(boxes=(x, y, 1, 1), text="Quick Mode: selecting 'Shorten all events'.")
+      sleep(0.6)
+      if not click(img="assets/buttons/confirm_btn.png", minSearch=get_secs(2),
+                   region=constants.GAME_SCREEN_REGION,
+                   text="Confirming Quick Mode settings."):
+        cx, cy = constants.QUICK_MODE_CONFIRM_MOUSE_POS
+        click(boxes=(cx, cy, 1, 1),
+              text="Confirming Quick Mode at the measured position.")
       sleep(2)
       continue
 
@@ -1097,7 +1187,25 @@ def career_lobby():
       sleep(6)
       continue
 
-    if matches["team_rank"]:
+    # The login bonus, on the way back from a career or through a date change.
+    # It matched nothing before, so it was advanced by blind taps. Its Skip is
+    # found by template within this branch rather than from the dispatch dict,
+    # so the race skip that race_prep() drives is left alone.
+    if matches["login_bonus"]:
+      if not click(img="assets/buttons/skip_btn.png", minSearch=get_secs(2),
+                   region=constants.SCREEN_BOTTOM_REGION,
+                   text="Login bonus; skipping it."):
+        x, y = constants.LOGIN_BONUS_SKIP_MOUSE_POS
+        click(boxes=(x, y, 1, 1),
+              text="Login bonus; skipping it at the measured position.")
+      sleep(2)
+      continue
+
+    # Either the team rank badge or the game's own navigation bar means we are
+    # outside a career. The bar is checked too because the badge is missing from
+    # some of the screens the game walks through after one, and those are
+    # exactly where the blind tap was pressing Scout.
+    if matches["team_rank"] or matches["game_nav"]:
       # A career that was running a moment ago is not over: the reload after a
       # date change lands here, and the career is behind the Career button.
       if RESUMING_CAREER:
@@ -1105,7 +1213,7 @@ def career_lobby():
         control.click(constants.CAREER_BUTTON_MOUSE_POS)
         sleep(4)
         continue
-      info("The game is on its own home screen, so the career is over."
+      info("The game is on its own screens, so the career is over."
            " Stopping the bot rather than tapping at a screen it cannot drive.")
       return
 
@@ -1155,6 +1263,8 @@ def career_lobby():
       click(boxes=matches["career_complete"], text="Career complete.")
       # The next career starts its friend card chain from step 1.
       outings.reset()
+      # And with the story Skip back at Off, so it has to be set again.
+      _career_start["skip_set"] = False
       # And may be a different game mode: "auto" has to see it again, and a
       # fixed mode is set afresh.
       state.apply_scenario(new_career=True)
@@ -1281,6 +1391,12 @@ def career_lobby():
     # in the same process still gets one attempt.
     _career_end["skills_done"] = False
     _career_end["any_skill_done"] = False
+    # Set the story Skip to x2 once per career. The lobby is the safe place for
+    # it: the button is there at a fixed position on every lobby frame, while
+    # a global handler would be pressing it on race and story screens that
+    # drive it themselves.
+    if not _career_start["skip_set"]:
+      _career_start["skip_set"] = set_skip_x2()
     energy_level, max_energy = check_energy_level()
     # An outing has played out by the time the lobby comes back, so this is
     # where it gets checked against what was predicted. Runs after the energy

@@ -68,14 +68,21 @@ def read_effects_panel(event_name=""):
   return choices
 
 # Grand Concert, Senior Early November, only with 16+ songs learned: "Closer
-# Together" (JP あなたと私をつなげるライブ). Five lyric lines, each a skill hint:
-#   1 call-and-response       Full Speed! (Smart Falcon)    / Full Tilt
-#   2 gratitude to the fans   Concentration (Mihono Bourbon) / Focus
-#   3 "I'm home"              Trackblazer (Silence Suzuka)   / Rosy Outlook
-#   4 a breakthrough          Come What May (Agnes Tachyon)  / All I've Got
-#   5 songs bring us closer   Lane Legerdemain, always gold
-# The gold one needs that character as the trainee or a support card, which the
-# bot cannot see, so the pick is the config's (grand_concert.lyrics_option).
+# Together" (JP あなたと私をつなげるライブ). Five lyric lines, each a skill hint.
+# Every line is one skill pair, white and gold, sharing a group_id in
+# master.mdb (checked 2026-09-16):
+#   Full Tilt        / Full Speed!        (group 20228)
+#   Focus            / Concentration      (group 20043)
+#   Rosy Outlook     / Trackblazer        (group 20071)
+#   All I've Got     / Come What May      (group 20170)
+#   Go with the Flow / Lane Legerdemain   (group 20050)
+# The Choices panel names the white one, so the gold is the upgrade a career
+# can earn. What decides that, and whether the deck changes which lines are
+# offered at all, is NOT in master.mdb: no support card teaches any of these
+# skills, the trainees that can learn them are many (Focus alone has seven),
+# and the option text lives in the story asset bundles. The pick is therefore
+# the config's (grand_concert.lyrics_option), and the Choices panel is logged
+# so the list can be compared against the deck later.
 # The English name is not certain, so the event is also known by its options
 # naming several of these skills.
 LYRICS_EVENT_NAME = "closer together"
@@ -101,6 +108,12 @@ def event_choice(event_name):
 
   if state.GRAND_CONCERT_SEEN and is_lyrics_event(event_name, panel):
     info(f"'Closer Together': taking lyric line {state.LYRICS_OPTION} (grand_concert.lyrics_option).")
+    # Which lines this event offers, and which of them carry a hint, is not in
+    # master.mdb: the option text lives in the story asset bundles, and no
+    # support card teaches the five lyric skills (checked 2026-09-16). The
+    # panel is logged, so a later comparison against the deck has something to
+    # work from.
+    debug(f"'Closer Together' panel: {panel}")
     return state.LYRICS_OPTION
 
   if not event_name:

@@ -111,10 +111,66 @@ def test_stopping_is_a_return_not_a_click():
   ok("and cleared as soon as a lobby is seen again",
      "SEEN_LOBBY = True\n    RESUMING_CAREER = False" in source)
 
+def test_the_game_navigation_bar():
+  """The bar along the bottom of the game's own screens, which carries Scout.
+
+  The team rank badge is missing from some of the screens the game walks
+  through after a career, and there the loop fell through to its blind taps -
+  one of which, DIALOG_ADVANCE_ALT_MOUSE_POS, lands in the Scout column. That
+  is the gacha, and it is why careers kept ending up in the summon menu. The
+  bar is on the game's own screens and on none of the career's, so stopping on
+  it is safe in the direction that matters.
+  """
+  for name in ("game_home.png", "game_home_gl.png", "home_mid_career.png",
+               "scenario_select.png", "trainee_select.png"):
+    ok(f"{name}: the navigation bar is found", bool(matches(os.path.join(FIXTURES, name))["game_nav"]))
+  for name in ("in_career.png", "career_complete.png", "login_bonus.png",
+               "date_changed.png", "continue_career.png"):
+    ok(f"{name}: and not there", not matches(os.path.join(FIXTURES, name))["game_nav"])
+
+def test_the_alt_tap_is_the_reason():
+  """Kept as a measurement rather than a memory: where that blind tap lands.
+
+  The Scout tile spans x 748-840, y 996-1074 on game_home.png; the tap sits in
+  that column at the tile's top edge, under its event badge.
+  """
+  import utils.constants as C
+  x, y = C.DIALOG_ADVANCE_ALT_MOUSE_POS
+  ok("the alternate blind tap is in the Scout column", 748 <= x <= 840, x)
+  ok("and level with the navigation bar", 960 <= y <= 1080, y)
+
+def test_the_login_bonus_is_recognised():
+  """The one post-career screen that matched nothing at all, so it was tapped at."""
+  found = matches(os.path.join(FIXTURES, "login_bonus.png"))
+  ok("the login bonus is recognised", bool(found["login_bonus"]))
+  for name in ("in_career.png", "game_home.png", "career_complete.png",
+               "date_changed.png", "scenario_select.png"):
+    ok(f"{name}: the login banner does not match",
+       not matches(os.path.join(FIXTURES, name))["login_bonus"])
+
+def test_both_are_read_before_the_blind_taps():
+  """Order is the whole point: read below the fallback, they would never fire."""
+  source = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
+  bar = source.index('matches["game_nav"]')
+  login = source.index('if matches["login_bonus"]')
+  # The comment above the template names the constant too, so anchor on the
+  # use rather than the prose - the first plain mention is 1000 lines earlier.
+  taps = source.index("constants.DIALOG_ADVANCE_ALT_MOUSE_POS")
+  ok("the navigation bar is checked before the blind taps", bar < taps)
+  ok("and so is the login bonus", login < taps)
+  # skip_btn.png is the race skip that race_prep() drives inside a career.
+  # Keyed here it would match mid-race, which is why the login branch locates
+  # it for itself instead.
+  skips = [key for key, path in E.templates.items() if path.endswith("skip_btn.png")]
+  ok("the dispatch dict does not key on the race skip", not skips, skips)
+
 for test in [test_templates_are_registered, test_the_home_screen_is_recognised,
              test_the_career_complete_screen_is_recognised,
              test_neither_fires_inside_a_career, test_dispatch_order,
-             test_stopping_is_a_return_not_a_click]:
+             test_stopping_is_a_return_not_a_click,
+             test_the_game_navigation_bar, test_the_alt_tap_is_the_reason,
+             test_the_login_bonus_is_recognised,
+             test_both_are_read_before_the_blind_taps]:
   print(f"\n-- {test.__name__}")
   test()
 

@@ -115,7 +115,39 @@ DIALOG_ADVANCE_MOUSE_POS = (553, 400)
 # minutes, logging "No back button, tapping to advance dialogue" every 32s,
 # until this point was tapped instead. It sits on the advance marker, above the
 # Skip/Quick row at y~1050, so it does not toggle either of those.
+#
+# That reasoning only ever covered the *career* screens. Outside a career the
+# game draws its own navigation bar along the bottom - Enhance / Story / Home /
+# Race / Scout - whose tiles start at y~1002, and this point lands on Scout,
+# the gacha. Careers kept ending up in the summon menu because of it. The loop
+# now stops on the "game_nav" template before it can blind-tap there, so this
+# point is only ever used inside a career. Keep it that way: moving it is not
+# free, the Inspiration screen is what it was measured against.
 DIALOG_ADVANCE_ALT_MOUSE_POS = (756, 980)
+
+# The login bonus' Skip, measured on the reload after a date change (2026-09-12)
+# and unchanged at the end of a career. Only used once the login-bonus banner
+# has already identified the screen.
+LOGIN_BONUS_SKIP_MOUSE_POS = (903, 1024)
+
+# The story Skip button, bottom-left of the story UI and of the lobby. It
+# cycles Off -> x1 -> x2 and resets to Off with every new career, and nothing
+# used to set it: with Skip off the bot taps each story line about every 9 s,
+# so a career intro read as a stall. Measured live 2026-09-17 - two presses
+# took it Off -> x1 -> x2, each state matching its own template at 1.000
+# against a worst confusion of 0.832, so the state is read, never counted.
+SKIP_BUTTON_MOUSE_POS = (567, 1052)
+SKIP_BUTTON_BBOX = (500, 1028, 680, 1078)
+
+# "Quick Mode Settings", the one-time dialog at the start of every career.
+# Four radios 68px apart: Don't use (460), Shorten all events (529), Only
+# scenario (597), Only trainee (664). Note that is **not** the 112px
+# event-choice spacing, although the radios do match event_choice_1.png at
+# 0.974 - deriving them from LAST_EVENT_CHOICE_ICON_TOP would land wrong.
+# Measured live 2026-09-17; the chosen radio reads ~273 green pixels in an
+# 18x18 patch against 0 for the rest.
+QUICK_MODE_SHORTEN_ALL_MOUSE_POS = (308, 529)
+QUICK_MODE_CONFIRM_MOUSE_POS = (553, 773)
 
 # Event choices are bottom-anchored: the last option sits at the same y whether
 # the event offers two of them or five. That makes "pick the last option" a

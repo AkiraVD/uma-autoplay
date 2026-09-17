@@ -120,12 +120,19 @@ Choice rows are **bottom-anchored**: the last choice is always at
 So with `n` choices, choice `i` (1-based) is at
 `y = 753 - (n - i) * 111`, `x = 553` (icon at `x = 291`).
 
-The current code instead template-matches the first choice icon and steps
-**down** by `choice_vertical_gap = 112`. That works, but it depends on the
-`event_choice_1.png` template matching, and the true step is 111.
+The code template-matches the first choice icon and steps **down** by
+`core/execute.py::CHOICE_VERTICAL_GAP = 112`, then clamps the choice to the
+options on screen (`option_count`, `choice_point`).
 
 Choice icons are colour-coded by index (1 green, 2 yellow, 3 pink), which is why
-a template of the green icon happens to anchor on choice 1.
+a template of the green icon anchors on choice 1: it matches once per frame,
+verified on the choices fixtures on 2026-09-16.
+
+Re-measured from six careers' logs on 2026-09-16: the anchor of the first
+option is 736 for one option, 624 for two, 513 for three and 290 for five, so
+the last row sits at ~736-738 and the step is 112. The 753 / 111 px above comes
+from an earlier session and does not match those captures; treat 736 / 112 as
+current, and note the anchors are a pixel off a perfect grid.
 
 Event name banner: `EVENT_NAME_REGION` reads correctly (`Paying It Forward`,
 `Happy Meek's Challenge!`). Banner types seen: `Support Card Event`,
@@ -628,6 +635,42 @@ gold hint if that character is the trainee or a support card. The bot takes
 `grand_concert.lyrics_option` and recognises the event by name or by its
 options naming 3+ of the lyric skills.
 
+Measured again on 2026-09-16, over six careers' logs:
+
+- The event opens with a **one-option prompt**, then shows the five lines. The
+  configured line was applied to both, so on the first prompt the click landed
+  a row below the only option and did nothing; the event then re-prompted and
+  the second, five-option screen took the right line. `choice_point()` in
+  `core/execute.py` now clamps a choice to the options on screen.
+- **Options are bottom-anchored**, so the first one's y gives the count:
+  736 = 1, 624 = 2, 513 = 3, 401 = 4, 290 = 5. `assets/icons/event_choice_1.png`
+  matches the first option only (one hit per frame), so it is a reliable anchor.
+- The **Choices panel reports four options** for this event in every career
+  (Full Tilt, Focus, Rosy Outlook, and one with no hint) although the list holds
+  five, so the panel is not a way to count them.
+- `master.mdb` holds the event's title (`text_data`, category 181) but no choice
+  text, so the on-screen list is the only source for the lines themselves.
+
+What the database does say about the five lines (2026-09-16), after the question
+came up of whether the deck changes them:
+
+- Each line is one **skill pair sharing a `group_id`**, white and gold:
+  Full Tilt / Full Speed! (20228), Focus / Concentration (20043),
+  Rosy Outlook / Trackblazer (20071), All I've Got / Come What May (20170),
+  Go with the Flow / Lane Legerdemain (20050). The panel names the white one.
+- **No support card teaches any of them**: expanding every
+  `support_card_data.skill_set_id` through `skill_set` gives zero hits. The
+  skill sets that do contain them belong to race NPCs.
+- The **trainees that can learn them are many** (Focus: Kitasan Black,
+  Maruzensky, Mejiro McQueen, Mihono Bourbon, Silence Suzuka, Eishin Flash,
+  Mayano Top Gun; Lane Legerdemain: Air Groove, Eishin Flash), and Full Speed!
+  has no trainee owner at all. So "one line per character" does not hold, and
+  the older note calling line 5 "anyone" is wrong.
+- Which lines appear, and which carry a hint, therefore cannot be derived from
+  the data files. `core/events.py` now saves the event's frame to the log
+  directory (`lyrics_event_<date>.png`) so a career's list can be compared
+  against the deck that produced it.
+
 **Turn counter.** `read_turn_digits()` reads the calendar number glyph by
 glyph: a "1" is 13-14px wide, other digits 25-30px, and only the wide ones go to
 OCR. It fixed "11" -> "17"; the old whole-number OCR stays as the fallback.
@@ -713,3 +756,107 @@ Career 4 (2026-09-11) added:
   without being taken. Open: the Performance weight needs to scale with
   urgency in Senior H2, and scheduling there should take the closest song
   regardless of rank (the slack picked rank 3 at 17 short over rank 20 at 12).
+
+## The gacha menu after a career (2026-09-17)
+
+Careers kept ending in the Scout (summon) menu. The cause is geometric, not a
+misread: the loop's alternate blind tap, `DIALOG_ADVANCE_ALT_MOUSE_POS`
+**(756, 980)**, sits in the Scout column of the game's own bottom navigation.
+
+The bar - **Enhance / Story / Home / Race / Scout** - is drawn on every screen
+outside a career. Measured on `game_home.png`: the tiles span **y 996-1074**,
+Scout's tile **x 748-840**, and its event badges reach up to y~975. The tap
+lands at the tile's top edge, under the badge.
+
+That point was chosen for the career-start Inspiration screen and reasoned only
+against the *career's* own Skip/Quick row at y~1050. Nothing had measured it
+against the game's menus, because the loop was never meant to be there.
+
+Why the loop was there at all: `team_rank` is absent from some of the screens
+the game walks through after a career, and `login_bonus` matched nothing in the
+dispatch dict, so both fell through to the blind taps. The walk after career 12
+took **3m19s** (01:39:40 sparks confirmed -> 01:42:59 home recognised), spent
+alternating taps with the Close/Back probes that backed out of Scout again.
+
+Two templates close it, both cut from the fixtures and checked with `sep`:
+
+| Template | Positives | Best negative | Margin |
+|---|---|---|---|
+| `assets/ui/game_nav_scout.png` | 0.930-1.000 (home, home GL, home mid-career, Scenario Select, trainee select) | 0.693 (`continue_career`) | +0.237 |
+| `assets/ui/login_bonus.png` | 1.000 (`login_bonus`) | 0.249 | +0.751 |
+
+`game_nav` joins `team_rank` in the branch that stops the loop, so the blind tap
+is never reached on a screen carrying the bar. `login_bonus` presses that
+screen's Skip at **(903, 1024)**, located by template inside the branch - the
+dispatch dict deliberately does *not* key on `skip_btn.png`, which is the race
+skip `race_prep()` drives inside a career.
+
+Covered by `tests/test_out_of_career.py`; the bar matches no in-career frame
+across the grand_concert and sparks fixtures.
+
+## Career start: story Skip and Quick Mode (2026-09-17)
+
+Both are once-per-career settings the bot never touched. Measured live while the
+Quick Mode dialog held the scene still - it blocks everything until Confirm, so
+the Skip button below it can be cycled without anything else moving.
+
+**Story Skip**, bottom-left of the story UI and of the lobby, at **(567, 1052)**
+(`SKIP_BUTTON_MOUSE_POS`, read inside `SKIP_BUTTON_BBOX` = 500,1028,680,1078).
+It cycles **Off -> x1 -> x2** and resets to Off with every new career. Two
+presses from Off reached x2. Each state matches its own template at 1.000:
+
+| Frame | skip_off | skip_x1 | skip_x2 |
+|---|---|---|---|
+| Off | **1.000** | 0.430 | 0.318 |
+| x1 | 0.090 | **1.000** | 0.832 |
+| x2 | 0.085 | 0.832 | **1.000** |
+
+x1 and x2 score 0.832 against each other, so the state is **read between
+presses, never counted** from an assumed start - one missed press would
+otherwise leave a whole career on x1. With Skip off the bot taps each story
+line about every 9 s, which reads as a stall.
+
+**Quick Mode Settings**, the one-time dialog at the start of every career.
+Four radios, **68px apart** - note that is *not* the 112px event-choice
+spacing, although the radios match `event_choice_1.png` at 0.974, so deriving
+them from `LAST_EVENT_CHOICE_ICON_TOP` lands wrong:
+
+| Radio | Position |
+|---|---|
+| Don't use Quick Mode | (308, 460) |
+| **Shorten all events** | **(308, 529)** |
+| Only shorten scenario events | (308, 597) |
+| Only shorten trainee events | (308, 664) |
+| Confirm | (553, 773) |
+
+The selected radio reads ~273 green pixels in an 18x18 patch against 0 for the
+rest. "Shorten all events" is the game's default, but the branch picks it
+explicitly rather than trusting a default across accounts and patches; clicking
+a radio only moves the pending choice, and Confirm commits.
+
+Fixtures in `tests/fixtures/career_start/`, covered by `tests/test_career_start.py`.
+
+### Verified end-to-end (2026-09-17, career 13)
+
+A full Grand Concert career run with the fix in place ended on the game's own
+screens without ever entering Scout:
+
+    05:00:03  Career complete.
+    05:01:39  Confirming the kept set.      (sparks done)
+    05:04:28  Leaving the finished career.  (to_home)
+    05:04:40  The game is on its own screens, so the career is over.
+    05:04:40  [BOT] Stopped.
+
+The post-spark walk took **3m01s**: 7 Next presses, 4 blind taps and a single
+back-out. No repeated Close/Back cycling, which pre-fix was the signature of
+the loop tapping Scout open and backing out of it again.
+
+Two things this run did **not** establish:
+
+- **Which template stopped it.** The branch is `team_rank or game_nav` and both
+  share one message, so the log cannot say which matched - on the home screen
+  both do. Naming the matched template in that line would make the next such
+  run self-evidencing.
+- **The `login_bonus` branch has still never fired** (0 occurrences in any log).
+  That screen appears after a reload or the daily reset, not after every
+  career, so it remains covered by fixtures only.
