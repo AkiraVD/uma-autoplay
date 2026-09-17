@@ -50,8 +50,8 @@ Pick the mode under **Game mode** on the web page (Trainee & strategy). **Auto-d
 #### Clone repository
 
 ```
-git clone https://github.com/AkiraVD/uma-stable-bot.git
-cd uma-stable-bot
+git clone https://github.com/AkiraVD/uma-autoplay.git
+cd uma-autoplay
 ```
 
 #### Install dependencies
@@ -134,5 +134,5 @@ Both are skewed by your stat priority and weights, skip trainings above the fail
 
 ### Contribute
 
-If you run into any issues or something doesn’t work as expected, feel free to [open an issue](https://github.com/AkiraVD/uma-stable-bot/issues).
+If you run into any issues or something doesn’t work as expected, feel free to [open an issue](https://github.com/AkiraVD/uma-autoplay/issues).
 Contributions are very welcome! New features go on the `dev` branch, which is used for testing them before they reach the main branch.
