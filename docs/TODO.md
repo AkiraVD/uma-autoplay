@@ -30,13 +30,24 @@ rarity, and the server's pickers. Two uses are still open:
 
 ## Untested paths, each waiting on a screen that has not appeared
 
-- **A skill row at max hint (level 5).** Still only ever watched refusing: all
-  871 of the logged lines are `is not at max hint ... leaving it for the end of
-  the career`, and not one is an acceptance.
 - **`unity_begin_showdown`'s settle delay** against a live Team Zenith screen.
 
 Cleared, kept briefly as a record of what the evidence was:
 
+- ~~A skill row at max hint (level 5)~~ - accepted 2026-09-18 for the first
+  time in any log, after 871 recorded refusals:
+  `Mid-career skill buy: 1 of 1 full-discount skills for 102 of 1234 points:
+  Corner Recovery o (102)` then `Buy Corner Recovery o at 102 (base 170), a
+  full hint discount.` So `at_max_discount` does return true in the wild; the
+  refusals were the rule working, not a dead branch. Same career: 32 refusals,
+  1 mid-career acceptance, 8 end-of-career buys.
+- ~~The TP bottle rule has never fired~~ - fired 2026-09-18 at 01:51:53 on a
+  spark reroll with 9 TP in hand against a 30 TP cost:
+  `Restoring TP so the reroll can go ahead.` / `Spending 1 of 157 TP bottles to
+  afford the reroll.` / `Confirming the bottle.` The reroll then improved the
+  set (blue 1* 5 white -> blue 2* 4 white) and the comparison kept the rerolled
+  one, which is the documented "blue stars first, then white count" order
+  deciding a case where the two metrics disagreed.
 - ~~`set_skip_x2()`'s press path~~ - fired 2026-09-18 at 00:02:34 on a fresh
   Trackblazer career, the first time in any log: `Story Skip reads off;
   pressing for x2.` then `Story Skip reads x1; pressing for x2.` Two presses,
