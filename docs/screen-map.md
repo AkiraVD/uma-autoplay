@@ -1072,6 +1072,35 @@ Buying and using are joined: step 4 rolls straight into the use flow, so an
 item bought and used in one visit never passes through the Training Items
 modal at all. That modal is only for items bought on an earlier turn.
 
+**Several items can be bought in one go**, and it is worth doing: ticking three
+rows summed correctly (1,225 -> 1,033 for 40 + 32 + 120) and `Confirm Exchange`
+listed all three stacked, each with its own `Held 0 > 1`, over a single
+combined coin line. The dialog grows its list downward and **the footer stays
+put**, so Cancel/Exchange remain at (419,997)/(686,997) however many items are
+in the basket.
+
+`Exchange Complete` then shows one **- / 0 / +** stepper per row, at
+x 706 / 751 / 797, rows at y 222 / 337 / 452 (115 px pitch), every one
+defaulting to 0.
+
+**Row order is not stable between the two screens.** The basket listed Ankle
+Weights, Megaphone, Training Application; `Exchange Complete` listed them
+Training Application, Megaphone, Ankle Weights. A reader must match rows by
+name, never by index.
+
+#### Training Items, stocked
+
+Same modal as the empty one, reached from the lobby's Training Items button
+(713,650), listing what was bought earlier and not used. Each row shows
+`Held N > N` and its own stepper at the same x 706 / 751 / 797.
+
+**Its rows sit higher than `Exchange Complete`'s**: first row y **151**, then
+266, 381, the same 115 px pitch. `Exchange Complete` starts at 222 because it
+carries the "Purchased the selected training items" line above the list. The
+two screens are otherwise near-identical and share Close/Confirm Use at
+(419,997)/(686,997), so they can only be told apart by the title bar - and
+their row grids must not be shared.
+
 **Only buy-and-use the books.** The flat stat items - Notepad (+3), Manual
 (+7), Scroll (+15), the `stat` category in `data/trackblazer_shop.json` - have
 no timing to get wrong, so using them the moment they are bought costs
