@@ -1288,9 +1288,22 @@ Climax Store coin, so `coins_for()` must not be applied to these three races.
 
 #### Driving a Climax race: the six screens
 
-Walked twice by hand, rounds 1 and 2, with identical positions both times. The
-bot cannot do this yet, so this is the recipe a Trackblazer race-day handler
-needs:
+Walked twice by hand, rounds 1 and 2, with identical positions both times.
+
+**The bot does drive this, and needs none of it.** Corrected 2026-09-18, when a
+Trackblazer career ran the Climax unattended: `race_day()` pressed
+`assets/trackblazer/ts_climax_race_btn.png` and the entire sequence collapsed
+into one `Next.` - about 45 s from press to the lobby returning. The game's own
+readback recorded the result (`Run in TS Climax Race 1 (EX)`, "Competed as the
+number 1 favorite and won"), and the standings read `RANK 1 /16`, `10 pt(s)`.
+
+The six steps below were measured *by hand, pressing each screen through*. The
+`Skip >>` and `Quick` buttons sitting at the bottom of these screens collapse
+them, which is why the hand-walk looked like six presses needing six templates
+and the bot needs one. Keep the table: it is still the manual recipe, and still
+what a deliberate handler would drive if one is ever wanted. Just do not read it
+as a list of blockers - in particular the uncut templates at steps 5 and 6 are
+not stopping anything.
 
 | # | Screen | Press |
 |---|---|---|
