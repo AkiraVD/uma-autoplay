@@ -21,29 +21,34 @@ def ok(label, condition, detail=""):
     failures.append(label)
 
 def flags():
-  return (S.UNITY_SEEN, S.GRAND_CONCERT_SEEN)
+  return (S.UNITY_SEEN, S.GRAND_CONCERT_SEEN, S.TRACKBLAZER_SEEN)
 
-def use(scenario, unity=False, gc=False):
+def use(scenario, unity=False, gc=False, tb=False):
   S.SCENARIO = scenario
-  S.UNITY_SEEN, S.GRAND_CONCERT_SEEN = unity, gc
+  S.UNITY_SEEN, S.GRAND_CONCERT_SEEN, S.TRACKBLAZER_SEEN = unity, gc, tb
   S._scenario_warned.clear()
 
 def test_auto():
   use("auto")
   S.apply_scenario()
-  ok("auto starts with no mode", flags() == (False, False), flags())
+  ok("auto starts with no mode", flags() == (False, False, False), flags())
   S.saw_scenario("grand_concert", "Lessons button in the lobby")
-  ok("auto takes Grand Concert from the screen", flags() == (False, True), flags())
+  ok("auto takes Grand Concert from the screen", flags() == (False, True, False), flags())
   S.apply_scenario()
-  ok("a restart mid-career keeps what auto saw", flags() == (False, True), flags())
+  ok("a restart mid-career keeps what auto saw", flags() == (False, True, False), flags())
   S.apply_scenario(new_career=True)
-  ok("a new career clears it", flags() == (False, False), flags())
+  ok("a new career clears it", flags() == (False, False, False), flags())
   S.saw_scenario("unity", "Spirit gauge on the training screen")
-  ok("and auto takes Unity Cup the same way", flags() == (True, False), flags())
+  ok("and auto takes Unity Cup the same way", flags() == (True, False, False), flags())
+  S.apply_scenario(new_career=True)
+  S.saw_scenario("trackblazer", "Trackblazer card on Scenario Select")
+  ok("and Trackblazer the same way", flags() == (False, False, True), flags())
 
 def test_fixed():
-  for scenario, expected in (("ura", (False, False)), ("unity", (True, False)), ("grand_concert", (False, True))):
-    use(scenario, unity=True, gc=True)
+  for scenario, expected in (("ura", (False, False, False)), ("unity", (True, False, False)),
+                             ("grand_concert", (False, True, False)),
+                             ("trackblazer", (False, False, True))):
+    use(scenario, unity=True, gc=True, tb=True)
     S.apply_scenario()
     ok(f"{scenario} sets the flags at start", flags() == expected, flags())
     use(scenario)
@@ -53,7 +58,7 @@ def test_fixed():
   use("ura")
   S.apply_scenario()
   S.saw_scenario("grand_concert", "Lessons button in the lobby")
-  ok("a fixed mode ignores a disagreeing screen", flags() == (False, False), flags())
+  ok("a fixed mode ignores a disagreeing screen", flags() == (False, False, False), flags())
   ok("but remembers it warned", "grand_concert" in S._scenario_warned, S._scenario_warned)
   S.saw_scenario("ura", "URA screen")
   ok("and never warns about its own mode", "ura" not in S._scenario_warned, S._scenario_warned)

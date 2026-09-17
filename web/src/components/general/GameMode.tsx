@@ -16,6 +16,7 @@ const MODES: [Scenario, string][] = [
   ["ura", "URA Finale"],
   ["unity", "Unity Cup"],
   ["grand_concert", "Grand Concert"],
+  ["trackblazer", "Trackblazer"],
 ];
 
 type Props = {

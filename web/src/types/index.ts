@@ -38,7 +38,7 @@ export const ConfigSchema = z.object({
   config_name: z.string(),
   trainee: z.string(),
   // Presets saved before the Game mode setting don't have it; they mean "auto".
-  scenario: z.enum(["auto", "ura", "unity", "grand_concert"]).optional(),
+  scenario: z.enum(["auto", "ura", "unity", "grand_concert", "trackblazer"]).optional(),
   priority_stat: z.array(z.string()),
   priority_weights: z.array(z.number()),
   sleep_time_multiplier: z.number(),

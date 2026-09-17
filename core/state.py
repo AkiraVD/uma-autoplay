@@ -56,15 +56,22 @@ ENERGY_TECHNIQUE_BELOW = 50
 PERFORMANCE_SHORT_POINTS = 0.75
 PERFORMANCE_URGENT_POINTS = 4.0
 ALWAYS_BUY_GOLD_SKILL = False
-# The game mode from config: "auto", "ura", "unity" or "grand_concert". A fixed
-# mode sets UNITY_SEEN / GRAND_CONCERT_SEEN outright (apply_scenario); "auto"
-# learns them by sighting the mode's own screens (saw_scenario).
+# The game mode from config: "auto", "ura", "unity", "grand_concert" or
+# "trackblazer". A fixed mode sets the SEEN flags outright (apply_scenario);
+# "auto" learns them by sighting the mode's own screens (saw_scenario).
 SCENARIO = "auto"
-SCENARIOS = ("auto", "ura", "unity", "grand_concert")
-SCENARIO_NAMES = {"ura": "URA Finale", "unity": "Unity Cup", "grand_concert": "Grand Concert"}
+SCENARIOS = ("auto", "ura", "unity", "grand_concert", "trackblazer")
+SCENARIO_NAMES = {"ura": "URA Finale", "unity": "Unity Cup",
+                  "grand_concert": "Grand Concert", "trackblazer": "Trackblazer"}
 # True when this career is Grand Concert: set by the config, or in "auto" once
 # the lobby has shown a Lessons button, which only Grand Concert has.
 GRAND_CONCERT_SEEN = False
+# True when this career is Trackblazer. Global's third scenario (2026-03-12),
+# the one where races replace the career goals: every year wants a number of
+# "Track Pts" (the HUD's name; the body text calls them Result Points) and the
+# Umamusume's own goals are switched off. Nothing reads this yet beyond the
+# mode plumbing - the in-career screens are unmapped. See docs/screen-map.md.
+TRACKBLAZER_SEEN = False
 # Career end. See core/sparks.py.
 MAX_RACE_RETRIES = 1
 REROLL_SPARKS = True
@@ -454,14 +461,16 @@ def apply_scenario(new_career=False):
   A fixed mode sets them outright, at every start and every new career. "auto"
   clears them only for a new career: stopping and starting the bot mid-career
   keeps what it has already seen."""
-  global UNITY_SEEN, GRAND_CONCERT_SEEN
+  global UNITY_SEEN, GRAND_CONCERT_SEEN, TRACKBLAZER_SEEN
   if SCENARIO == "auto":
     if new_career:
       UNITY_SEEN = False
       GRAND_CONCERT_SEEN = False
+      TRACKBLAZER_SEEN = False
     return
   UNITY_SEEN = SCENARIO == "unity"
   GRAND_CONCERT_SEEN = SCENARIO == "grand_concert"
+  TRACKBLAZER_SEEN = SCENARIO == "trackblazer"
 
 def saw_scenario(name, how):
   """The screen showed something only game mode `name` has.
@@ -469,7 +478,7 @@ def saw_scenario(name, how):
   In "auto" that decides the mode. A fixed mode is kept as configured, with one
   warning per mode when the screen disagrees, since it usually means the Game
   mode setting is wrong for this career."""
-  global UNITY_SEEN, GRAND_CONCERT_SEEN
+  global UNITY_SEEN, GRAND_CONCERT_SEEN, TRACKBLAZER_SEEN
   if SCENARIO == "auto":
     if name == "unity" and not UNITY_SEEN:
       UNITY_SEEN = True
@@ -477,6 +486,9 @@ def saw_scenario(name, how):
     elif name == "grand_concert" and not GRAND_CONCERT_SEEN:
       GRAND_CONCERT_SEEN = True
       info(f"{how}: this is Grand Concert.")
+    elif name == "trackblazer" and not TRACKBLAZER_SEEN:
+      TRACKBLAZER_SEEN = True
+      info(f"{how}: this is Trackblazer.")
     return
   if name != SCENARIO and name not in _scenario_warned:
     _scenario_warned.add(name)
