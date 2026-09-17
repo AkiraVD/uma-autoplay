@@ -59,15 +59,26 @@ def parse_goal(criteria):
   there is no decision to make), or text this does not recognise. None means
   "leave the turn to the existing logic", never "do nothing".
 
-  The two measurable kinds report their progress in opposite directions, which
-  is the trap here:
+  Both measurable kinds report what is still OUTSTANDING, not what has been
+  earned:
 
       "Earn 5000 fans Progress 3,828 fan(s) to go"   -> remaining IS 3828
-      "300 Result Pts Progress After 88 pts"         -> remaining is 300 - 88
+      "300 Result Pts Progress After 300 pts"        -> remaining IS 300
 
-  The leading number on the fans line is not trustworthy - one real log reads
+  Measured live on 2026-09-18 by watching one Result Pts goal from its first
+  turn to its last: 300 -> 240 -> 200 -> 140 -> 100 -> 20 -> "Goal Achieved".
+  It opens at the target with nothing earned and counts down, so the trailing
+  figure is the remainder.
+
+  This used to read that figure as progress and return `target - figure`, which
+  inverted it exactly: a brand-new goal parsed as already met (300 - 300 = 0)
+  and a nearly-finished one as maximum urgency (300 - 20 = 280). The single log
+  line it was written from could not distinguish the two readings; only the
+  sequence can.
+
+  The leading number is not trustworthy on either line - one real log reads
   "Earn 3000 fans ... 4,434 fan(s) to go", where the remainder exceeds the
-  stated target - so the "to go" figure is taken and the target ignored.
+  stated target - so the outstanding figure is taken and the target ignored.
   """
   text = (criteria or "").strip()
   if not text:
@@ -83,8 +94,7 @@ def parse_goal(criteria):
 
   hit = _RESULT_PTS.search(text)
   if hit:
-    target, done = _int(hit.group(1)), _int(hit.group(2))
-    return ("points", max(0, target - done))
+    return ("points", _int(hit.group(2)))
 
   return None
 

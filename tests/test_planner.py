@@ -25,13 +25,40 @@ def ok(label, condition, detail=""):
 
 
 def test_parses_the_two_measurable_goals():
-  """Fans give the remainder directly; Result Pts give target and progress."""
+  """Both kinds report what is still outstanding, not what has been earned."""
   ok("fans: the 'to go' figure is the remainder",
      P.parse_goal("Earn 5000 fans Progress 3,828 fan(s) to go") == ("fans", 3828))
-  ok("result pts: remaining is target minus done",
-     P.parse_goal("300 Result Pts Progress Aftert 88 pts") == ("points", 212))
+  ok("result pts: the trailing figure IS the remainder",
+     P.parse_goal("300 Result Pts Progress Aftert 88 pts") == ("points", 88))
   ok("and the other OCR spelling of After",
-     P.parse_goal("300 Result Pts Progress After' 128 pts") == ("points", 172))
+     P.parse_goal("300 Result Pts Progress After' 128 pts") == ("points", 128))
+
+
+def test_the_result_pts_countdown_measured_live():
+  """One goal watched start to finish, 2026-09-18, Trackblazer/Maruzensky.
+
+  This is the sequence that caught the inversion. The figure opens at the
+  target with nothing earned and falls to near zero before the goal reads
+  achieved, so it is the remainder. Read as progress it would have to start
+  at 0 and climb, and `target - figure` would call this fresh goal met on its
+  very first turn.
+  """
+  seen = ["300 Result Pts Progress Aftert 300 pts",
+          "300 Result Pts Progress Aftert 240 pts",
+          "300 Result Pts Progress Aftert 200 pts",
+          "300 Result Pts Progress After' 140 pts",
+          "300 Result Pts Progress Aftert 100 pts",
+          "300 Result Pts Progress After' 20 pts"]
+  got = [P.parse_goal(line) for line in seen]
+  ok("the first turn of a 300 pt goal needs all 300",
+     got[0] == ("points", 300), got[0])
+  ok("the last turn before achieved needs only 20",
+     got[-1] == ("points", 20), got[-1])
+  values = [g[1] for g in got]
+  ok("and the remainder falls monotonically",
+     all(a > b for a, b in zip(values, values[1:])), values)
+  ok("then achieved is nothing to plan for",
+     P.parse_goal("300 Result Pts Goal Achievedl MAX") is None)
 
 def test_the_fans_target_is_ignored_on_purpose():
   """A real log reads 'Earn 3000 fans ... 4,434 to go' - the target is wrong."""
@@ -149,6 +176,7 @@ def test_slack_arithmetic():
   ok("impossible is negative", P.slack(9, 5) == -4)
 
 for test in [test_parses_the_two_measurable_goals,
+             test_the_result_pts_countdown_measured_live,
              test_the_fans_target_is_ignored_on_purpose,
              test_goals_with_nothing_to_decide,
              test_energy_decides_before_anything_else,
