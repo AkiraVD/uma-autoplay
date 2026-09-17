@@ -85,8 +85,50 @@ Worth deriving properly if the behaviour ever looks wrong:
   is still not derived anywhere, and the turn counter cannot supply one - it
   counts down to the next race day rather than the end of the career, and reads
   -1 (unreadable) throughout Trackblazer's climax.
+- **`11` reads as `1` in every year, and the Classic counter misreads badly.**
+  Full unsampled sequence, 2026-09-18, Trackblazer/Maruzensky.
+
+  The counter counts down to the **end of the current year**. Junior and Senior
+  read that correctly - Senior ran `24, 23, 22 ... 3, 2` across Jan to Dec.
+
+  The reproducible one: **Late Jul reads `1` in all three years**, where the
+  truth is `11`. Junior, Classic and Senior each show `12, 1, 10, 9` across
+  Early Jul to Late Aug. The leading digit is being dropped - the same failure
+  `core/gains.py`'s glyph bank was built for, and worth fixing first because it
+  is 3-for-3 rather than mysterious.
+
+  Classic on top of that is simply wrong:
+
+      Early Jan .. Late Jun   5 5 5 5 5 5 5 5 5 5 5   (true: 24 .. 13)
+      Early Jul .. Late Aug   12  1  10  9            (right, bar the 1 = 11)
+      Early Sep .. Late Dec   5 5 6 5 5 5 1 1         (true: 8 .. 1)
+
+  `5` is the recurring wrong value, and `Early Oct 6` arriving after
+  `Late Sep 5` counts *up*, so this is misreading and not a counter frozen by
+  game state. Two theories are dead: not "an achieved goal blanks the box" - a
+  lobby frame captured at Senior Early Dec *while* the goal read
+  `Goal Achievedl MAX` shows the card reading `2 turn(s) left` and `check_turn`
+  read 2 - and not simply the year, since Junior and Senior read fine.
+
+  It matters because `decide_race_for_goal` compares `turn` against integers
+  and the planner takes it as `opportunities`. Evidence is in `logs/log.txt.1`
+  plus `logs/log.txt`, since the run rotated mid-career.
+- **`Turn: -1` recurs at Late Dec**, at Junior and Senior alike, and through
+  every TS Climax turn. `-1` is `check_turn`'s unreadable return, and no
+  `Turn count out of range` warning is logged with it, so both the glyph bank
+  and the OCR fallback found *nothing* rather than something out of range.
+  Harmless today - it degrades to `Turn count unknown, skipping the goal race
+  check this turn.` - but it silently disables that check on those turns.
+- **A long run's early log lives in `logs/log.txt.1`, not `log.txt`.**
+  `utils/log.py` uses `RotatingFileHandler(maxBytes=1_000_000, backupCount=10)`,
+  so any career that logs more than ~1 MB rotates mid-run. On 2026-09-18 the
+  23:57 start and the whole Junior/Classic stretch ended up in `log.txt.1`
+  while `log.txt` held only 01:13 onward. **Search `logs/log.txt*`** - a
+  `logs/*.txt` glob matches none of the backups, and the silence is
+  indistinguishable from a clean run: it made a career with 3 warnings look
+  like it had none, and its `[BOT] Starting` line look missing.
 - **`auto_buy_skill()` scans the whole list on every race day and buys
-  nothing.** Measured 2026-09-18 across the three Climax race days: 16
+  nothing.** Measured 2026-09-18 across the three Climax race days: 24
   `leaving it for the end of the career` refusals and **zero** purchases, at
   ~6m51s for round 1 (three full rewind-and-scan cycles) and ~2m09s for round
   2 (one). The refusals are the documented max-hint rule working as intended;
