@@ -860,3 +860,68 @@ Two things this run did **not** establish:
 - **The `login_bonus` branch has still never fired** (0 occurrences in any log).
   That screen appears after a reload or the daily reset, not after every
   career, so it remains covered by fixtures only.
+
+## Trackblazer: research and the screens outside a career (2026-09-17)
+
+Global's **third** permanent scenario, "Trackblazer - Start of the Climax",
+released 2026-03-12 - before Grand Concert, not after it. Nothing in the bot
+handles it yet. Everything below outside the career was measured on the live
+client; everything inside one is still unverified.
+
+### What the game itself says
+
+Walked Scenario Select -> Scenario Details -> How to Play, all five pages.
+
+- **Points have two names.** The HUD reads **"Track Pts"** - a star icon,
+  `<Year> Track Pts`, `100/300pts` and a progress bar. The body text calls them
+  **"Result Points"**. Guides call them "Grade Points", which appears nowhere in
+  the game; prefer "Track Pts" for anything read off the screen.
+- `There are no character-specific goals in this Career scenario`, and
+  `You can choose for yourself which races to enter`.
+- Classic Year target is **300**, matching the guides.
+- **Best Umamusume Award**, which no guide consulted mentioned: every year at
+  the end of the Late December turn an award goes to the highest performing
+  Umamusume, driven by supporter bonds, race results and fans, and winning it
+  raises the trainee's Unique Skill level. This is very likely what uma.guide's
+  otherwise unexplained "5,000 fans + 19 bond post-Junior" thresholds describe.
+- Finale: `Reach every Career goal to take on the Twinkle Star Climax`, three
+  races, winner becomes the "Twinkle Top Star".
+
+### Race rows carry everything race selection needs
+
+Each row on the race list shows, in one place: a **G1/G2/G3 badge**, the track
+line (`Tokyo Turf 2000m (Med) Left`), a gold star **`+100 pts`**, a green coin
+**`+100`**, `+15,000 fans`, and **Turf / Medium aptitude chips**. So grade,
+points, coins, distance, surface and aptitude are all on screen - master.mdb is
+only needed to cross-check. Note `data/races.json` has **no grade field**;
+`server/master_data.py`'s mdb-backed races do (`"grade": "G3"`).
+
+### Measured geometry (1920x1080 Steam)
+
+| Screen | Element | Position |
+|---|---|---|
+| Scenario Select | left / right arrow | (177, 494) / (935, 494) |
+| | page dots (4 = 4 scenarios, Trackblazer 3rd) | ~(515-590, 857) |
+| | Scenario Details | (800, 277) |
+| | Back / Next | (212, 910) / (552, 909) |
+| Career Scenario Details | How to Play | (744, 385) |
+| | Close | (552, 997) |
+| How to Play (5 pages) | Next / Back | (552, 1019) / (320, 1019) |
+| | page dots | ~(525-585, 975) |
+
+`assets/trackblazer/scenario_select_title.png` is the wordmark off the
+Scenario Select card: 1.000 on that card against a best negative of 0.294 over
+five other frames, margin +0.706.
+
+### OCR note
+
+The Track Pts counter reads cleanly at a generous crop; a tight one returned
+`100/30pt5`. Large outlined display digits, the same class of glyph that needed
+`core/gains.py`'s template bank - expect to read this counter by digit
+templates rather than easyocr.
+
+### Still unverified - only exists inside a career
+
+The shop / Climax Store and its 6-turn refresh and costs, rival races and their
+red/blue VS icon, race route epithets, and where the Track Pts HUD actually sits
+in the lobby (so far only seen in a tutorial mock-up).
