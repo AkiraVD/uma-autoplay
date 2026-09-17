@@ -69,6 +69,20 @@ Worth deriving properly if the behaviour ever looks wrong:
   is still not derived anywhere, and the turn counter cannot supply one - it
   counts down to the next race day rather than the end of the career, and reads
   -1 (unreadable) throughout Trackblazer's climax.
+- **The career intro plays at Skip Off**, so every story line costs a ~9 s tap.
+  `set_skip_x2` runs from the lobby, and deliberately - `execute.py` notes that
+  a global handler would press it on race and story screens that drive it
+  themselves - but the Skip button sits at the same `(567, 1052)` on the story
+  UI. Measured 2026-09-18: the intro ran from 23:58:26 to past 00:01:17 still
+  inside `Trainee Event: Self-Introduction`, long enough to trip the
+  "not in the career lobby for 20 checks" recovery. Worth weighing a
+  story-screen-only exception against the risk that comment names.
+- **The trainee aptitude warning ignores legacy inheritance.** `core/trainee.py`
+  reads base aptitudes from master.mdb, but the Legacy screen raises them before
+  the career starts. A Trackblazer run on 2026-09-18 warned
+  `skill_distance includes long, but her long aptitude is C` while the Legacy
+  parents had already lifted Long to A on screen, so the warning was wrong. It
+  is warn-only, but it fires on exactly the careers that inherit hardest.
 - **Only one friend card has ever been seen in a deck.** With two the panel
   lists both and the reader takes the first row.
 - **`LOG_PANEL_REGION` assumes the Log tab is selected** in the right-hand

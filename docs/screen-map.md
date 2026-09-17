@@ -836,6 +836,51 @@ a radio only moves the pending choice, and Confirm commits.
 
 Fixtures in `tests/fixtures/career_start/`, covered by `tests/test_career_start.py`.
 
+### The setup screens, walked by hand (2026-09-18)
+
+Scenario Select -> Trainee Select -> Legacy Select -> Support Formation ->
+Final Confirmation, starting a Trackblazer career on Maruzensky. Every position
+below was clicked live at 1920x1080, so they are measured rather than derived.
+
+| Screen | Element | Position |
+|---|---|---|
+| Home | CAREER banner | (712, 930) (`CAREER_BUTTON_MOUSE_POS`) |
+| | TP `+`, opens Recover TP | (570, 47) |
+| Recover TP | each row's Use | x = 763 (`TP_RESTORE_USE_X`), rows ~115 apart |
+| | Toughness 30 label centre -> its Use | (446, 244) -> (763, 269) |
+| | Close | (552, 996) |
+| Recover TP quantity | Cancel / OK | (419, 774) / (689, 774) |
+| Trainee Select | Next | (551, 908) |
+| | trainee tiles | x 322/435/551/665/779, rows y 617 / 750 |
+| Legacy Select | Change, Legacy 1 / 2 | (409, 751) / (695, 751) |
+| | Reset / Auto-Select | (418, 821) / (685, 821) |
+| Support Formation | deck slots | x 373/553/731, rows y 345 / 573 |
+| | deck page arrows | (275, 482) / (835, 482) |
+| | Reset / Auto-Fill | (415, 771) / (683, 771) |
+| | Back / Start Career! / Perks | (211, 910) / (585, 910) / (873, 909) |
+| Borrow Card | first friend row | (545, 250) |
+| | Close | (552, 997) |
+| Support Select | card tiles | x 328/440/552/665/777, rows 145 apart from y 165 |
+| | Close | (552, 997) |
+| Final Confirmation | Normal Career / Independent Training | (408, 181) / (696, 181) |
+| | Event Boost (TP Usage x2) checkbox | (311, 809) |
+| | Cancel / Start Career! | (419, 997) / (686, 997) |
+
+**A disabled `Start Career!` looks exactly like a swallowed click.** The game
+refuses a deck holding a support card of the *same character as the trainee*:
+that card wears an orange `Trainee` banner with a red `!`, and the button
+renders disabled - desaturated olive with pale grey-blue text, against the
+vivid green and crisp white of `Auto-Fill` right above it. Neither an ordinary
+click nor a `deliberate_click`-style move/settle/hold press does anything, and
+nothing is logged, so it presents as the spark-screen wedge and sends you down
+the input-delivery path. It is not an input problem. Compare the button against
+a known-enabled green one in the same frame before suspecting the click, and
+check the deck for a `!` badge. Swapping the offending card out enables the
+button immediately.
+
+This bites whenever a saved deck is reused for a trainee it was not built for,
+which is the normal case when switching trainee between careers.
+
 ### Verified end-to-end (2026-09-17, career 13)
 
 A full Grand Concert career run with the fix in place ended on the game's own
