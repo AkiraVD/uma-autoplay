@@ -1072,6 +1072,21 @@ Buying and using are joined: step 4 rolls straight into the use flow, so an
 item bought and used in one visit never passes through the Training Items
 modal at all. That modal is only for items bought on an earlier turn.
 
+**Only buy-and-use the books.** The flat stat items - Notepad (+3), Manual
+(+7), Scroll (+15), the `stat` category in `data/trackblazer_shop.json` - have
+no timing to get wrong, so using them the moment they are bought costs
+nothing. Everything else should be bought and left in the inventory for the
+turn that wants it: a Coaching Megaphone spends its +20% over the next four
+turns whether or not those were training turns, an energy item is worth most
+when energy is actually low, and a Good-Luck Charm is worth most on a turn
+with a training the bot would otherwise skip for failure risk.
+
+The game agrees with this by default: the `Exchange Complete` quantity starts
+at **0** with Confirm Use dimmed, so storing is what happens if nothing is
+pressed, and using on purchase is the opt-in. A buying routine should step the
+quantity up only for the `stat` category and press **Close** (419,997) for
+everything else, then come back to the Training Items modal later.
+
 The shop restocked between visits with a completely different lineup (Junior:
 Royal Kale Juice, Wit Scroll, Guts Ankle Weights...; Senior: Wit Manual, Guts
 Manual, Guts Scroll, Good-Luck Charm...), and the Senior visit was badged
