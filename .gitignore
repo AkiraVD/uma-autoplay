@@ -18,10 +18,6 @@ data/support_cards_owned.json
 # Design canvas working files
 design/
 
-# Local, machine-specific guidance and skills, kept out of the repo
-CLAUDE.md
-.claude/
-
 # Logs
 logs
 *.log
