@@ -305,28 +305,34 @@ export default function ToolsView() {
                         picked={parsePoint(at)}
                         onPick={(x, y) => setAt(`${x},${y}`)}
                       />
-                      <div className="flex flex-wrap items-center justify-end gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="mr-auto font-mono text-sm text-muted-foreground">
                           Point: {at || "click the screen to pick one"}
                         </span>
                         {button(CLICK, { at }, !parsePoint(at))}
+                      </div>
+                      {/* Typing goes wherever the caret already is, so tap the field
+                          with Click at X,Y first - the screen above shows whether it
+                          took focus. Printable ASCII only; the game's keyboard
+                          cannot send the rest. */}
+                      <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+                        <Input
+                          className="h-9 w-full sm:w-72"
+                          placeholder="Text to type into the focused field"
+                          maxLength={MAX_TYPE}
+                          value={text}
+                          onChange={(e) => setText(e.target.value)}
+                        />
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {text.length}/{MAX_TYPE}
+                        </span>
+                        {button(TYPE, { text }, !text)}
                         <DialogClose asChild>
-                          <Button>Done</Button>
+                          <Button className="ml-auto">Done</Button>
                         </DialogClose>
                       </div>
                     </DialogContent>
                   </Dialog>
-                  {/* Typing goes to whatever field is focused, so tap it with Click
-                      at X,Y first. Printable ASCII only - the game's keyboard
-                      cannot send the rest. */}
-                  <Input
-                    className="h-9 w-full sm:w-72"
-                    placeholder="Text to type into the focused field"
-                    maxLength={MAX_TYPE}
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                  />
-                  {button(TYPE, { text }, !text)}
                 </div>
               )}
             </div>
