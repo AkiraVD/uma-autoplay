@@ -974,6 +974,32 @@ def do_something(results):
     info("All stats capped or no valid training.")
     return None
 
+  # ADVISORY ONLY - this decides nothing and changes no behaviour.
+  #
+  # The race-vs-train planner needs to know how good this turn's best training
+  # is, and training_score is the number it would judge. But do_something only
+  # reaches that scorer through most_support_card, so in any year that takes
+  # the rainbow path it is never computed at all: it appears twice in a whole
+  # career log, both times for wit. rainbow_training's own "total=" lines are a
+  # different scale and cannot stand in for it.
+  #
+  # So score all five here and log what the planner would have concluded. That
+  # gives real turns to calibrate STRONG_TRAINING_SCORE against before anything
+  # is allowed to act on it. Costs no OCR - it is arithmetic over `results`,
+  # which has already been read.
+  try:
+    scored = sorted(((training_score((key, data))[0], key)
+                     for key, data in filtered.items()), reverse=True)
+    if scored:
+      best, best_key = scored[0]
+      verdict = "TRAIN" if best >= STRONG_TRAINING_SCORE else "a race is affordable"
+      debug("planner: " + ", ".join(f"{k}={s:.2f}" for s, k in scored)
+            + f" | best {best_key.upper()}={best:.2f} vs STRONG="
+            + f"{STRONG_TRAINING_SCORE} -> {verdict}")
+  except Exception as e:
+    # Advisory only, so it must never be able to break a turn.
+    debug(f"planner: scoring failed, ignored ({e}).")
+
   # The run for the 18th song, when the config says the gold skill is wanted.
   # Banking energy is worth more than one turn of Performance points in every
   # other situation, but in Senior H2 a turn that pays a type the last song
