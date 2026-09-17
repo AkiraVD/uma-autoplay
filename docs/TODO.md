@@ -29,15 +29,19 @@ rarity, and the server's pickers. Two uses are still open:
 
 ## Untested paths, each waiting on a screen that has not appeared
 
-- **`set_skip_x2()`'s press path.** The button was already x2 when the handler
-  first ran, so it read the state and returned without pressing. Zero
-  occurrences of "Story Skip reads" in any log, so it still has never pressed.
 - **A skill row at max hint (level 5).** Still only ever watched refusing: all
   871 of the logged lines are `is not at max hint ... leaving it for the end of
   the career`, and not one is an acceptance.
 - **`unity_begin_showdown`'s settle delay** against a live Team Zenith screen.
 
-Cleared on 2026-09-17, kept briefly as a record of what the evidence was:
+Cleared, kept briefly as a record of what the evidence was:
+
+- ~~`set_skip_x2()`'s press path~~ - fired 2026-09-18 at 00:02:34 on a fresh
+  Trackblazer career, the first time in any log: `Story Skip reads off;
+  pressing for x2.` then `Story Skip reads x1; pressing for x2.` Two presses,
+  Off -> x1 -> x2, with the state re-read between them rather than counted from
+  an assumed start. The lobby followed at 00:02:43. It had never pressed before
+  only because the button happened to already be x2 every previous time.
 
 - ~~`login_bonus` has never fired live~~ - fired at 22:39:51 during a daily
   reset, and the reload resumed the career correctly through Continue Career.
@@ -73,9 +77,10 @@ Worth deriving properly if the behaviour ever looks wrong:
   `set_skip_x2` runs from the lobby, and deliberately - `execute.py` notes that
   a global handler would press it on race and story screens that drive it
   themselves - but the Skip button sits at the same `(567, 1052)` on the story
-  UI. Measured 2026-09-18: the intro ran from 23:58:26 to past 00:01:17 still
-  inside `Trainee Event: Self-Introduction`, long enough to trip the
-  "not in the career lobby for 20 checks" recovery. Worth weighing a
+  UI. Measured 2026-09-18: 23:58:26 to 00:02:43, roughly 28 taps through
+  `Trainee Event: Self-Introduction`, long enough to trip the "not in the
+  career lobby for 20 checks" recovery once before the lobby appeared. About
+  four minutes a career, so this is a small win, not a stall - worth weighing a
   story-screen-only exception against the risk that comment names.
 - **The trainee aptitude warning ignores legacy inheritance.** `core/trainee.py`
   reads base aptitudes from master.mdb, but the Legacy screen raises them before
