@@ -1,4 +1,4 @@
-# Uma Stable Bot
+# Uma Autoplay
 
 A bot that plays Umamusume careers for you: training, races, events, skills and the scenario mechanics, start to finish. It can run in the background on Linux while you use your desktop, and you watch and control it from a web page, including from your phone.
 
@@ -6,7 +6,7 @@ A bot that plays Umamusume careers for you: training, races, events, skills and 
 
 ## Credits
 
-Uma Stable Bot started as a fork of [samsulpanjul/umamusume-auto-train](https://github.com/samsulpanjul/umamusume-auto-train) (its [discord server](https://discord.gg/vKKmYUNZuk), [demo video](https://youtu.be/CXSYVD-iMJk)), which was inspired by [shiokaze/UmamusumeAutoTrainer](https://github.com/shiokaze/UmamusumeAutoTrainer). It has since grown far enough apart to go by its own name. Thanks to both projects.
+Uma Autoplay started as a fork of [samsulpanjul/umamusume-auto-train](https://github.com/samsulpanjul/umamusume-auto-train) (its [discord server](https://discord.gg/vKKmYUNZuk), [demo video](https://youtu.be/CXSYVD-iMJk)), which was inspired by [shiokaze/UmamusumeAutoTrainer](https://github.com/shiokaze/UmamusumeAutoTrainer). It has since grown far enough apart to go by its own name. Thanks to both projects.
 
 # ⚠️ USE IT AT YOUR OWN RISK ⚠️
 
