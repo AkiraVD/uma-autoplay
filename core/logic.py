@@ -546,7 +546,7 @@ def rainbow_training(results):
   }
 
   if not rainbow_candidates:
-    info("No rainbow training found under failure threshold.")
+    info("No training cleared the weight threshold under the failure limit.")
     return None
 
   # Find support card rainbow in training
@@ -560,7 +560,17 @@ def rainbow_training(results):
 
   best_key, best_data = best_rainbow
 
-  info(f"Rainbow training selected: {best_key.upper()} with {best_data['rainbow_points']} rainbow points and {best_data['failure']}% fail chance")
+  # "Rainbow points" was a misleading name: the number is mostly support count,
+  # hints and the measured stat gains, and only partly rainbows. A board with
+  # three blue supports and no rainbow at all scores 5.863, where a board with
+  # one genuine rainbow scores 4.513 - so the figure was routinely reported as
+  # "rainbow points" on facilities holding none. Say what it is, and say how
+  # many rainbows actually contributed.
+  rainbows = best_data["total_rainbow_friends"]
+  info(f"Training selected: {best_key.upper()} with training weight"
+       f" {best_data['rainbow_points']:.3f} from {rainbows} rainbow(s),"
+       f" {best_data.get('total_supports', 0)} support(s)"
+       f" and {best_data['failure']}% fail chance")
   return best_key
 
 def filter_by_stat_caps(results, current_stats, game_caps=None):
@@ -1051,7 +1061,7 @@ def do_something(results):
   else:
     result = rainbow_training(filtered)
     if result is None:
-      info("Falling back to most_support_card because rainbow not available.")
+      info("No training cleared the weight threshold; falling back to most_support_card.")
       result = most_support_card(filtered)
 
   if result is None:

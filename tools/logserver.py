@@ -43,8 +43,13 @@ PATTERNS = {
   "headroom": r"^Stat headroom: (\{.+\})$",
   "action": r"^(Training [A-Z]+\.|Race Day\.|Going out with the friend support\.|"
             r"No friend outing on offer, plain recreation\.|Rest.*|URA Finale)$",
-  "reason": r"^(Rainbow training selected: .+|Best training: .+|"
-            r"Going on a Recreation outing: .+|Falling back to .+)$",
+  # "Rainbow training selected" was renamed to "Training selected ... training
+  # weight", because the number is mostly support count, hints and measured
+  # gains rather than rainbows. The old spelling stays matched so a log written
+  # by an older run still parses.
+  "reason": r"^(Training selected: .+|Rainbow training selected: .+|Best training: .+|"
+            r"Going on a Recreation outing: .+|Falling back to .+|"
+            r"No training cleared the weight threshold.*)$",
   "chain": r"^Recreation panel: ([a-z-]+) at step (\d+) of (\d+)",
   "readback": r"^(Outing readback for .+)$",
 }
