@@ -1241,6 +1241,32 @@ side, matching the whole table.
 rewards screen shows a medal icon worth 600 of something, but it is not the
 Climax Store coin, so `coins_for()` must not be applied to these three races.
 
+#### Driving a Climax race: the six screens
+
+Walked twice by hand, rounds 1 and 2, with identical positions both times. The
+bot cannot do this yet, so this is the recipe a Trackblazer race-day handler
+needs:
+
+| # | Screen | Press |
+|---|---|---|
+| 1 | Climax lobby (Race Day pill) | **TS Climax Race!** (537,908) |
+| 2 | Race List | **Race** (552,913) |
+| 3 | `Race Details` - "Enter race?" | **Race** (686,775) |
+| 4 | Race prep (stats, strategy) | **Race** (642,990) |
+| 5 | Lineup, **full 1920 width** | **Race!** (960,999) |
+| 6 | race running | skip, then Next (679,992) |
+
+Then two more screens before the lobby returns: a rewards screen whose **Next
+is a decorated button at (552,1000)** that matches no template we have, and a
+standings screen (`RANK n /16`) with Next at (553,939).
+
+Two traps in there. Step 5 is drawn at the full screen width rather than in the
+usual x 148-958 panel, so its button sits at x=960. And the race view's skip is
+`skip_btn_big.png` at **(1685,987)**, outside `SCREEN_BOTTOM_REGION` (x
+125-1000) - which is why `tools/umatool.py skiprace`, which searches the whole
+screen, drives this fine while `race_day()`'s region-scoped searches cannot.
+Skip count varies with the cinematic: 3 clicks for round 1, 5 for round 2.
+
 **The facility row on a race day is replaced.** No Rest, Training, Infirmary,
 Recreation or Races - only three buttons:
 
