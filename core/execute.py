@@ -14,6 +14,7 @@ import re
 import time
 from rapidfuzz import fuzz
 import core.state as state
+import core.scenarios as scenarios
 from core.state import check_support_card, check_unity_icons, check_failure, check_turn, check_mood, check_current_year, check_criteria, check_skill_pts, check_energy_level, check_energy_reserved, get_race_type, check_status_effects, check_aptitudes, check_credit, check_outing_available, check_recreation_panel, read_log_lines
 from core.logic import do_something, decide_race_for_goal, training_value, should_recreate, has_extreme_burst
 
@@ -658,16 +659,21 @@ def select_event():
 def race_day():
   if state.stop_event.is_set():
     return
-  # URA Finale race days replace the usual lobby with a two-button layout whose
-  # pink "URA Finale Race!" button does not match race_day_btn.png (~0.47), so
-  # without this the bot sits in the lobby and never starts the Finale.
+  # A race day replaces the usual lobby with a layout whose big race button does
+  # not match race_day_btn.png (~0.47 on URA's), so without this the bot sits in
+  # the lobby and never starts the finale. Which button, and where it sits, is
+  # the mode's business - see core/scenarios.py.
+  mode = scenarios.current()
   if not click(img="assets/buttons/race_day_btn.png", minSearch=get_secs(10), region=constants.SCREEN_BOTTOM_REGION):
-    if not click(img="assets/buttons/ura_finale_race_btn.png", minSearch=get_secs(3), region=constants.SCREEN_BOTTOM_REGION, text="URA Finale race day."):
-      # Heavily animated, so the template match is marginal. The button does not
-      # move, so click where it lives - which depends on the scenario.
-      x, y = (constants.GC_FINALE_RACE_MOUSE_POS if state.GRAND_CONCERT_SEEN
-              else constants.FINALE_RACE_MOUSE_POS)
-      click(boxes=(x, y, 1, 1), text="URA Finale race day (by position).")
+    if not click(img=mode["race_day_asset"], minSearch=get_secs(3),
+                 region=constants.SCREEN_BOTTOM_REGION,
+                 text=f"{mode['name']} race day."):
+      # URA's button is heavily animated, so its template match is marginal and
+      # this fallback is what usually runs. It does not move, so click where it
+      # lives. Trackblazer's template is reliable (0.923 vs 0.411), so for that
+      # mode this is only a backstop.
+      x, y = mode["race_day_pos"]
+      click(boxes=(x, y, 1, 1), text=f"{mode['name']} race day (by position).")
 
   click(img="assets/buttons/ok_btn.png")
   sleep(0.5)

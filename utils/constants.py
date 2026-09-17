@@ -166,6 +166,11 @@ FINALE_RACE_MOUSE_POS = (690, 905)
 # URA position above lands on the Lessons button's edge there, and
 # ura_finale_race_btn.png only reaches 0.75, so the fallback is what runs.
 GC_FINALE_RACE_MOUSE_POS = (545, 925)
+# Trackblazer ends in the Twinkle Star Climax, not the URA Finale, and its race
+# day lays out Skills (340) / TS Climax Race! (537) / Shop (755). URA's position
+# above falls in the gap beside the Shop, which is where the bot kept landing:
+# three laps, 0/3 races run. Measured by hand on 2026-09-17.
+TB_CLIMAX_RACE_MOUSE_POS = (537, 908)
 # The career-complete screen puts its own Skills / Complete Career buttons at
 # the bottom of the game panel. The in-career skills_btn template does not
 # match them (0.59), so these two are reached by position.
