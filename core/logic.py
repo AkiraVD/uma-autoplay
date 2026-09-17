@@ -1,5 +1,6 @@
 import core.state as state
 import core.outings as outings
+import core.planner as planner
 import core.training_cost as training_cost
 from core.state import check_current_year, stat_state, stat_caps_state, check_energy_level, check_aptitudes
 from utils.log import info, warning, error, debug
@@ -470,6 +471,18 @@ WIT_BAND_MIN_RAINBOWS = 1
 # Energy at the time do_something ran, for the wit band. Read once per turn
 # and published rather than re-read, the same way the stat headroom is.
 _energy_level = None
+
+# The goal text and turn counter, published by career_lobby before it calls
+# do_something. They exist only for the advisory planner: do_something receives
+# `results` and nothing else, so the criteria cannot reach it otherwise, and
+# reading it again here would cost a second OCR pass on every turn.
+_goal_context = {}
+
+
+def set_goal_context(criteria=None, turn=None):
+  """Publish this turn's goal text and turns-left for the advisory planner."""
+  global _goal_context
+  _goal_context = {"criteria": criteria, "turn": turn}
 # Whether the last turn was inside the band, so entering and leaving it is
 # logged once instead of on every turn - energy sits in the band most of the
 # time, which made an every-turn line pure noise.
@@ -1003,13 +1016,33 @@ def do_something(results):
                      for key, data in filtered.items()), reverse=True)
     if scored:
       best, best_key = scored[0]
-      verdict = "TRAIN" if best >= STRONG_TRAINING_SCORE else "a race is affordable"
-      debug("planner: " + ", ".join(f"{k}={s:.2f}" for s, k in scored)
-            + f" | best {best_key.upper()}={best:.2f} vs STRONG="
-            + f"{STRONG_TRAINING_SCORE} -> {verdict}")
+      scores = {k: s for s, k in scored}
+      debug("planner scores: " + ", ".join(f"{k}={s:.2f}" for s, k in scored)
+            + f" | best {best_key.upper()}={best:.2f}")
+
+      # What core/planner.py would decide, given this turn. Still advisory: the
+      # verdict is logged and thrown away, so a career's worth of them can be
+      # read back before anything is allowed to act on it.
+      #
+      # `opportunities` is a crude stand-in. The planner wants it in the goal's
+      # own units - races for a count goal, fans for a fan goal - and all this
+      # has is turns remaining, which is only an upper bound of one race per
+      # turn, and plain wrong units for Result Pts. So the line prints the
+      # inputs beside the verdict rather than presenting it as authoritative.
+      goal = planner.parse_goal(_goal_context.get("criteria"))
+      turns_left = _goal_context.get("turn")
+      opportunities = turns_left if isinstance(turns_left, int) and turns_left >= 0 else None
+      action, why = planner.decide(
+        goal, opportunities, energy_level, scores,
+        skip_training_energy=state.SKIP_TRAINING_ENERGY)
+      ratio = planner.training_is_worth_keeping(scores)
+      debug(f"planner would: {action or 'defer'} - {why}"
+            f" [goal={goal}, opportunities={opportunities}"
+            f" (turns-left proxy), energy={energy_level:.0f},"
+            f" standout={ratio}]")
   except Exception as e:
     # Advisory only, so it must never be able to break a turn.
-    debug(f"planner: scoring failed, ignored ({e}).")
+    debug(f"planner: advisory failed, ignored ({e}).")
 
   # The run for the 18th song, when the config says the gold skill is wanted.
   # Banking energy is worth more than one turn of Performance points in every

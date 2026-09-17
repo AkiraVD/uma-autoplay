@@ -102,12 +102,46 @@ def test_no_opinion_cases():
   """None must mean 'use the existing logic', never 'do nothing'."""
   a, _ = P.decide(None, 10, 60, {"a": 3.0}, skip_training_energy=35)
   ok("no measurable goal -> no opinion", a is None)
-  a, _ = P.decide(("points", 5), None, 60, {"a": 3.0}, skip_training_energy=35)
-  ok("no race count -> no opinion", a is None)
+  # A missing count no longer means "no opinion" on its own: the slack branch
+  # is skipped and the board decides instead, so a flat one is needed here.
+  # test_missing_count_falls_through_to_the_board covers both sides.
+  a, _ = P.decide(("points", 5), None, 60, {"a": 2.0, "b": 1.9, "c": 1.8},
+                  skip_training_energy=35)
+  ok("no race count and a flat board -> no opinion", a is None)
   a, _ = P.decide(("points", 5), 10, None, {"a": 3.0}, skip_training_energy=35)
   ok("unknown energy -> no opinion", a is None)
   a, _ = P.decide(("points", 0), 10, 60, {"a": 3.0}, skip_training_energy=35)
   ok("an already-met goal -> no opinion", a is None)
+
+def test_a_unit_mismatch_is_not_urgency():
+  """Caught when the advisory was first wired, and worth pinning.
+
+  `remaining` is in points or fans; a caller with only the turn counter would
+  pass turns. 212 points against 9 turns gives slack -203, so every single turn
+  reads as "no time left" and the board never gets a say - the planner would
+  have said "race" for a whole career and looked like it was working.
+  """
+  flat = {"a": 2.98, "b": 2.53, "c": 1.10}
+  standout = {"a": 8.42, "b": 2.22, "c": 0.66}
+  a1, w1 = P.decide(("points", 212), 9, 60, flat, skip_training_energy=35)
+  a2, w2 = P.decide(("points", 212), 9, 60, standout, skip_training_energy=35)
+  ok("a mismatched count does not force a race", a1 != "race", f"{a1}: {w1}")
+  ok("and the board still decides", a2 == "train", f"{a2}: {w2}")
+  ok("the two boards disagree, which is the point", a1 != a2, f"{a1} vs {a2}")
+
+def test_missing_count_falls_through_to_the_board():
+  standout = {"a": 8.42, "b": 2.22, "c": 0.66}
+  flat = {"a": 2.98, "b": 2.53, "c": 1.10}
+  a1, _ = P.decide(("points", 50), None, 60, standout, skip_training_energy=35)
+  a2, _ = P.decide(("points", 50), None, 60, flat, skip_training_energy=35)
+  ok("no count + standout -> keep the turn", a1 == "train")
+  ok("no count + flat board -> no opinion", a2 is None)
+
+def test_a_credible_count_still_uses_slack():
+  """A count goal in its own units must keep working."""
+  standout = {"a": 8.42, "b": 2.22, "c": 0.66}
+  a, w = P.decide(("points", 2), 2, 60, standout, skip_training_energy=35)
+  ok("2 needed against 2 chances still races", a == "race", w)
 
 def test_slack_arithmetic():
   ok("spare chances", P.slack(2, 5) == 3)
@@ -123,6 +157,9 @@ for test in [test_parses_the_two_measurable_goals,
              test_the_ratio_matches_the_measured_turns,
              test_degenerate_boards,
              test_no_opinion_cases,
+             test_a_unit_mismatch_is_not_urgency,
+             test_missing_count_falls_through_to_the_board,
+             test_a_credible_count_still_uses_slack,
              test_slack_arithmetic]:
   print(f"\n-- {test.__name__}")
   test()

@@ -152,10 +152,25 @@ def decide(goal, opportunities, energy, scores,
     return None, f"{kind} goal already met"
 
   if opportunities is None:
-    return None, "no race count for the remaining turns"
+    # No count in the goal's units, so deadline pressure cannot be judged. Fall
+    # through to the board rather than guessing: a wrong slack reading is worse
+    # than none, because it always errs toward "race".
+    if training_is_worth_keeping(scores, ratio):
+      return "train", "no race count available, but this board has a standout"
+    return None, "no race count in the goal's units"
 
-  # For a count goal each race is worth one; for fans each is worth whatever it
-  # pays, so the caller passes opportunities already expressed in goal units.
+  # Opportunities must be in the goal's own units: races for a count goal, but
+  # points or fans for those. Turns-left is NOT a substitute - 212 points
+  # against 9 turns gives slack -203, so every turn reads as "no time left" and
+  # the board never gets a say. Refuse the comparison instead of letting a unit
+  # mismatch masquerade as urgency.
+  if kind in ("points", "fans") and opportunities < remaining / 10:
+    if training_is_worth_keeping(scores, ratio):
+      return "train", (f"{opportunities} is not a credible {kind} count for"
+                       f" {remaining} needed, so judging on the board: standout")
+    return None, (f"{opportunities} is not a credible {kind} count for"
+                  f" {remaining} needed - units look mismatched")
+
   spare = slack(remaining, opportunities)
   if spare <= 0:
     return "race", (f"{remaining} {kind} still needed with only {opportunities} chance(s)"

@@ -16,7 +16,7 @@ from rapidfuzz import fuzz
 import core.state as state
 import core.scenarios as scenarios
 from core.state import check_support_card, check_unity_icons, check_failure, check_turn, check_mood, check_current_year, check_criteria, check_skill_pts, check_energy_level, check_energy_reserved, get_race_type, check_status_effects, check_aptitudes, check_credit, check_outing_available, check_recreation_panel, read_log_lines
-from core.logic import do_something, decide_race_for_goal, training_value, should_recreate, has_extreme_burst
+from core.logic import do_something, decide_race_for_goal, training_value, should_recreate, has_extreme_burst, set_goal_context
 
 from utils.log import info, warning, error, debug
 import utils.constants as constants
@@ -1565,6 +1565,11 @@ def career_lobby():
       sleep(0.5)
       results_training = check_training()
 
+    # Published for the advisory planner, the way the headroom and energy
+    # readings are: do_something() only receives `results`, so the goal text
+    # and the turn counter cannot reach it any other way. Advisory only - the
+    # planner logs a verdict and nothing acts on it yet.
+    set_goal_context(criteria, turn)
     best_training = do_something(results_training)
     # A friend-type support pays out through outings, not the training
     # facilities, and the outing also clears conditions and returns energy.
