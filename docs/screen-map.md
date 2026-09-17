@@ -1209,6 +1209,45 @@ selection needs, in one place: grade badge, track line
 - The Junior goal reads **`60 Result Pts`**, matching
   `TARGETS["turf"]["junior"] = 60`.
 
+#### The Twinkle Star Climax (2026-09-17)
+
+Trackblazer's replacement for the URA Finale: three races, highest total wins.
+Measured from one frame on a Race Day, so treat the positions as approximate.
+
+**It introduces a year string nothing else produces**: `TS Climax Races
+Underway`, with the title bar reading `TS CLIMAX`. The goal line is
+`Win the Twinkle Star Climax series` with `Current Rank <trophy> RANK -`; the
+rank is a badge rather than text, so OCR returns the literal word "RANK".
+
+**There is no turn counter.** The box that normally holds "N turn(s) left" is
+replaced by a red **Race Day** pill, so anything parsing turns left has nothing
+to read here.
+
+**The facility row is replaced.** No Rest, Training, Infirmary, Recreation or
+Races - only three buttons:
+
+| Element | Position |
+|---|---|
+| title `TS CLIMAX` / year label | (203,17) / (347,45) |
+| **Race Day** pill (where the turn counter was) | ~(310,115) |
+| goal EX badge / text / Details | (410,88) / (595,73) / (805,86) |
+| **RANKING** badge / points / **`0/3 Races`** | (222,185) / (222,265) / (213,308) |
+| Training Items (+ count badge) / Full Stats | (713,708) + (738,682) / (793,708) |
+| Skills / **TS Climax Race!** / Shop | (350,915) / (550,900) / (752,915) |
+| shop coin balance | ~(752,963) |
+
+**The shop stays open through the Climax**, still holding its coin balance.
+That matches uma.guide's note that a hammer can be bought just before the
+finals, and it is the last chance to spend coins, which expire with the career.
+The Training Items button shows a count badge for stored items.
+
+**Gotcha for the race schedule.** `career_lobby()` guards the schedule block
+with `len(year_parts) > 3 and year_parts[3] not in ["Jul", "Aug"]`. This year
+string splits to `["TS", "Climax", "Races", "Underway"]`, so `year_parts[3]` is
+`"Underway"` and the guard passes - the schedule block runs during the Climax.
+Harmless with an empty schedule, but a configured one would try to select a
+scheduled race on a Climax race day, where the Races button does not exist.
+
 ### Still unverified - only exists inside a career
 
 The shop / Climax Store itself and its 6-turn refresh and costs, rival races
