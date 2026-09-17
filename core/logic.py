@@ -793,8 +793,9 @@ def turns_until_summer(year_text):
   """Turns from now until the first camp turn, or None when there is none.
 
   The year string is "<Junior|Classic|Senior> Year <Early|Late> <Mon>", so
-  "Junior Year Pre-Debut" and "Finale Season" have no month to read and fall
-  out as None rather than needing their own cases. Returns None from Early Jul
+  "Junior Year Pre-Debut", "Finale Underway" and Trackblazer's "TS Climax
+  Races Underway" have no month to read and fall out as None rather than
+  needing their own cases. Returns None from Early Jul
   onwards too: once camp has started there is nothing left to prepare for.
   """
   parts = (year_text or "").split(" ")

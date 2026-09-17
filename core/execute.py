@@ -22,7 +22,6 @@ from utils.log import info, warning, error, debug
 import utils.constants as constants
 
 from core.recognizer import is_btn_active, multi_match_templates, match_template
-from utils.scenario import ura
 from core.skill import buy_skill
 from core.gains import check_stat_gains
 from core.events import event_choice, get_event_name
@@ -1463,23 +1462,15 @@ def career_lobby():
       if lessons.visit(energy_level, year, turn, button=lessons_button):
         continue
 
-    # URA SCENARIO
-    if year == "Finale Season" and turn == "Race Day":
-      info("URA Finale")
-      if state.IS_AUTO_BUY_SKILL and not auto_buy_skill():
-        continue
-      ura()
-      for i in range(2):
-        click(img="assets/buttons/race_btn.png", minSearch=get_secs(2))
-        sleep(0.5)
-
-      race_prep()
-      sleep(1)
-      after_race()
-      continue
-
-    # If calendar is race day, do race
-    if turn == "Race Day" and year != "Finale Season":
+    # If the calendar says race day, race. Every mode's finale comes through
+    # here too. A separate branch used to handle `year == "Finale Season"`, but
+    # that string is not one the game produces - check_current_year reports
+    # "Finale Underway", and Trackblazer "TS Climax Races Underway" - so it
+    # never executed once in any career, in any mode. It was removed rather
+    # than repaired: it was a weaker copy of race_day() with no confirm-dialog
+    # click and no position fallback, and race_day() has driven every finale
+    # all along, which is why that function carries the URA-specific asset.
+    if turn == "Race Day":
       info("Race Day.")
       if (state.IS_AUTO_BUY_SKILL and year_parts[0] != "Junior"
           and not auto_buy_skill()):

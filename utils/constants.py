@@ -24,7 +24,6 @@ FULL_STATS_STATUS_REGION=(265, 575, 845-265, 940-575)
 FULL_STATS_APTITUDE_REGION=(395, 340, 820-395, 440-340)
 
 SCROLLING_SELECTION_MOUSE_POS=(560, 680)
-SKILL_SCROLL_BOTTOM_MOUSE_POS=(560, 850)
 
 # Dragging the skill list. Measured on a live buy screen, and every number here
 # is a correction to something that was wrong:
