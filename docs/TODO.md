@@ -11,8 +11,9 @@ history (`git log -p docs/TODO.md`) and the measured screen layouts are in
   and a per-discipline circle/triangle/cross row in the confirmation modal.
   Beating a harder team raises team rank, which drives facility levels; losing
   it lowers them.
-- **Trackblazer: plays, but cannot finish a Climax race.** See the Trackblazer
-  section below for what exists and what is left. Feasible by OCR - UMAT has a
+- **Trackblazer: plays, and finishes Climax races.** Rounds 1 and 2 ran end to
+  end unattended on 2026-09-18. See the Trackblazer section below for what is
+  still left. Feasible by OCR - UMAT has a
   full OCR implementation - but not a liftable module: they fork the whole bot
   per scenario, and the genuinely new parts are the shop database (now
   generated from master.mdb), item purchase and item use.
@@ -73,6 +74,13 @@ Worth deriving properly if the behaviour ever looks wrong:
   is still not derived anywhere, and the turn counter cannot supply one - it
   counts down to the next race day rather than the end of the career, and reads
   -1 (unreadable) throughout Trackblazer's climax.
+- **`auto_buy_skill()` scans the whole list on every race day and buys
+  nothing.** Measured 2026-09-18 across the three Climax race days: 16
+  `leaving it for the end of the career` refusals and **zero** purchases, at
+  ~6m51s for round 1 (three full rewind-and-scan cycles) and ~2m09s for round
+  2 (one). The refusals are the documented max-hint rule working as intended;
+  the cost is that the scan runs anyway. Worth an early-out when the tier list
+  and hint state cannot produce a buy.
 - **The career intro plays at Skip Off**, so every story line costs a ~9 s tap.
   `set_skip_x2` runs from the lobby, and deliberately - `execute.py` notes that
   a global handler would press it on race and story screens that drive it
@@ -126,11 +134,22 @@ now measured; `screen-map.md` has the geometry. What exists:
 
 Still to do:
 
-- **A Climax race cannot be finished.** `race_day()` starts one, but the
-  full-width lineup **Race!** (960,999) and the rewards **Next** (552,1000)
-  have no template - the best existing matches score 0.475 and 0.528, so both
-  need cutting - and `race_prep()`/`after_race()` cannot drive those screens.
-  The six-screen sequence is written up in `screen-map.md`.
+- ~~**A Climax race cannot be finished.**~~ It can. Rounds 1 and 2 both ran
+  unattended on 2026-09-18 with no new templates: `race_day()` pressed
+  `assets/trackblazer/ts_climax_race_btn.png` (its second branch - the generic
+  `race_day_btn.png` does not match, exactly as that function's comment says),
+  and the whole race collapsed into a single `Next.` The game's own readback
+  recorded it: `Run in TS Climax Race 1 (EX)` / "Competed as the number 1
+  favorite and won", followed by the `After the First Climax Race` scenario
+  event, and the standings screen read `RANK 1 /16` with `10 pt(s)` - matching
+  `CLIMAX_VP[1]`.
+
+  So the missing lineup **Race!** (960,999) and rewards **Next** (552,1000)
+  templates are **not** blockers. The six-screen walk in `screen-map.md` was
+  measured by hand without the game's `Skip >>` / `Quick` buttons, which are
+  present on those screens and collapse the sequence. Cutting those two
+  templates is still worth doing for a deliberate handler, but nothing is
+  waiting on them.
 - **Auto-detect.** `saw_scenario("trackblazer", ...)` still has no caller. The
   lobby's Result Pts badge or the Shop facility button are the obvious tells.
 - **Result Pts HUD.** The in-career badge reads `<Year> Result Pts` and a bare
