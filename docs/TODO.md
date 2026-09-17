@@ -11,11 +11,11 @@ history (`git log -p docs/TODO.md`) and the measured screen layouts are in
   and a per-discipline circle/triangle/cross row in the confirmation modal.
   Beating a harder team raises team rank, which drives facility levels; losing
   it lowers them.
-- **Trackblazer: mode plumbing only.** See the Trackblazer section below for
-  what exists and what is left. Feasible by OCR - UMAT has a full OCR
-  implementation - but not a liftable module: they fork the whole bot per
-  scenario, and the genuinely new parts are the ~54KB shop database, item
-  purchase and item use.
+- **Trackblazer: plays, but cannot finish a Climax race.** See the Trackblazer
+  section below for what exists and what is left. Feasible by OCR - UMAT has a
+  full OCR implementation - but not a liftable module: they fork the whole bot
+  per scenario, and the genuinely new parts are the shop database (now
+  generated from master.mdb), item purchase and item use.
 
 ## master.mdb
 
@@ -29,19 +29,24 @@ rarity, and the server's pickers. Two uses are still open:
 
 ## Untested paths, each waiting on a screen that has not appeared
 
-- **`login_bonus`** has never fired live - zero occurrences in any log. It only
-  shows after a reload or the daily reset, so it is fixture-verified only.
 - **`set_skip_x2()`'s press path.** The button was already x2 when the handler
-  first ran, so it read the state and returned without pressing. Its first real
-  exercise is the next career start, when the game resets Skip to Off.
-- **A skill row at max hint (level 5).** Mid-career buying has been watched
-  refusing, never accepting.
-- **A three-option event.** Only two-option panels have been seen, across 9 real
-  ones. Nothing assumes a count, but the header spacing is unchecked and
-  `LAST_EVENT_CHOICE_ICON_TOP` suggests up to five are possible.
-- **The Effects-button fallback.** "Always display choice effects" has been On
-  throughout, so the panel opens by itself and that path has never run.
+  first ran, so it read the state and returned without pressing. Zero
+  occurrences of "Story Skip reads" in any log, so it still has never pressed.
+- **A skill row at max hint (level 5).** Still only ever watched refusing: all
+  871 of the logged lines are `is not at max hint ... leaving it for the end of
+  the career`, and not one is an acceptance.
 - **`unity_begin_showdown`'s settle delay** against a live Team Zenith screen.
+
+Cleared on 2026-09-17, kept briefly as a record of what the evidence was:
+
+- ~~`login_bonus` has never fired live~~ - fired at 22:39:51 during a daily
+  reset, and the reload resumed the career correctly through Continue Career.
+- ~~A three-option event~~ - six seen, including `Lovely Training Weather` and
+  `New Year's Shrine Visit`, all with the first icon at `top=513`, which is
+  exactly what `option_count()` predicts for three.
+- ~~The Effects-button fallback~~ - fired 22 times
+  (`Choices panel is not open; using the Effects button`), so "Always display
+  choice effects" was evidently off for part of a run.
 
 ## Numbers that are reasoned rather than measured
 
@@ -84,32 +89,40 @@ Worth deriving properly if the behaviour ever looks wrong:
 - **Skill costs on screen are not read by the planner.** It takes them from the
   database, which assumes the OCR'd name resolved to the right skill.
 
-## Trackblazer: only the mode plumbing exists
+## Trackblazer
 
-`trackblazer` is selectable as a Game mode and `state.TRACKBLAZER_SEEN` is set
-from it, but **nothing reads that flag yet**. Every scenario-conditional branch
-in the bot tests `GRAND_CONCERT_SEEN` or `UNITY_SEEN` and falls through to the
-URA default, so a Trackblazer career currently runs as a plain URA one: it will
-train, race and finish, and it will not know about Track Pts, the shop, rival
-races or the Twinkle Star Climax.
+A full career was played on 2026-09-17, so most of this section's screens are
+now measured; `screen-map.md` has the geometry. What exists:
 
-Still to do, and each needs screens that only exist inside a running career
-(see the Trackblazer section of `screen-map.md` for what is already measured):
+- `core/scenarios.py` holds per-mode values and `race_day()` reads them, so a
+  Climax race day clicks the right button instead of URA's position.
+- `data/trackblazer_shop.json` is generated from master.mdb: 53 real items with
+  costs and decoded effects, replacing 25 guessed ones.
+- `core/trackblazer.py`'s tables are checked against the game - `CLIMAX_VP` at
+  six placements, `POINTS_BY_GRADE` at G3, `TARGETS` at Junior turf.
 
-- **Auto-detect.** `saw_scenario("trackblazer", ...)` exists but has no caller.
-  The only template cut so far is the Scenario Select card, which is never on
-  screen during a career, so a lobby-side tell has to be found.
-- **Track Pts HUD.** Read `<current>/<target>` per year. Expect a digit-template
-  bank rather than easyocr - these are the large outlined display glyphs that
-  needed `core/gains.py`'s bank, and a tight crop already misread `100/300` as
-  `100/30pt5`.
-- **Race selection by points.** Race rows show grade, points, coins, distance,
-  surface and aptitude on screen; master.mdb carries grade where
-  `data/races.json` does not. The goal is a per-year points target rather than a
-  fixed schedule, so `decide_race_for_goal()` needs a Trackblazer arm.
-- **The shop.** Refreshes every 6 turns, items cost Shop Coins earned by race
-  placement. Unmapped.
-- **Rival races and race-route epithets.** Unmapped.
+Still to do:
+
+- **A Climax race cannot be finished.** `race_day()` starts one, but the
+  full-width lineup **Race!** (960,999) and the rewards **Next** (552,1000)
+  have no template - the best existing matches score 0.475 and 0.528, so both
+  need cutting - and `race_prep()`/`after_race()` cannot drive those screens.
+  The six-screen sequence is written up in `screen-map.md`.
+- **Auto-detect.** `saw_scenario("trackblazer", ...)` still has no caller. The
+  lobby's Result Pts badge or the Shop facility button are the obvious tells.
+- **Result Pts HUD.** The in-career badge reads `<Year> Result Pts` and a bare
+  count - no `/target`, unlike the How to Play mock-up. Expect a digit-template
+  bank rather than easyocr, as `core/gains.py` needed.
+- **Race selection by points.** `decide_race_for_goal()` needs a Trackblazer
+  arm, and `data/races.json` carries no grade where master.mdb does.
+- **Reading the shop, and buying.** The flow is fully mapped but no code reads
+  it. Note a purchase is four screens deep and three different green buttons
+  share (686,997), so a reader must match on the title bar.
+- **Epithets.** The stat awards are documented from seriru's guide (+30/+20/+10
+  tiers) but nothing models them; they are the scenario's real stat engine.
+- **Nine mode gates** still branch inline on `GRAND_CONCERT_SEEN`/`UNITY_SEEN`
+  rather than going through `core/scenarios.py`. Moving `state.py:608` needs
+  the `scenarios` -> `state` import inverted first.
 - **Best Umamusume Award** at the end of each Late December turn, which raises
   the trainee's Unique Skill level. Not in any guide consulted; found by reading
   the in-game How to Play.
