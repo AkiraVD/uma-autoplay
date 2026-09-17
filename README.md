@@ -135,4 +135,4 @@ Both are skewed by your stat priority and weights, skip trainings above the fail
 ### Contribute
 
 If you run into any issues or something doesn’t work as expected, feel free to [open an issue](https://github.com/AkiraVD/uma-autoplay/issues).
-Contributions are very welcome! New features go on the `dev` branch, which is used for testing them before they reach the main branch.
+Contributions are very welcome!

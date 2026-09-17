@@ -35,7 +35,7 @@ def focus_umamusume():
   return True
 
 def main():
-  print("Uma Stable Bot!")
+  print("Uma Autoplay!")
   try:
     state.reload_config()
     state.stop_event.clear()

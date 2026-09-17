@@ -62,7 +62,7 @@ function App() {
           On a phone it wraps to several rows, so there it scrolls away instead. */}
       <header className="sm:sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center gap-x-4 gap-y-2 px-4 sm:px-8 py-2">
-          <h1 className="text-lg font-bold text-primary tracking-tight whitespace-nowrap">Uma Stable Bot</h1>
+          <h1 className="text-lg font-bold text-primary tracking-tight whitespace-nowrap">Uma Autoplay</h1>
           <nav aria-label="Views" className="flex items-center rounded-lg border border-border p-0.5">
             {VIEWS.map(([key, label]) => (
               <button
