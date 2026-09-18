@@ -100,6 +100,32 @@ things:
   backup, and the silence is indistinguishable from a clean run: it made a
   career with 3 warnings look like it had none.
 
+## The per-type split, and what older careers cannot do
+
+`Levels:` in the log is `total_friendship_levels` - one aggregate over all six
+card types (spd, sta, pwr, guts, wit and **friend**). But a rainbow is a card of
+the facility's *own* type at yellow or max, which `rainbow_training` reads from
+the per-type split, and `training_score` needs the same structure. A sum cannot
+be split back into its parts: `Levels:{'max': 3}` is equally three own-type
+cards (three rainbows) or one own-type plus two friend cards (one rainbow), and
+those two boards pick different facilities.
+
+Since **2026-09-18** the debug line carries the split as well, flat and only
+where it is non-zero, because nested braces five times a turn are unreadable
+and `spd:max=1` parses without them:
+
+```
+[SPD] → Total Supports 3, Levels:{...} , Fail: 20%, Gains: {...}, Energy -26, Split:[spd:max=1, friend:max=2]
+```
+
+`career_extract.py` stores it as `facilities.<key>.split`. Careers recorded
+*before* that date have no `Split:` clause and simply carry no `split` key -
+their `total_supports`, `failure`, `gains`, `energy_cost` and
+`total_friendship_levels` replay exactly, so `focus_max_friendships` (the Junior
+scorer) replays in full, but `rainbow_training` and `training_score` cannot be
+replayed against them at all. `trackblazer_20260918.json` is one of those: it
+predates the change by a few hours.
+
 ## Not built yet
 
 There is no replay harness. The fixture makes one straightforward - feed each

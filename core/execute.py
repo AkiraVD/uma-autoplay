@@ -410,7 +410,21 @@ def check_training():
     # can see one at all.
     energy_note = ("" if measured is None else
                    f", Energy -{measured:.0f}" + (f" (db -{base})" if abs(measured - base) >= 2 else ""))
-    debug(f"[{key.upper()}] → Total Supports {support_card_results['total_supports']}, Levels:{support_card_results['total_friendship_levels']} , Fail: {failure_chance}%{unity_note}{gains_note}{energy_note}")
+    # `Levels:` is the aggregate over all six card types, and a sum cannot be
+    # split back into its parts - so on its own it cannot say how many of this
+    # facility's cards are its OWN type, which is what a rainbow is. Reading a
+    # career back afterwards therefore could not replay rainbow_training or
+    # training_score at all (see docs/backtest.md). So print the per-type split
+    # too, flat and only where it is non-zero: nested braces would be unreadable
+    # five times a turn, and `spd:max=2` parses without them.
+    split = ", ".join(
+      f"{card_type}:{level}={count}"
+      for card_type, bucket in support_card_results.items()
+      if isinstance(bucket, dict) and "friendship_levels" in bucket
+      for level, count in bucket["friendship_levels"].items()
+      if count)
+    split_note = f", Split:[{split}]" if split else ""
+    debug(f"[{key.upper()}] → Total Supports {support_card_results['total_supports']}, Levels:{support_card_results['total_friendship_levels']} , Fail: {failure_chance}%{unity_note}{gains_note}{energy_note}{split_note}")
     sleep(0.1)
 
   click(img="assets/buttons/back_btn.png")

@@ -34,6 +34,14 @@ FACILITY = re.compile(
   r"\[(\w+)\]\s*.\s*Total Supports (\d+), Levels:(\{[^}]*\})\s*,"
   r" Fail: (\d+)%, Gains: (\{[^}]*\})(?:, Energy (-?\d+))?")
 
+# The per-type split, added 2026-09-18: `Split:[spd:max=2, friend:blue=1]`.
+# Careers recorded before that have no Split clause, so it is matched
+# separately and simply comes back empty for them - the aggregate in `Levels:`
+# cannot be split back into types, which is why those careers cannot replay
+# rainbow_training. See docs/backtest.md.
+SPLIT = re.compile(r"Split:\[([^\]]*)\]")
+SPLIT_ENTRY = re.compile(r"(\w+):(\w+)=(\d+)")
+
 PATTERNS = {
   "year": re.compile(r"^Year: (.+)$"),
   "turn": re.compile(r"^Turn: (.+)$"),
@@ -128,13 +136,20 @@ def extract(paths, since=None):
     face = FACILITY.search(message)
     if face:
       key, supports, levels, fail, gains, energy = face.groups()
-      current["facilities"][key.lower()] = {
+      record = {
         "supports": int(supports),
         "levels": _dict(levels),
         "failure": int(fail),
         "gains": _dict(gains),
         "energy_cost": int(energy) if energy is not None else None,
       }
+      found = SPLIT.search(message)
+      if found:
+        by_type = {}
+        for card_type, level, count in SPLIT_ENTRY.findall(found.group(1)):
+          by_type.setdefault(card_type, {})[level] = int(count)
+        record["split"] = by_type
+      current["facilities"][key.lower()] = record
       continue
 
     for name, pattern in PATTERNS.items():
