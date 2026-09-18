@@ -898,6 +898,16 @@ def check_turn():
     if glyph_read is not None and in_range(glyph_read, TURNS_LEFT_RANGE):
       return glyph_read
 
+    # Which path produced the number matters, and used to be invisible: the
+    # glyph bank and the easyocr fallback both return a bare int, so a wrong
+    # reading looked exactly like a right one. Two careers ran with Late Jul
+    # reading 1 where the truth was 11 - six times over - and nothing in either
+    # log said the fallback had been used at all. easyocr drops narrow digits
+    # (the failure core/gains.py's template bank exists to avoid), so a fallback
+    # reading is the first suspect whenever a turn count looks wrong.
+    why = "declined" if glyph_read is None else f"out of range ({glyph_read})"
+    debug(f"Turn glyph read {why}; falling back to OCR on the turn box.")
+
     # The region covers the goal counter and, in Unity Cup, the "Until the Unity
     # Cup" counter below it. The goal box is always the upper one, so take the
     # topmost number rather than the first one the OCR happens to emit.
@@ -906,6 +916,7 @@ def check_turn():
       for found in re.findall(r"\d+", text):
         numbers.append((by + bh / 2, int(found)))
     if not numbers:
+      debug(f"OCR found no number in the turn box either ({turn_text!r}); returning -1.")
       return -1
     numbers.sort(key=lambda n: n[0])
     turns_left = numbers[0][1]
@@ -913,6 +924,8 @@ def check_turn():
       warning(f"Turn count out of range, ignoring: {turn_text}")
       return -1
 
+    info(f"Turn {turns_left} came from the OCR fallback, not the glyph bank"
+         f" (raw {turn_text!r}) - treat it as suspect.")
     return turns_left
 
 # Check year
