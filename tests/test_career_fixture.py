@@ -109,6 +109,49 @@ def test_energy_is_the_reading_the_decision_was_made_on():
      all(v > 15 for v in others.values()), others)
 
 
+def test_the_split_is_carried_where_the_career_is_new_enough():
+  """Careers recorded from 2026-09-18 11:42 on must carry the per-type split.
+
+  `Levels:` is an aggregate over six card types, so on its own it cannot say
+  how many of a facility's cards are its OWN type - which is what a rainbow is,
+  and what `rainbow_training` and `training_score` both read. Without the split
+  those two scorers cannot be replayed at all.
+
+  This is pinned because a regression would be silent: drop the clause and
+  every other check in this file still passes, exactly as they did before the
+  split existed.
+  """
+  newer = os.path.join("tests", "fixtures", "careers", "trackblazer_20260918b.json")
+  if not os.path.exists(newer):
+    ok("the split-bearing career is present", False, "missing")
+    return
+  scored = [t for t in load(newer)["turns"] if t.get("facilities")]
+  missing = [t["time"] for t in scored
+             if not any("split" in f for f in t["facilities"].values())]
+  ok("every scored turn carries a split", not missing, missing[:5])
+
+  # A split must never contradict the aggregate it was taken from: summing the
+  # per-type buckets has to reproduce total_friendship_levels exactly.
+  bad = []
+  for turn in scored:
+    for key, face in turn["facilities"].items():
+      split = face.get("split") or {}
+      if not split:
+        continue
+      for level in ("gray", "blue", "green", "yellow", "max"):
+        summed = sum(b.get(level, 0) for b in split.values())
+        if summed != (face["levels"] or {}).get(level, 0):
+          bad.append((turn["time"], key, level, summed, face["levels"].get(level)))
+  ok("and the split sums back to the aggregate", not bad, bad[:3])
+
+  # The whole point: at least one turn where an own-type rainbow is recoverable
+  # and the aggregate alone could not have told you.
+  demo = [(t["time"], k) for t in scored for k, f in t["facilities"].items()
+          if (f.get("split") or {}).get(k, {}).get("yellow")
+          or (f.get("split") or {}).get(k, {}).get("max")]
+  ok("and own-type rainbows are recoverable", demo, f"{len(demo)} such facilities")
+
+
 def test_the_career_covers_the_whole_run():
   """Junior through the Climax, so a replay is not quietly missing a year."""
   if not os.path.exists(LIVE):
@@ -125,6 +168,7 @@ for test in [test_there_is_something_to_replay,
              test_every_fixture_is_structurally_sound,
              test_every_scored_turn_carries_a_decision,
              test_energy_is_the_reading_the_decision_was_made_on,
+             test_the_split_is_carried_where_the_career_is_new_enough,
              test_the_career_covers_the_whole_run]:
   print(f"\n-- {test.__name__}")
   test()

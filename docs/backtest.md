@@ -17,9 +17,15 @@ their shape.
 
 ## Recorded careers
 
-| Fixture | Run | Scenario / trainee | Turns | Decisions | Outcome |
-|---|---|---|---|---|---|
-| `trackblazer_20260918.json` | 2026-09-18, 23:57-01:55 | Trackblazer, `[Hot☆Summer Night]` Maruzensky, Deck 6 + borrowed SSR group card | 77 (57 scored) | 43 train / 14 rest - spd 24, wit 10, pwr 4, guts 3, sta 2 | **RANK 1**, Twinkle Star Climax won, 3 warnings, 0 errors |
+| Fixture | Run | Scenario / trainee | Turns | Decisions | Splits | Outcome |
+|---|---|---|---|---|---|---|
+| `trackblazer_20260918.json` | 2026-09-18, 23:57-01:55 | Trackblazer, `[Hot☆Summer Night]` Maruzensky, Deck 6 + borrowed SSR group card | 77 (57 scored) | 43 train / 14 rest - spd 24, wit 10, pwr 4, guts 3, sta 2 | **no** - predates the change | **RANK 1**, Twinkle Star Climax won, 3 warnings, 0 errors |
+| `trackblazer_20260918b.json` | 2026-09-18, 11:42-13:33 | same trainee and deck, `prioritize_g1_race` on (which turned out to be inert here) | 77 (54 scored) | 39 train / 15 rest | **yes** - 54 of 54 scored turns | **RANK 1**, spd 1064 / sta 325 / pwr 626 / guts 304 / wit 509 |
+
+Prefer **`...918b`** for anything touching the scorers: it is the only one that can
+replay `rainbow_training` and `training_score`. The first is still useful for
+the rest-vs-train rules, and it holds the turn the last-five-turns rescue was
+written for.
 
 What that one is good for:
 
