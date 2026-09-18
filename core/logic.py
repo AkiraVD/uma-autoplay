@@ -1085,10 +1085,19 @@ def do_something(results):
       goal = planner.parse_goal(_goal_context.get("criteria"))
       turns_left = _goal_context.get("turn")
       opportunities = turns_left if isinstance(turns_left, int) and turns_left >= 0 else None
+      # Only facilities that could actually be trained reach the planner. A
+      # score says nothing about failure, so an unsafe standout would otherwise
+      # read as a turn worth protecting: measured 2026-09-18 on Senior Early
+      # Dec, SPD scored 9.30 with every facility at 20-23% against a 15% bar,
+      # and the real logic rested. The line above keeps all five on purpose -
+      # that is calibration data, not an input.
+      safe_scores = {key: score for score, key in scored
+                     if int(filtered[key]["failure"]) <= state.MAX_FAILURE
+                     or has_extreme_burst(filtered[key])}
       action, why = planner.decide(
-        goal, opportunities, energy_level, scores,
+        goal, opportunities, energy_level, safe_scores,
         skip_training_energy=state.SKIP_TRAINING_ENERGY)
-      ratio = planner.training_is_worth_keeping(scores)
+      ratio = planner.training_is_worth_keeping(safe_scores)
       debug(f"planner would: {action or 'defer'} - {why}"
             f" [goal={goal}, opportunities={opportunities}"
             f" (turns-left proxy), energy={energy_level:.0f},"

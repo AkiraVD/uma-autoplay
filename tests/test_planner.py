@@ -78,6 +78,26 @@ def test_goals_with_nothing_to_decide():
      P.parse_goal("Run in Junior Make Debut") is None)
   ok("and so is empty", P.parse_goal("") is None and P.parse_goal(None) is None)
 
+def test_a_met_goal_never_races_however_low_the_energy():
+  """The ordering bug, straight off a live turn.
+
+  Senior Early Dec 2026-09-18, two turns from the finale: the goal read
+  `300 Result Pts Goal Achievedl MAX` and energy was 22 against a floor of 35.
+  The energy rule fired before the goal was examined and advised racing for a
+  goal that needed nothing - which would have spent the turn and reached the
+  finale weaker. The real logic rested, and was right.
+  """
+  board = {"spd": 9.30, "sta": 4.91, "wit": 0.71, "guts": 0.66, "pwr": 0.63}
+  a, why = P.decide(("points", 0), 2, 22, board, skip_training_energy=35)
+  ok("a met goal on an empty tank is not a race", a is None, f"{a}: {why}")
+  a, _ = P.decide(None, 2, 22, board, skip_training_energy=35)
+  ok("and no goal at all is no opinion either", a is None)
+  # The rule this must not have broken: an open goal on the same empty tank
+  # still races, because resting there pays nothing toward a live deadline.
+  a, why = P.decide(("points", 40), 2, 22, board, skip_training_energy=35)
+  ok("but an open goal on an empty tank still races", a == "race", f"{a}: {why}")
+
+
 def test_energy_decides_before_anything_else():
   """Measured: three of seven turns were settled by energy alone.
 
@@ -179,6 +199,7 @@ for test in [test_parses_the_two_measurable_goals,
              test_the_result_pts_countdown_measured_live,
              test_the_fans_target_is_ignored_on_purpose,
              test_goals_with_nothing_to_decide,
+             test_a_met_goal_never_races_however_low_the_energy,
              test_energy_decides_before_anything_else,
              test_no_slack_forces_a_race,
              test_with_slack_the_board_decides,

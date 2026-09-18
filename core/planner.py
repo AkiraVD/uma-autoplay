@@ -136,23 +136,32 @@ def decide(goal, opportunities, energy, scores,
   """(action, reason) for this turn: "race", "train" or None.
 
   None means "no opinion - use the existing logic", which is what an
-  unrecognised goal or a missing reading gets. The order is the measured one:
-  doability, then deadline pressure, then whether the turn is worth keeping.
+  unrecognised goal or a missing reading gets.
 
-  `energy` below `skip_training_energy` means the bot cannot train and would
-  otherwise rest. Racing costs a turn either way and pays points, coins and
-  fans, so a race beats a rest whenever there is any energy at all to race on.
+  **The goal is checked before energy, and that ordering is load-bearing.** It
+  ran the other way round until 2026-09-18, on the reasoning that doability
+  comes first: a turn that cannot train has only rest or race left, and a race
+  pays points, coins and fans where a rest pays none. That is true as far as it
+  goes, but it returned before the goal was ever looked at, so a turn whose
+  goal was already met still came back "race".
+
+  Measured live, Senior Early Dec, two turns from the finale:
+  `300 Result Pts Goal Achievedl MAX`, energy 22, every facility at 20-23%
+  failure - and the planner advised racing for a goal that needed nothing.
+  Racing there would have spent the turn and reached the finale weaker, for no
+  progress at all. The real logic rested, and was right.
+
+  With no goal, or a goal already met, this module has no business holding an
+  opinion: deadline pressure is the only thing it reasons about, and there is
+  no deadline. Those cases return None first, so the energy rule now applies
+  only in service of a goal that is still open.
+
+  `energy` below `skip_training_energy` still means the bot cannot train and
+  would otherwise rest, and a race still beats a rest there - but only while
+  something remains to chase.
   """
   if energy is None:
     return None, "energy unknown"
-
-  can_train = energy >= skip_training_energy
-
-  if not can_train:
-    if energy > 0:
-      return "race", (f"energy {energy:.0f} is under {skip_training_energy}, so this turn"
-                      " cannot train - racing beats resting while there is energy to race on")
-    return None, f"energy {energy:.0f} leaves nothing to race on either"
 
   if goal is None:
     return None, "no measurable goal this turn"
@@ -160,6 +169,15 @@ def decide(goal, opportunities, energy, scores,
   kind, remaining = goal
   if remaining <= 0:
     return None, f"{kind} goal already met"
+
+  can_train = energy >= skip_training_energy
+
+  if not can_train:
+    if energy > 0:
+      return "race", (f"energy {energy:.0f} is under {skip_training_energy}, so this turn"
+                      f" cannot train - racing beats resting while {remaining} {kind}"
+                      " are still needed")
+    return None, f"energy {energy:.0f} leaves nothing to race on either"
 
   if opportunities is None:
     # No count in the goal's units, so deadline pressure cannot be judged. Fall
