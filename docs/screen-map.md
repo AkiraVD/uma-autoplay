@@ -866,11 +866,19 @@ below was clicked live at 1920x1080, so they are measured rather than derived.
 | | Event Boost (TP Usage x2) checkbox | (311, 809) |
 | | Cancel / Start Career! | (419, 997) / (686, 997) |
 
-**A disabled `Start Career!` looks exactly like a swallowed click.** The game
-refuses a deck holding a support card of the *same character as the trainee*:
-that card wears an orange `Trainee` banner with a red `!`, and the button
-renders disabled - desaturated olive with pale grey-blue text, against the
-vivid green and crisp white of `Auto-Fill` right above it. Neither an ordinary
+**A disabled `Start Career!` looks exactly like a swallowed click.** It renders
+disabled - desaturated olive with pale grey-blue text, against the vivid green
+and crisp white of `Auto-Fill` right above it - and there are **two** separate
+causes, either of which is enough on its own:
+
+- a deck holding a support card of the *same character as the trainee*, which
+  wears an orange `Trainee` banner with a red `!`;
+- an **empty Friends slot**. A five-card deck will not start. Measured
+  2026-09-18 on a deck with no conflict at all: the button was disabled until
+  the borrow was taken, and went vivid the moment slot six was filled.
+
+The two were conflated when this was first written, because the borrow happened
+before the button was ever pressed. Neither an ordinary
 click nor a `deliberate_click`-style move/settle/hold press does anything, and
 nothing is logged, so it presents as the spark-screen wedge and sends you down
 the input-delivery path. It is not an input problem. Compare the button against
