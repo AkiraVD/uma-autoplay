@@ -119,6 +119,13 @@ Worth deriving properly if the behaviour ever looks wrong:
   and the OCR fallback found *nothing* rather than something out of range.
   Harmless today - it degrades to `Turn count unknown, skipping the goal race
   check this turn.` - but it silently disables that check on those turns.
+- **No replay harness for the recorded careers.** `tests/fixtures/careers/`
+  now holds a whole career turn by turn - the board, the energy the decision
+  was made on, and what was chosen - but nothing feeds it back through the
+  scorers. The mechanical half is small. What stops it is that "worse" needs
+  defining: a different facility at a near-identical score is not obviously a
+  regression, and a harness that cries wolf on every tie is worth less than
+  none. See `docs/backtest.md`.
 - **A long run's early log lives in `logs/log.txt.1`, not `log.txt`.**
   `utils/log.py` uses `RotatingFileHandler(maxBytes=1_000_000, backupCount=10)`,
   so any career that logs more than ~1 MB rotates mid-run. On 2026-09-18 the
