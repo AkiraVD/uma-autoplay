@@ -1,0 +1,136 @@
+"""The recorded careers in tests/fixtures/careers/.
+
+Run with `python tests/test_career_fixture.py` from the repo root. Pure JSON -
+no OCR, no stubbing - so it is fast.
+
+They exist so a change to the scorers can be replayed against a real career
+instead of a hand-built board. `logs/` is gitignored and `utils/log.py` keeps
+only ten 1 MB backups, so a career's evidence is gone after about ten more
+runs; a long career also rotates *mid-run*, which is how the 2026-09-18 career
+ended up with its own first two hours in `log.txt.1`. Regenerate with
+`tools/career_extract.py`.
+
+Most of what follows guards against the extractor lying quietly, which it did
+twice while being written - and both times the output looked entirely healthy:
+
+  - it recorded the energy *after* each turn acted, because a turn logs energy
+    several times and the last reading belongs to the next turn;
+  - it recorded no decision at all for Junior year, because
+    focus_max_friendships logs no selection and do_rest logs nothing whatsoever.
+"""
+import glob
+import json
+import os
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+os.chdir(ROOT)
+
+CAREERS = sorted(glob.glob(os.path.join("tests", "fixtures", "careers", "*.json")))
+LIVE = os.path.join("tests", "fixtures", "careers", "trackblazer_20260918.json")
+failures = []
+
+
+def ok(label, condition, detail=""):
+  print(f"{'ok  ' if condition else 'FAIL'} {label}" + (f": {detail}" if detail else ""))
+  if not condition:
+    failures.append(label)
+
+
+def load(path):
+  with open(path, encoding="utf-8") as handle:
+    return json.load(handle)
+
+
+def test_there_is_something_to_replay():
+  ok("at least one recorded career", len(CAREERS) >= 1, f"{len(CAREERS)} found")
+
+
+def test_every_fixture_is_structurally_sound():
+  for path in CAREERS:
+    name = os.path.basename(path)
+    data = load(path)
+    turns = data.get("turns") or []
+    ok(f"{name}: has turns", len(turns) > 0, len(turns))
+    ok(f"{name}: records the logs it came from",
+       bool((data.get("source") or {}).get("logs")))
+    scored = [t for t in turns if t.get("facilities")]
+    ok(f"{name}: has scored boards", len(scored) > 0, len(scored))
+    # levels/gains are Python dict literals in the log; a parse failure stores
+    # None, which would read as "no supports" rather than as an error.
+    bad = [(t["time"], key) for t in scored for key, face in t["facilities"].items()
+           if not isinstance(face.get("levels"), dict)
+           or not isinstance(face.get("gains"), dict)]
+    ok(f"{name}: every board parsed its levels and gains", not bad, bad[:4])
+
+
+def test_every_scored_turn_carries_a_decision():
+  """A turn that read a board and then did nothing is a hole, not a rest.
+
+  Junior is the case that caught this: it goes through focus_max_friendships,
+  which logs no selection line, so the whole year recorded `action: None` while
+  the fixture still looked full.
+  """
+  for path in CAREERS:
+    name = os.path.basename(path)
+    scored = [t for t in load(path)["turns"] if t.get("facilities")]
+    missing = [t["time"] for t in scored if not t.get("action")]
+    ok(f"{name}: no scored turn without an action", not missing, missing[:5])
+    trained = [t for t in scored if t.get("action") == "train"]
+    ok(f"{name}: every train names its facility",
+       all(t.get("trained") for t in trained), f"{len(trained)} trains")
+
+
+def test_energy_is_the_reading_the_decision_was_made_on():
+  """Pinned to the live rescue turn.
+
+  The choice was made at 38.98 and WIT then refunded the tank to 44.07.
+  Recording the second figure would make every energy-gated turn in the
+  fixture unreplayable, while looking perfectly plausible.
+  """
+  if not os.path.exists(LIVE):
+    ok("the 2026-09-18 career is present", False, "missing")
+    return
+  turns = load(LIVE)["turns"]
+  rescue = [t for t in turns if "resting this late" in (t.get("decided_by") or "")]
+  ok("the last-turn rescue is captured", len(rescue) == 1, len(rescue))
+  if not rescue:
+    return
+  turn = rescue[0]
+  ok("energy is the pre-decision reading", turn.get("energy") == 38.98, turn.get("energy"))
+  ok("and the post-action reading is kept apart",
+     turn.get("energy_after") == 44.07, turn.get("energy_after"))
+  ok("it trained rather than rested",
+     turn.get("action") == "train" and turn.get("trained") == "wit",
+     f"{turn.get('action')}/{turn.get('trained')}")
+  others = {k: f["failure"] for k, f in turn["facilities"].items() if k != "wit"}
+  ok("on a board where everything but WIT was over the failure bar",
+     all(v > 15 for v in others.values()), others)
+
+
+def test_the_career_covers_the_whole_run():
+  """Junior through the Climax, so a replay is not quietly missing a year."""
+  if not os.path.exists(LIVE):
+    return
+  turns = load(LIVE)["turns"]
+  years = {(t.get("year") or "").split(" Year")[0] for t in turns if t.get("year")}
+  for era in ("Junior", "Classic", "Senior"):
+    ok(f"covers {era}", era in years, sorted(years))
+  ok("and reaches the Climax",
+     any("Climax" in (t.get("year") or "") for t in turns))
+
+
+for test in [test_there_is_something_to_replay,
+             test_every_fixture_is_structurally_sound,
+             test_every_scored_turn_carries_a_decision,
+             test_energy_is_the_reading_the_decision_was_made_on,
+             test_the_career_covers_the_whole_run]:
+  print(f"\n-- {test.__name__}")
+  test()
+
+print()
+if failures:
+  print(f"{len(failures)} FAILED: {failures}")
+  sys.exit(1)
+print("all checks passed")
