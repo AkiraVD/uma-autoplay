@@ -218,6 +218,14 @@ Still to do:
   bank rather than easyocr, as `core/gains.py` needed.
 - **Race selection by points.** `decide_race_for_goal()` needs a Trackblazer
   arm, and `data/races.json` carries no grade where master.mdb does.
+
+  **`prioritize_g1_race` is inert in this scenario**, so it is not the lever.
+  The gate at `core/logic.py:1239` needs `"Progress"` *and* `"G1"`/`"GI"` in the
+  criteria text, but Trackblazer's goals are Result Pts: measured 2026-09-18
+  over a full career, 38 criteria lines contained `Progress` and **none**
+  contained `G1` or `GI`, across 52 turns where the check was consulted. Turning
+  the setting on changes nothing here - a Trackblazer arm has to match on points
+  rather than on grade wording.
 - **Reading the shop, and buying.** The flow is fully mapped but no code reads
   it. Note a purchase is four screens deep and three different green buttons
   share (686,997), so a reader must match on the title bar.
