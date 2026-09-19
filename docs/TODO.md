@@ -85,7 +85,34 @@ Worth deriving properly if the behaviour ever looks wrong:
   is still not derived anywhere, and the turn counter cannot supply one - it
   counts down to the next race day rather than the end of the career, and reads
   -1 (unreadable) throughout Trackblazer's climax.
-- **`11` reads as `1` in every year, and the Classic counter misreads badly.**
+- ~~**`11` reads as `1`, and the Classic counter misreads badly.**~~ Root-caused
+  2026-09-19 and half-fixed. Both symptoms were one defect: `check_turn`'s OCR
+  fallback ranked candidate numbers by **position**, taking the topmost. The
+  region's top edge catches the year label, easyocr mangles "Classic" into
+  things like `'(5obbic'`, and `re.findall` pulls a `5` out of it. Measured on a
+  live frame:
+
+      box y= 18.0  conf=0.03  '(5obbic'  -> digit 5   <- garbage, and topmost
+      box y=321.0  conf=0.99  '7'        -> digit 7   <- the actual counter
+
+  Every "Classic stuck at 5" turn was that. Ranking by confidence first
+  (`NUMBER_MIN_CONFIDENCE`, the rule `core/ocr.py::extract_number` already uses)
+  with position only as the tie-break returns 7. The `11` case is the same
+  fallback: the box text really was `'11 turn(s) left'` at high confidence, so
+  the digit was never dropped by OCR.
+
+  **What is still open: the glyph bank declines on every live frame.** It read
+  `None` on 31 of 31 live captures while passing 17 of 17 fixtures, which is why
+  the fallback ran every single turn and why this hid for two careers. Cause:
+  the live lobby renders digits at **22-23px** where the fixtures are **36-40px**,
+  so `TURN_GLYPH_HEIGHT = (25, 50)` excludes them all. Widening it to (20, 45)
+  was tried and **reverted** - the components are then found, but per-glyph OCR
+  returns nothing at that scale, and touching digits merge into one ~32px blob
+  read as a single wrong character (`0` for 9, `2` for 6). Silent `None`s became
+  confident wrong numbers, which is worse. Fixing it properly needs a digit
+  bank cut from live crops the way `core/gains.py` works;
+  `tests/fixtures/turn/live/` holds 31 of them as material.
+- **The measured turn sequences, kept as the evidence behind the entry above.**
   Full unsampled sequence, 2026-09-18, Trackblazer/Maruzensky.
 
   The counter counts down to the **end of the current year**. Junior and Senior
@@ -93,9 +120,11 @@ Worth deriving properly if the behaviour ever looks wrong:
 
   The reproducible one: **Late Jul reads `1` in all three years**, where the
   truth is `11`. Junior, Classic and Senior each show `12, 1, 10, 9` across
-  Early Jul to Late Aug. The leading digit is being dropped - the same failure
-  `core/gains.py`'s glyph bank was built for, and worth fixing first because it
-  is 3-for-3 rather than mysterious.
+  Early Jul to Late Aug. This used to read "the leading digit is being dropped,
+  the same failure `core/gains.py`'s glyph bank was built for" - **wrong**. The
+  2026-09-19 logging caught the box text as `'11 turn(s) left'`, so easyocr read
+  both digits at high confidence and it was the fallback's ranking rule that
+  lost one. The measurement below stands; the cause is the entry above.
 
   Classic on top of that is simply wrong:
 
