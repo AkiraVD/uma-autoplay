@@ -828,6 +828,24 @@ def check_selected_training():
 # is 13-14px wide (width/height 0.34-0.39) where every other digit is 25-30px
 # (0.68-0.75). Only the wide ones go to OCR, one at a time. Measured on 12
 # lobbies across both box colours (purple Grand Concert, blue URA/Unity).
+# Deliberately still (25, 50), which means this reader DECLINES on every live
+# lobby frame and the OCR fallback does all the real work. That is not an
+# oversight - widening it was tried on 2026-09-19 and made things worse.
+#
+# The live lobby renders this box at a different scale from the 17 saved
+# fixtures: fixture digits stand 36-40px, live digits 22-23px. Lowering the
+# floor to 20 does admit them, and the components are found in the right places
+# - on a frame whose box read "11 turn(s) left", both glyphs were located at
+# x=26 and x=64, w=16-17, h=22. But at that scale the per-glyph OCR returns
+# nothing at all for them, so the function still bails; and where two digits
+# touch they merge into one 31-34px blob at aspect ~1.4, which easyocr reads as
+# a single wrong character - '0' for a 9, '2' for a 6.
+#
+# So the widened band turns silent Nones into confidently wrong numbers, which
+# is the worse failure: a None falls through to the fallback, a wrong digit does
+# not. Reading this box at the live scale needs a digit-template bank cut from
+# live crops, the way core/gains.py works - not a threshold change. The 27 live
+# captures in tests/fixtures/turn/live/ are the material for it.
 TURN_GLYPH_HEIGHT = (25, 50)
 TURN_GLYPH_MAX_WIDTH = 40
 TURN_ONE_MAX_ASPECT = 0.5
@@ -939,17 +957,35 @@ def check_turn():
     debug(f"Turn glyph read {why}; falling back to OCR on the turn box.")
 
     # The region covers the goal counter and, in Unity Cup, the "Until the Unity
-    # Cup" counter below it. The goal box is always the upper one, so take the
-    # topmost number rather than the first one the OCR happens to emit.
+    # Cup" counter below it, so position still decides between two *real*
+    # counters - but only after confidence has thrown out what is not a counter
+    # at all.
+    #
+    # Ranking on position alone read the wrong number for two entire careers.
+    # The region's top edge catches the year label, easyocr mangles "Classic"
+    # into things like '(5obbic', and re.findall pulls a 5 out of it. Measured
+    # live 2026-09-19:
+    #
+    #   box y= 18.0  conf=0.03  '(5obbic'  -> digit 5   <- garbage, and topmost
+    #   box y=321.0  conf=0.99  '7'        -> digit 7   <- the actual counter
+    #
+    # Every "Classic Year stuck at 5" turn was that. Filtering at
+    # NUMBER_MIN_CONFIDENCE is core/ocr.py's own rule for exactly this - see
+    # extract_number, which refuses rather than return a plausible-but-wrong
+    # number - so confidence leads and position is only the tie-break.
     numbers = []
     for text, conf, (bx, by, bw, bh) in read_boxes(enlarged):
+      if conf < NUMBER_MIN_CONFIDENCE:
+        debug(f"Ignoring {text!r} in the turn box: confidence {conf:.2f}"
+              f" is under {NUMBER_MIN_CONFIDENCE}.")
+        continue
       for found in re.findall(r"\d+", text):
-        numbers.append((by + bh / 2, int(found)))
+        numbers.append((conf, by + bh / 2, int(found)))
     if not numbers:
       debug(f"OCR found no number in the turn box either ({turn_text!r}); returning -1.")
       return -1
-    numbers.sort(key=lambda n: n[0])
-    turns_left = numbers[0][1]
+    numbers.sort(key=lambda n: (-n[0], n[1]))
+    turns_left = numbers[0][2]
     if not in_range(turns_left, TURNS_LEFT_RANGE):
       warning(f"Turn count out of range, ignoring: {turn_text}")
       return -1
