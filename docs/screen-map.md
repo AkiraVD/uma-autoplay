@@ -907,6 +907,27 @@ a known-enabled green one in the same frame before suspecting the click, and
 check the deck for a `!` badge. Swapping the offending card out enables the
 button immediately.
 
+**How to tell it apart, measured (2026-09-19).** Mean HSV over the button
+faces, disabled `Start Career!` against an enabled `Auto-Fill` in the same
+frame:
+
+| Button | Saturation | Value |
+|---|---|---|
+| `Start Career!` (disabled, empty Friends slot) | 0.842 | **0.512** |
+| `Auto-Fill` (enabled, same frame) | 0.892 | **0.822** |
+
+**Brightness is the discriminator, not saturation.** The two differ by 0.05 in
+saturation and 0.31 in value, so a saturation-only check misses the disabled
+state entirely - which is worth stating because "desaturated olive" invites
+exactly that check.
+
+One caveat that cost a measurement here: **never compare while a confirm modal
+is up.** The overlay is a white wash, not a dimmer - it drops saturation while
+*raising* brightness. Legacy Select's enabled `Auto-Select` read sat 0.432 /
+val 0.888 under the Confirm Auto-Select dialog and sat 0.878 / val 0.815 once
+it closed, so under a modal both buttons look alike and the comparison says
+nothing.
+
 This bites whenever a saved deck is reused for a trainee it was not built for,
 which is the normal case when switching trainee between careers.
 
