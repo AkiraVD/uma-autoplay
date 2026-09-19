@@ -310,20 +310,20 @@ Still to do:
   share (686,997), so a reader must match on the title bar.
   `core/shop_choice.py` decides *what* to buy from rows once something can read
   them; the reader and the clicking are what is left.
-- **Is a training bonus a percentage or a flat number?** Worth one measurement,
-  because the two readings differ by about seven times and every Megaphone and
-  Ankle Weights price depends on it. The items are worded
-  `training gain +20% for 4 turn(s)` but the game's item screen displays `+20`.
-  At the measured median of 15 points a training, a Coaching Megaphone is worth
-  12 points (0.30/coin) as a percentage and 80 (2.00/coin) as a flat bonus.
-
-  **How to settle it:** buy and use one Coaching Megaphone mid-career, then
-  compare the `Gains:` a facility shows before and after. `check_training` logs
-  those every turn, so the evidence records itself. Natural variation between
-  turns is about +/-5 points while the readings predict +3 and +20 on a
-  15-point facility, so one comparison is enough even without controlling the
-  board. `core/shop_choice.py` encodes the percentage reading with
-  `TRAINING_BONUS_IS_PERCENT`; flip it if the run says otherwise.
+- ~~**Is a training bonus a percentage or a flat number?**~~ **A percentage**,
+  settled 2026-09-19 by measurement. The board was read twice on one turn
+  (Classic Late Nov, turn 3) with a Motivating Megaphone (+40%, the tier the
+  shop happened to stock) used in between, so supports, levels, energy costs
+  and failure rates were identical either side: SPD `spd 13 -> 19`, STA
+  `sta 7 -> 9`, PWR `pwr 9 -> 12`, WIT `wit 17 -> 23`. **Nothing moved by 40**,
+  and every ratio clusters on x1.4, the spread being rounding noise on small
+  integers. Three further things the same run settled: it multiplies the
+  **final** gain, after support bonuses (PWR and WIT carried supports and
+  scaled just like the zero-support facilities); it scales **skill points**
+  too (WIT skill `6 -> 8`, while a `skill: 2` holding at 2 is 2 x 1.4
+  truncating rather than an exception); and it leaves **energy cost and
+  failure rate untouched**. So `TRAINING_BONUS_IS_PERCENT` stays `True` and the
+  sevenfold valuation swing is gone. Full table in `screen-map.md`.
 - **Megaphone and Ankle Weights stack**, and nothing uses that yet. Both can be
   active on the same turn, the Ankle Weights' +50% landing on one facility on
   top of the Megaphone's global bonus. For *buying* this changes little - the

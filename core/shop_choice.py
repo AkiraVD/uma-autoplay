@@ -98,10 +98,26 @@ TRAINING_ENERGY = 21.0
 # a Megaphone comfortably above an Ankle Weights, which is the ordering that
 # matters most on a real shelf.
 #
-# To settle it: buy and use one Coaching Megaphone mid-career, then compare the
-# `Gains:` a facility shows before and after. Natural variation between turns is
-# about +/-5 points, while the two readings predict +3 and +20 on a 15-point
-# facility - so even one noisy comparison separates them.
+# **Settled 2026-09-19 by measurement.** The board was read twice on one turn -
+# Classic Late Nov, turn 3 - with a Motivating Megaphone (+40%, the tier the
+# shop happened to stock) used in between, so supports, levels, energy costs and
+# failure rates were identical either side:
+#
+#   SPD (0 sup)  spd 13 -> 19   pwr 5 -> 7      STA (0 sup)  sta  7 -> 9
+#   PWR (1 sup)  pwr  9 -> 12   sta 5 -> 7      WIT (2 sup)  wit 17 -> 23
+#
+# Nothing moved by 40, so the flat reading is dead. Every ratio clusters on
+# x1.4, the spread being rounding noise on small integers. Three further things
+# the same run settled:
+#
+#   - it multiplies the FINAL gain, after support bonuses: PWR and WIT carried
+#     supports and scaled exactly like the zero-support facilities;
+#   - it scales the skill points too (WIT skill 6 -> 8; a `skill: 2` holding at
+#     2 is 2 x 1.4 truncating, not an exception);
+#   - energy cost and failure rate are untouched.
+#
+# So the percentage reading below is right, and it multiplies what a training
+# actually returns - which is what MEDIAN_TRAINING_GAIN stands in for.
 TRAINING_BONUS_IS_PERCENT = True
 
 

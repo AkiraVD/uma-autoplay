@@ -1292,6 +1292,39 @@ pressed, and using on purchase is the opt-in. A buying routine should step the
 quantity up only for the `stat` category and press **Close** (419,997) for
 everything else, then come back to the Training Items modal later.
 
+#### What a training bonus actually does (measured 2026-09-19)
+
+A `training_bonus` percentage is a **multiplier on the training's gains**, not a
+flat addition. Measured by reading the board twice on a single turn - Classic
+Late Nov, turn 3 - with a Motivating Megaphone (+40% for 3 turns) used in
+between, so supports, levels, energy costs and failure rates were identical on
+both sides:
+
+| Facility | Supports | Before | After |
+|---|---|---|---|
+| SPD | 0 | spd 13, pwr 5, skill 2 | spd **19**, pwr **7**, skill 2 |
+| STA | 0 | sta 7, guts 3, skill 2 | sta **9**, guts **4**, skill 2 |
+| PWR | 1 | sta 5, pwr 9, skill 2 | sta **7**, pwr **12**, skill 2 |
+| GUTS | 1 | spd 4, pwr 3, guts 7, skill 2 | spd **5**, pwr **4**, guts **9**, skill 2 |
+| WIT | 2 | spd 5, wit 17, skill 6 | spd **7**, wit **23**, skill **8** |
+
+Nothing moved by 40, so the flat reading is refuted outright; every ratio
+clusters on x1.4, the spread being rounding noise on small integers (13 x 1.4 =
+18.2 showing 19, 7 x 1.4 = 9.8 showing 9). Also established:
+
+- **It multiplies the final gain, after support bonuses.** PWR and WIT carried
+  supports and scaled like the zero-support facilities did.
+- **It scales skill points too** (WIT skill 6 -> 8). A `skill: 2` holding at 2
+  is 2 x 1.4 truncating, not a counter-example.
+- **Energy cost and failure rate are untouched** - identical on both sides.
+
+The game says as much itself, in the Log entry the use writes: *"Use Motivating
+Megaphone. All stats gained from training will be increased by 40% for 3
+turns."*
+
+This settles `TRAINING_BONUS_IS_PERCENT` in `core/shop_choice.py`, which was
+carrying a sevenfold valuation swing.
+
 #### Read the name, never the price
 
 Measured against a saved shop frame with the project's own reader. **Item names
