@@ -854,13 +854,18 @@ TURN_MIN_WHITE = 0.35
 def read_turn_digits(screen=None, crop=None):
   """The turns-left number read glyph by glyph, or None if it does not read.
 
-  Pass a full screenshot as screen, or an already-cut TURN_DIGITS_REGION as crop.
+  Pass a full screenshot as screen, or an already-cut digits crop as crop.
   """
-  left, top, width, height = constants.TURN_DIGITS_REGION
-  if crop is None and screen is None:
-    crop = capture_region(constants.TURN_DIGITS_REGION)
-  elif crop is None:
-    crop = screen.crop((left, top, left + width, top + height))
+  if crop is None:
+    # Imported here rather than at module scope: core/scenarios.py imports this
+    # module, so a top-level import would be circular.
+    import core.scenarios as scenarios
+    region = scenarios.get("turn_digits_region")
+    if screen is None:
+      crop = capture_region(region)
+    else:
+      left, top, width, height = region
+      crop = screen.crop((left, top, left + width, top + height))
   result = _read_turn_digits(crop)
   if TURN_DEBUG_DIR:
     _save_turn_frame(crop, result)

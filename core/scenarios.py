@@ -33,6 +33,9 @@ URA = {
   "race_day_asset": "assets/buttons/ura_finale_race_btn.png",
   "race_day_pos": constants.FINALE_RACE_MOUSE_POS,
   "career_complete_skills_pos": constants.CAREER_COMPLETE_SKILLS_MOUSE_POS,
+  # Where the calendar box's turns-left digits sit. Modes draw that box at
+  # different digit sizes and heights, so the crop is per mode.
+  "turn_digits_region": constants.TURN_DIGITS_REGION,
 }
 
 # Unity Cup ends in the URA Finale and keeps its race-day layout, so it differs
@@ -61,6 +64,7 @@ TRACKBLAZER = {
   "name": "Trackblazer",
   "race_day_asset": "assets/trackblazer/ts_climax_race_btn.png",
   "race_day_pos": constants.TB_CLIMAX_RACE_MOUSE_POS,
+  "turn_digits_region": constants.TB_TURN_DIGITS_REGION,
 }
 
 BY_KEY = {m["key"]: m for m in (URA, UNITY, GRAND_CONCERT, TRACKBLAZER)}

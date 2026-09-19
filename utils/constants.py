@@ -7,6 +7,15 @@ TURN_REGION=(255, 45, 380 - 255, 165 - 45)
 # to take in all of a race day's GOAL, whose four tall letters are then too many
 # to be a number.
 TURN_DIGITS_REGION=(258, 48, 112, 58)
+# Trackblazer draws the same box with taller digits set lower: measured at
+# y 84..131 (h 47) against URA's 36..40, so URA's crop keeps only the top 22px
+# of every glyph. The reader returned None on 49 of 49 live frames because of
+# it, and the h=22 that produced looked like a threshold problem for two days -
+# TURN_GLYPH_HEIGHT and TURN_MIN_WHITE are both correct, and a whole glyph here
+# lands inside them. Same 112x58 window, shifted 30px down onto the card.
+# Per mode, not a shared edit: URA's and Grand Concert's boxes fit as they are,
+# and moving the shared constant breaks the 17 fixtures that pass on it.
+TB_TURN_DIGITS_REGION=(258, 78, 112, 58)
 FAILURE_REGION=(250, 770, 855 - 295, 835 - 770)
 YEAR_REGION=(255, 32, 570 - 255, 58 - 32)
 CRITERIA_REGION=(455, 55, 765 - 455, 115 - 55)
