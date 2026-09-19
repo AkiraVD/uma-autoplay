@@ -363,6 +363,20 @@ Still to do:
     no harm on the first outing: the zero-support gains either side of the
     purchase were identical (SPD `spd 11` at turn 1 and again at turn 12, where
     +20% would read 13), so nothing was wasted - by luck rather than design.
+  - **The coin counter tweens, and the tick guard believed it.** Measured over
+    the 2026-09-19 career: 34 baskets planned, **21 ticks accepted, ~160
+    refused**, so the shop under-bought all night after its first success. The
+    first `read_coins()` of each visit was always right (100, 105, 113, 213,
+    58, 158, 260 - balances that track race payouts), while every read *inside*
+    the tick loop came back 8, 9, 3, 0 or 10 regardless of the real balance:
+    113 and 213 both reported "8 -> 8". It was never the region - the same
+    frames read 560 and 516 correctly as saved fixtures, ticked row and all.
+    The difference is that in-loop reads land 0.6s after a click, on a counter
+    that is still rolling. Fixed with `settled_coins()`, which waits for two
+    equal readings the way `menu_scan.wait_for_list` waits for the list, and by
+    making the mismatch **advisory**: a stale reading is likelier than a
+    mis-aimed click, and `Confirm Exchange` still shows the basket before
+    anything is spent.
 - ~~**Is a training bonus a percentage or a flat number?**~~ **A percentage**,
   settled 2026-09-19 by measurement. The board was read twice on one turn
   (Classic Late Nov, turn 3) with a Motivating Megaphone (+40%, the tier the

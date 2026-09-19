@@ -111,6 +111,30 @@ def read_coins(screen=None):
   return int(numbers[-1]) if numbers else None
 
 
+def settled_coins(tries=4):
+  """The coin balance once it stops changing, or the last reading.
+
+  The counter TWEENS. Read 0.6s after a click it returns a fragment of a
+  rolling number - measured 2026-09-19 over a 3.5 hour career, where the first
+  read of each visit (no click before it) was always right while every in-loop
+  read came back 8, 9, 3, 0 or 10 regardless of a balance of 58, 113 or 213.
+  The same frames read perfectly as saved fixtures, so it was never the region.
+
+  This is the counter's version of `menu_scan.wait_for_list`: wait for the
+  thing to stop moving before believing it.
+  """
+  previous = read_coins()
+  for _ in range(tries):
+    if state.stop_event.is_set():
+      return previous
+    sleep(0.4)
+    now = read_coins()
+    if now is not None and now == previous:
+      return now
+    previous = now
+  return previous
+
+
 def read_shelf():
   """Every distinct row on the shelf, in shelf order.
 
@@ -198,15 +222,24 @@ def buy(wanted, use_now=()):
       continue
     key = (row["name"], row["cost"])
     if key in targets:
-      before = read_coins()
+      before = settled_coins()
       tick(box)
-      after = read_coins()
+      after = settled_coins()
       # Ticking deducts the cost immediately, before any commit, so the coin
       # counter is a free confirmation that the right row was hit.
+      #
+      # **Advisory, not fatal.** This used to `continue` on a mismatch, which
+      # abandoned the row - and because the counter tweens, the reading was
+      # usually the stale one rather than the click being wrong. Over one
+      # career that refused about 160 of 180 ticks and the shop under-bought
+      # all night. A stale read is far likelier than a mis-aimed click, and
+      # `Confirm Exchange` still lists the whole basket before anything is
+      # spent, so a wrong row has one more chance to be caught. Say so loudly
+      # and carry on.
       if before is not None and after is not None and before - after != row["cost"]:
         warning(f"TB-SHOP-TICK: {row['name']} costs {row['cost']} but the coin"
-                f" counter went {before} -> {after}; leaving it and moving on.")
-        continue
+                f" counter went {before} -> {after}; taking the tick anyway"
+                " (the counter tweens and the reading may be stale).")
       targets.discard(key)
       ticked.append(row)
       info(f"Shop: ticked {row['name']} for {row['cost']} coins.")
