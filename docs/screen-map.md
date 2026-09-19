@@ -879,13 +879,25 @@ below was clicked live at 1920x1080, so they are measured rather than derived.
 | | deck page arrows | (275, 482) / (835, 482) |
 | | Reset / Auto-Fill | (415, 771) / (683, 771) |
 | | Back / Start Career! / Perks | (211, 910) / (585, 910) / (873, 909) |
-| Borrow Card | first friend row | (545, 250) |
+| Borrow Card | first row of the borrow list | (545, 250) |
+| | rows below it | ~148px apart: 397 / 545 / 692 / 840 |
 | | Close | (552, 997) |
 | Support Select | card tiles | x 328/440/552/665/777, rows 145 apart from y 165 |
 | | Close | (552, 997) |
 | Final Confirmation | Normal Career / Independent Training | (408, 181) / (696, 181) |
 | | Event Boost (TP Usage x2) checkbox | (311, 809) |
 | | Cancel / Start Career! | (419, 997) / (686, 997) |
+
+**The Friends slot is not filtered to friend-type cards** (2026-09-19). It is
+the *borrowed* slot - a card taken from another player - and it accepts any
+type, so the list behind it is every borrowable card rather than the five
+friend cards `core/outings.py` names. Measured: the top row was
+`[Esteemed and Adored] Heirs to the Throne`, which master.mdb records as
+**type3** (Power), while the `Pal` cards sat second, third and fourth. So
+"first row" in the table above means the first row of the list, not the first
+friend - tapping (545,250) blind puts whatever happens to sort first into the
+slot. Read the row, or check the type with `tools/support_cards.py find <name>`,
+which prints it (`Pal` = friend).
 
 **A disabled `Start Career!` looks exactly like a swallowed click.** It renders
 disabled - desaturated olive with pale grey-blue text, against the vivid green
