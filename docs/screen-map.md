@@ -888,6 +888,34 @@ below was clicked live at 1920x1080, so they are measured rather than derived.
 | | Event Boost (TP Usage x2) checkbox | (311, 809) |
 | | Cancel / Start Career! | (419, 997) / (686, 997) |
 
+**Starting a career costs 30 TP, and the game asks before it blocks you**
+(2026-09-19). Pressing `Start Career!` below the TP cost raises a Confirm
+dialog - *"You need 13 more TP to start a Career Scenario, and 43 more TP if
+you wish to use Event Boost. Would you like to restore TP?"* - with **No**
+(419,704) / **Restore** (686,704). Read at TP 17/100, so the career itself is
+**30 TP** and Event Boost a further **30** on top. `Restore` only opens Recover
+TP; nothing is spent until a second dialog is confirmed.
+
+The TP bottle is **`Toughness 30`** (Recovery 30). Rows measured on the Recover
+TP list, label then its `Use` about 27px below at `TP_RESTORE_USE_X`:
+
+| Row | Label y | Use y |
+|---|---|---|
+| Carats | 115 | 141 |
+| **Toughness 30** | 232 | **259** |
+| Oguri Cap's Handmade Chocolate | 345 | 373 |
+| El Condor Pasa's Handmade Chocolate | 460 | 486 |
+| Mihono Bourbon's Handmade Chocolate | 577 | 603 |
+| Meisho Doto's Handmade Chocolate | 689 | 719 |
+| Nice Nature's Handmade Chocolate | 804 | 833 |
+| Close | | 984 |
+
+All five chocolates also restore 30, so they are interchangeable with the
+bottle and are the ones to burn first if they ever expire. The quantity dialog
+that follows names the item, the resulting TP (`48/100`) and the holding before
+and after (`156` -> `155`), with Cancel / OK at y~762 - so it can be verified
+before committing rather than confirmed blind.
+
 **The Friends slot is not filtered to friend-type cards** (2026-09-19). It is
 the *borrowed* slot - a card taken from another player - and it accepts any
 type, so the list behind it is every borrowable card rather than the five
