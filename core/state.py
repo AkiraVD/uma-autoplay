@@ -5,6 +5,7 @@ import re
 import json
 import os
 import threading
+import time
 import Levenshtein
 from math import floor
 
@@ -842,6 +843,35 @@ def read_turn_digits(screen=None, crop=None):
     crop = capture_region(constants.TURN_DIGITS_REGION)
   elif crop is None:
     crop = screen.crop((left, top, left + width, top + height))
+  result = _read_turn_digits(crop)
+  if TURN_DEBUG_DIR:
+    _save_turn_frame(crop, result)
+  return result
+
+
+# Set UMA_TURN_DEBUG to a directory to keep every crop this reader is handed,
+# named after what it returned. Off by default: it writes a file per turn.
+#
+# It exists because capturing the frame any other way does not work. A tool that
+# watched the log for a year string and then grabbed the screen caught the race
+# screen three steps later - the bot reads the box, decides, and moves on inside
+# a second. The only place the reader's actual input exists is here.
+TURN_DEBUG_DIR = os.environ.get("UMA_TURN_DEBUG") or ""
+
+
+def _save_turn_frame(crop, result):
+  """Keep the crop next to the number it produced, for offline replay."""
+  try:
+    os.makedirs(TURN_DEBUG_DIR, exist_ok=True)
+    stamp = time.strftime("%H%M%S")
+    crop.save(os.path.join(TURN_DEBUG_DIR, f"turn_{stamp}_read{result}.png"))
+  except Exception as e:                       # never let debugging break a turn
+    debug(f"turn-frame capture failed, ignored ({e}).")
+
+
+def _read_turn_digits(crop):
+  """The glyph-by-glyph read itself. Split out so the capture above can wrap it
+  without duplicating any of the logic."""
   rgb = np.asarray(crop.convert("RGB"))
   # The digits sit on the calendar's white card (~60% of the region). With no
   # card there is no counter to read, only whatever else is on that screen.
