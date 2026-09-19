@@ -783,10 +783,12 @@ Two templates close it, both cut from the fixtures and checked with `sep`:
 | Template | Positives | Best negative | Margin |
 |---|---|---|---|
 | `assets/ui/game_nav_scout.png` | 0.930-1.000 (home, home GL, home mid-career, Scenario Select, trainee select) | 0.693 (`continue_career`) | +0.237 |
+| `assets/ui/game_nav_race.png` | 0.781-0.945 (same set bar `game_home`, plus the Scout screen at 0.942) | 0.691 (`continue_career`) | +0.090 alone, **+0.237 in union with `game_nav`** |
 | `assets/ui/login_bonus.png` | 1.000 (`login_bonus`) | 0.249 | +0.751 |
 
 `game_nav` joins `team_rank` in the branch that stops the loop, so the blind tap
-is never reached on a screen carrying the bar. `login_bonus` presses that
+is never reached on a screen carrying the bar. (A third template, `game_nav_alt`,
+joined that branch on 2026-09-19 to cover the Scout screen - see below.) `login_bonus` presses that
 screen's Skip at **(903, 1024)**, located by template inside the branch - the
 dispatch dict deliberately does *not* key on `skip_btn.png`, which is the race
 skip `race_prep()` drives inside a career.
@@ -794,7 +796,8 @@ skip `race_prep()` drives inside a career.
 Covered by `tests/test_out_of_career.py`; the bar matches no in-career frame
 across the grand_concert and sparks fixtures.
 
-**Still open: the bar goes blind on the Scout screen itself (2026-09-19).**
+**The bar went blind on the Scout screen itself - fixed 2026-09-19 by reading
+two tiles.**
 `game_nav_scout.png` is cut from the Scout tile in its *inactive* state, so it
 matches every screen where Scout is not the open tab and fails on the one
 screen where it is - which is exactly where the blind tap puts the bot.
@@ -808,12 +811,37 @@ level with `login_bonus.png` and +0.004 over `in_career.png` - so no threshold
 separates it. The template's margin on the original set is unchanged at +0.237,
 so this is a missing case, not a regression.
 
-Re-cutting the bar from a tile that is inactive on *both* screens does not work
-either. Worst-positive minus best-negative over the fixture set: race
-**-0.385**, enhance **-0.015**, story **+0.047**, scout **-0.346**. All score
-0.92-0.98 on the live Scout frame and still fail to separate, because the
-fixtures' bars differ enough between screens to swamp the gap. A working fix
-needs a different feature, not another tile crop.
+**Swapping in a different tile only moves the blind spot.** `game_home.png` was
+captured with the *Race* tab open, so a Race-tile template fails on it for
+exactly the same reason. But only one tab can be active at a time, so for any
+two distinct tiles at least one is always in its normal state - a union of two
+is complete **by construction**, not by luck. Hence `game_nav_alt`
+(`assets/ui/game_nav_race.png`, the Race tile) beside `game_nav`, and a branch
+reading `team_rank or game_nav or game_nav_alt`.
+
+Partner chosen by measurement, unions scored over the fixture set at the
+production threshold of **0.85**:
+
+| Pairing | Union worst-positive | Best negative | Margin |
+|---|---|---|---|
+| `game_nav` + **race** | 0.930 | **0.693** | **+0.237** |
+| `game_nav` + enhance | 0.918 | 0.763 | +0.155 |
+| `game_nav` + story | 0.930 | **0.844** | +0.086 |
+
+Story is the trap: 0.844 on `continue_career` against a 0.85 threshold is six
+thousandths away from calling a live career finished. Race adds no new negative
+risk at all - its worst negative is the same 0.693 as `game_nav`'s.
+
+**The race tile is not independently trustworthy.** `sep` rates it +0.090 alone
+(worst positive 0.781 on `scenario_select`, *under* the 0.85 threshold), so it
+must never replace `game_nav` - only sit beside it.
+
+An earlier sweep here reported every candidate as hopeless (race -0.385,
+enhance -0.015, story +0.047, scout -0.346). That was wrong twice over: the
+crops were placed by eye instead of anchored on the shipped template's own
+match position, and reporting only min/max hid the fact that each candidate
+failed on exactly **one** frame - a different one each time, which is precisely
+what makes the union work.
 
 ## Career start: story Skip and Quick Mode (2026-09-17)
 
@@ -988,10 +1016,11 @@ the loop tapping Scout open and backing out of it again.
 
 Two things this run did **not** establish:
 
-- **Which template stopped it.** The branch is `team_rank or game_nav` and both
-  share one message, so the log cannot say which matched - on the home screen
-  both do. Naming the matched template in that line would make the next such
-  run self-evidencing.
+- **Which template stopped it.** The branch is
+  `team_rank or game_nav or game_nav_alt` and all three share one message, so
+  the log cannot say which matched - on the home screen all three do. Naming
+  the matched template in that line would make the next such run
+  self-evidencing.
 - **The `login_bonus` branch has still never fired** (0 occurrences in any log).
   That screen appears after a reload or the daily reset, not after every
   career, so it remains covered by fixtures only.
