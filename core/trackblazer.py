@@ -116,14 +116,15 @@ def catalogue(force=False):
 def item(name):
   """One catalogue entry by exact name, or None.
 
-  Exact matching no longer fits what the shop actually prints. The rows were
-  read on 2026-09-17 and stat items carry a stat prefix - "Speed Notepad",
-  "Guts Manual", "Wit Scroll", "Guts Ankle Weights" - where this catalogue
-  holds the bare noun, and master.mdb lists all five stat variants separately.
-  So a caller passing a row straight off the screen gets None today.
+  Exact matching is enough, and that was worth checking rather than assuming.
+  This docstring used to say canonicalisation was still owed, because the rows
+  read on 2026-09-17 carry a stat prefix ("Speed Notepad", "Guts Manual") where
+  the catalogue then held the bare noun. The catalogue has since been
+  regenerated from master.mdb and holds the prefixed names too: all seven
+  measured live rows resolve here exactly, with matching costs.
 
-  Canonicalise here the way core/skill.py does for skill names, once the shop
-  reader exists and there is measured OCR damage to match against.
+  Add canonicalisation when a row is seen that does *not* resolve - with OCR
+  damage to match against, the way core/skill.py does for skill names.
   """
   for entry in catalogue():
     if entry.get("name") == name:

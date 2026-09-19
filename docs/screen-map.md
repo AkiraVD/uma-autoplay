@@ -1051,10 +1051,12 @@ What this changes:
   universe of items and the shop is a rotating subset of it - it is not a list
   to be matched wholesale.
 - **Live names are stat-prefixed** ("Speed Notepad", "Guts Manual", "Wit
-  Scroll", "Guts Ankle Weights") where the catalogue holds the bare noun.
-  `core/trackblazer.py::item()` matches exact names and its docstring already
-  says to canonicalise "once the shop rows have been read off a real screen" -
-  they now have been, so that is the next edit there.
+  Scroll", "Guts Ankle Weights"). This said the catalogue held the bare noun and
+  that `item()` therefore needed canonicalising - **no longer true**: the file
+  was regenerated from master.mdb and holds the prefixed names, and on
+  2026-09-19 all seven of the rows below resolved through
+  `core/trackblazer.py::item()` exactly, with matching costs. No name mapping is
+  needed until a row is seen that does not resolve.
 - **The Megaphone tiers have real names, not sizes.** The 40-coin one is
   "Coaching Megaphone", matching the file's guessed "Megaphone (small)" on both
   cost and effect. The 55 and 70 tiers are still unnamed.
