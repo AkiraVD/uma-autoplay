@@ -229,6 +229,27 @@ Still to do:
 - **Reading the shop, and buying.** The flow is fully mapped but no code reads
   it. Note a purchase is four screens deep and three different green buttons
   share (686,997), so a reader must match on the title bar.
+  `core/shop_choice.py` decides *what* to buy from rows once something can read
+  them; the reader and the clicking are what is left.
+- **Is a training bonus a percentage or a flat number?** Worth one measurement,
+  because the two readings differ by about seven times and every Megaphone and
+  Ankle Weights price depends on it. The items are worded
+  `training gain +20% for 4 turn(s)` but the game's item screen displays `+20`.
+  At the measured median of 15 points a training, a Coaching Megaphone is worth
+  12 points (0.30/coin) as a percentage and 80 (2.00/coin) as a flat bonus.
+
+  **How to settle it:** buy and use one Coaching Megaphone mid-career, then
+  compare the `Gains:` a facility shows before and after. `check_training` logs
+  those every turn, so the evidence records itself. Natural variation between
+  turns is about +/-5 points while the readings predict +3 and +20 on a
+  15-point facility, so one comparison is enough even without controlling the
+  board. `core/shop_choice.py` encodes the percentage reading with
+  `TRAINING_BONUS_IS_PERCENT`; flip it if the run says otherwise.
+- **Megaphone and Ankle Weights stack**, and nothing uses that yet. Both can be
+  active on the same turn, the Ankle Weights' +50% landing on one facility on
+  top of the Megaphone's global bonus. For *buying* this changes little - the
+  pair is worth the sum of its parts - but a use-logic that spends them on
+  separate turns throws the combination away.
 - **Epithets.** The stat awards are documented from seriru's guide (+30/+20/+10
   tiers) but nothing models them; they are the scenario's real stat engine.
 - **Nine mode gates** still branch inline on `GRAND_CONCERT_SEEN`/`UNITY_SEEN`

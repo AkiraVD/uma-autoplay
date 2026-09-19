@@ -75,6 +75,35 @@ ENERGY_POINT = 1.0
 # One mood level, in stat points.
 MOOD_LEVEL = 8.0
 
+# What one training actually returns, in stat points. Measured over 555 real
+# trainings across both recorded careers: median 15, mean 17.7, p25 12, p75 20,
+# max 66. The median is used rather than the mean because the tail is long.
+MEDIAN_TRAINING_GAIN = 15.0
+# What one training costs in energy, for pricing the energy_cost_up drawback.
+TRAINING_ENERGY = 21.0
+
+# **The training-bonus scale is UNVERIFIED**, and the two readings differ by
+# about seven times, so this is the one number here worth checking before
+# trusting a shop plan built on it.
+#
+# Every item is worded as a percentage - "training gain +20% for 4 turn(s)" -
+# but the game's own item screen displays "+20", and which one it applies is
+# not established. At the measured median of 15 points a training:
+#
+#   read as a percentage : 0.20 x 4 x 15 =  12 pts for 40 coins = 0.30/coin
+#   read as a flat bonus :   20 x 4      =  80 pts for 40 coins = 2.00/coin
+#
+# The percentage reading is encoded below because it matches the wording and is
+# the conservative of the two - it cannot cause over-buying. It also still puts
+# a Megaphone comfortably above an Ankle Weights, which is the ordering that
+# matters most on a real shelf.
+#
+# To settle it: buy and use one Coaching Megaphone mid-career, then compare the
+# `Gains:` a facility shows before and after. Natural variation between turns is
+# about +/-5 points, while the two readings predict +3 and +20 on a 15-point
+# facility - so even one noisy comparison separates them.
+TRAINING_BONUS_IS_PERCENT = True
+
 
 def _effect_value(effect, headroom=None):
   """What one effect clause is worth, in stat points."""
@@ -94,9 +123,33 @@ def _effect_value(effect, headroom=None):
   if kind == "mood":
     return amount * MOOD_LEVEL          # negative amounts subtract, as they should
   if kind == "energy_cost_up":
-    # A drawback clause, not a benefit: it makes the training cost more.
-    return -effect.get("percent", 0) * 0.1
-  if kind in ("training_bonus", "race_bonus", "fan_bonus"):
+    # A drawback, priced as the energy it actually costs: +20% on a ~21-energy
+    # training is about 4 extra energy, which at ENERGY_POINT is 4 stat points.
+    # This used to be a flat -percent*0.1, which under-priced it on cheap
+    # facilities and over-priced it on nothing - it was simply invented.
+    percent = effect.get("percent", 0) / 100.0
+    turns = max(1, effect.get("turns", 1))
+    return -percent * TRAINING_ENERGY * ENERGY_POINT * turns
+  if kind == "training_bonus":
+    # Percentage of what a training returns, over the turns the buff lasts.
+    # Assumes the turns get used, which is close enough: a Megaphone bought
+    # mid-career is bought precisely because training turns are coming.
+    #
+    # Megaphone and Ankle Weights STACK - both can be active on the same turn,
+    # and an Ankle Weights' +50% applies to one facility on top of a Megaphone's
+    # global bonus. That matters more for *using* them than for buying them: if
+    # the buffs add, the pair is already worth the sum of its parts here, and
+    # what stacking really demands is that the use-logic spends them together
+    # rather than on separate turns. That logic does not exist yet.
+    percent = effect.get("percent", 0) / 100.0
+    turns = max(1, effect.get("turns", 1))
+    if not TRAINING_BONUS_IS_PERCENT:
+      return effect.get("percent", 0) * turns
+    return percent * turns * MEDIAN_TRAINING_GAIN
+  if kind in ("race_bonus", "fan_bonus"):
+    # Neither pays in stat points at all - they pay fans and race rewards, which
+    # this scorer has no exchange rate for. Deliberately rated low rather than
+    # guessed at.
     return effect.get("percent", 0) * 0.1 * max(1, effect.get("turns", 1)) * 0.5
   if kind == "no_fail":
     return 6.0 * max(1, effect.get("turns", 1))
