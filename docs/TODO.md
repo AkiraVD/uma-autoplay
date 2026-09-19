@@ -305,11 +305,28 @@ Still to do:
   contained `G1` or `GI`, across 52 turns where the check was consulted. Turning
   the setting on changes nothing here - a Trackblazer arm has to match on points
   rather than on grade wording.
-- **Reading the shop, and buying.** The flow is fully mapped but no code reads
-  it. Note a purchase is four screens deep and three different green buttons
-  share (686,997), so a reader must match on the title bar.
-  `core/shop_choice.py` decides *what* to buy from rows once something can read
-  them; the reader and the clicking are what is left.
+- **Reading the shop, and buying.** `core/shop.py` now reads the shelf and
+  drives the purchase, scrolling through `core/menu_scan.py`'s `SHOP_BUY`
+  profile, and `tests/test_shop_read.py` checks it against three captured
+  frames. A row is anchored on its per-row **"Cost" label**, deliberately not
+  its checkbox: ticking a row turns the checkbox green, so a checkbox template
+  goes blind on exactly the row a buying pass most needs to find again - the
+  ticked fixture pins that. A row whose name is clipped by the panel header
+  reads as `None` rather than as an unknown item, and the sale price (the last
+  number, "Cost ~~55~~ 44") is what the plan is costed on.
+
+  **What is left is live work, not code.** Two things:
+  - `travel_ratio` in the `SHOP_BUY` profile is a conservative **0.95**, not a
+    measurement. Ad-hoc drags with no hold at either end travelled 218px of a
+    requested 250 (0.872), but `slow_drag` holds at both ends to kill the glide
+    and will travel further, so that figure describes the wrong drag. Erring
+    high under-advances into extra overlap, which costs passes but never skips
+    a row; erring low skips rows. Re-measure against `slow_drag` on a live
+    shelf.
+  - Nothing calls `shop.visit()` yet. It wants a branch in `career_lobby()`
+    that opens the shop from `SHOP_BUTTON_MOUSE_POS`, visits, and leaves by
+    `SHOP_BACK_MOUSE_POS`, with the stat headroom passed through so a capped
+    stat's item scores zero.
 - ~~**Is a training bonus a percentage or a flat number?**~~ **A percentage**,
   settled 2026-09-19 by measurement. The board was read twice on one turn
   (Classic Late Nov, turn 3) with a Motivating Megaphone (+40%, the tier the

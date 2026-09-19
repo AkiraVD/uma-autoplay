@@ -179,6 +179,43 @@ GC_FINALE_RACE_MOUSE_POS = (545, 925)
 # above falls in the gap beside the Shop, which is where the bot kept landing:
 # three laps, 0/3 races run. Measured by hand on 2026-09-17.
 TB_CLIMAX_RACE_MOUSE_POS = (537, 908)
+
+# Trackblazer's Climax Store. The shelf is a scrolling list walked through
+# core/menu_scan.py (profile SHOP_BUY) and read by core/shop.py. Measured
+# 2026-09-19 on live frames; the row pitch is 121px (names at 429/550/671/792).
+SHOP_BUTTON_MOUSE_POS = (622, 952)          # the lobby's facility-grid button
+SHOP_LIST_BBOX = (275, 395, 845, 815)
+# Drag at x=400: the checkbox column is x~765 and dragging there would toggle
+# a row, and Confirm sits at (552,913) so the drag column stays clear of it.
+# The two y values are symmetric about the list's middle so an up-drag is not
+# clamped by the bottom of the screen.
+SHOP_SCROLL_UP_FROM_MOUSE_POS = (400, 460)
+SHOP_SCROLL_DOWN_FROM_MOUSE_POS = (400, 760)
+SHOP_SCROLL_DISTANCE = 240                  # about two rows at a 121px pitch
+SHOP_ROW_PITCH = 121
+
+# Offsets from the "Cost" anchor's top-left corner, as (dx, dy, w, h).
+SHOP_NAME_OFFSET = (-10, -42, 330, 36)
+SHOP_COST_OFFSET = (80, -6, 120, 38)
+SHOP_EFFECT_OFFSET = (10, 24, 450, 34)
+# Anchor top-left -> the row's checkbox centre (392,452 -> 766,459).
+SHOP_CHECKBOX_OFFSET = (374, 7)
+
+SHOP_COINS_REGION = (640, 330, 160, 45)
+SHOP_CONFIRM_MOUSE_POS = (552, 913)
+SHOP_RESET_MOUSE_POS = (771, 913)
+SHOP_BACK_MOUSE_POS = (216, 1039)
+# Confirm Exchange, Exchange Complete and Confirm Use all put their green
+# button here and their Cancel/Close there. They can only be told apart by the
+# title bar, never by position - see docs/screen-map.md.
+SHOP_DIALOG_GREEN_MOUSE_POS = (686, 997)
+SHOP_DIALOG_CANCEL_MOUSE_POS = (419, 997)
+SHOP_DIALOG_TITLE_REGION = (260, 20, 590, 60)
+# The Exchange Complete quantity stepper. It defaults to 0, so storing is what
+# happens if nothing is pressed and using on purchase is the opt-in.
+SHOP_QTY_PLUS_MOUSE_POS = (797, 222)
+SHOP_QTY_MINUS_MOUSE_POS = (706, 222)
+SHOP_QTY_COUNT_REGION = (725, 200, 55, 48)
 # The career-complete screen puts its own Skills / Complete Career buttons at
 # the bottom of the game panel. The in-career skills_btn template does not
 # match them (0.59), so these two are reached by position.

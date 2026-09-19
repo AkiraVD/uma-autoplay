@@ -84,6 +84,37 @@ SKILL_BUY = calibration(
   rewind_settle=1.4,
 )
 
+# Trackblazer's Climax Store shelf. The anchor is the per-row "Cost" label,
+# deliberately NOT the row checkbox: ticking a row turns its checkbox green, so
+# a checkbox template goes blind on exactly the row that was just selected -
+# which is the row a buying pass most needs to find again. Measured 2026-09-19
+# over six shop frames against six non-shop ones, the Cost label separates
+# +0.491 (worst positive 0.977, best negative 0.486). The per-row coin icon was
+# the other candidate and was rejected at 0.820 on the lobby, whose Shop button
+# carries a coin balance of its own.
+#
+# travel_ratio is a conservative starting value, not a measurement. Ad-hoc
+# drags with no hold at either end travelled 218px of a requested 250 (0.872),
+# but slow_drag holds 1.0s before and 0.5s after to kill the glide and will
+# travel further, so 0.872 describes the wrong drag. Erring HIGH is the safe
+# direction: `scroll` asks for `step / travel_ratio`, so a too-high ratio
+# under-advances into extra overlap - costing passes - while a too-low one
+# over-advances and skips rows. Re-measure against slow_drag on a live shelf.
+SHOP_BUY = calibration(
+  name="shop shelf",
+  anchor="assets/trackblazer/shop_cost_label.png",
+  list_bbox="SHOP_LIST_BBOX",
+  scroll_up_from="SHOP_SCROLL_UP_FROM_MOUSE_POS",
+  scroll_down_from="SHOP_SCROLL_DOWN_FROM_MOUSE_POS",
+  default_step="SHOP_SCROLL_DISTANCE",
+  hold_after=0.5,
+  travel_ratio=0.95,
+  rewind_settle=1.4,
+  min_step=110,
+  max_step=380,
+  passes=8,
+)
+
 def const(prof, key):
   """Resolve a profile field that names a constant. See the module docstring."""
   value = prof[key]
