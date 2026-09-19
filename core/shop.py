@@ -216,8 +216,18 @@ def buy(wanted, use_now=()):
     warning("TB-SHOP-BUY: Exchange did not complete; the basket may be unspent.")
     return ticked
 
+  # Say so out loud. `_expect` only logs when a title does NOT match, so the
+  # happy path used to log nothing at all past the ticks - a completed exchange
+  # and a silently failed Confirm produced identical logs, and the only way to
+  # tell them apart was to go and read the coin balance by hand. Same class of
+  # bug as a silent None: the failure is invisible, not loud.
+  spent = sum(r["cost"] for r in ticked)
+  info(f"Shop: exchanged {len(ticked)} item(s) for {spent} coins: "
+       + ", ".join(r["name"] for r in ticked))
+
   names = {r["name"] for r in ticked}
-  if any(n in names for n in (use_now or ())):
+  using = [n for n in (use_now or ()) if n in names]
+  if using:
     control.click(*constants.SHOP_QTY_PLUS_MOUSE_POS)
     sleep(0.5)
     control.click(*constants.SHOP_DIALOG_GREEN_MOUSE_POS)
@@ -225,10 +235,15 @@ def buy(wanted, use_now=()):
     if _expect(CONFIRM_USE):
       control.click(*constants.SHOP_DIALOG_GREEN_MOUSE_POS)
       sleep(2)
+      info(f"Shop: used on purchase: {', '.join(using)}.")
+    else:
+      warning("TB-SHOP-USE: Confirm Use never came up; the items are stored"
+              " rather than used.")
   else:
     # Quantity stays 0 and Close stores the lot for the turn that wants it.
     control.click(*constants.SHOP_DIALOG_CANCEL_MOUSE_POS)
     sleep(1.5)
+    info(f"Shop: stored {len(ticked)} item(s) for a later turn.")
   return ticked
 
 
