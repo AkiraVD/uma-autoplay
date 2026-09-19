@@ -108,8 +108,14 @@ Worth deriving properly if the behaviour ever looks wrong:
   `logic.career_ending()` now names the last five turns off the year string,
   which is the signal such a check would hang from; an exact turns-left count
   is still not derived anywhere, and the turn counter cannot supply one - it
-  counts down to the next race day rather than the end of the career, and reads
-  -1 (unreadable) throughout Trackblazer's climax.
+  counts down to the end of the current **year**, not the end of the career.
+  (This entry said "the next race day", which the measured sequence further
+  down already contradicted and the 2026-09-19 career settles: Junior ran `11`
+  down to `1` across Late Jul to Late Dec, then Classic Early Jan opened at
+  `24`.) The claim that it also read `-1` *throughout* Trackblazer's Climax
+  dated from the mis-cropped region and no longer holds: the 2026-09-19 career
+  logged **one** unreadable turn across 75 numeric ones, and a Climax race day
+  returns the string `"Race Day"` rather than -1.
 - ~~**`11` reads as `1`, and the Classic counter misreads badly.**~~ Root-caused
   2026-09-19 and half-fixed. Both symptoms were one defect: `check_turn`'s OCR
   fallback ranked candidate numbers by **position**, taking the topmost. The
