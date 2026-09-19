@@ -794,6 +794,27 @@ skip `race_prep()` drives inside a career.
 Covered by `tests/test_out_of_career.py`; the bar matches no in-career frame
 across the grand_concert and sparks fixtures.
 
+**Still open: the bar goes blind on the Scout screen itself (2026-09-19).**
+`game_nav_scout.png` is cut from the Scout tile in its *inactive* state, so it
+matches every screen where Scout is not the open tab and fails on the one
+screen where it is - which is exactly where the blind tap puts the bot.
+Measured live with the Menu panel open over Scout: `game_nav` **0.451**,
+`team_rank` **0.363**. One tap on Home later, the same two read **0.976** and
+**0.944**. `team_rank` is not merely low there, it is absent: the Scout screen
+draws gacha currency top-left where the TEAM RANK badge normally sits.
+
+Kept as `out_of_career/game_scout_active.png`, where it scores **0.428** -
+level with `login_bonus.png` and +0.004 over `in_career.png` - so no threshold
+separates it. The template's margin on the original set is unchanged at +0.237,
+so this is a missing case, not a regression.
+
+Re-cutting the bar from a tile that is inactive on *both* screens does not work
+either. Worst-positive minus best-negative over the fixture set: race
+**-0.385**, enhance **-0.015**, story **+0.047**, scout **-0.346**. All score
+0.92-0.98 on the live Scout frame and still fail to separate, because the
+fixtures' bars differ enough between screens to swamp the gap. A working fix
+needs a different feature, not another tile crop.
+
 ## Career start: story Skip and Quick Mode (2026-09-17)
 
 Both are once-per-career settings the bot never touched. Measured live while the
