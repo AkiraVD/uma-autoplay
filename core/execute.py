@@ -136,6 +136,14 @@ templates = {
   # it again - which is what "it keeps going to the gacha menu after a career"
   # was. Stopping here means the tap never happens on those screens at all.
   "game_nav": "assets/ui/game_nav_scout.png",
+  # The same bar, read off the Race tile. game_nav is cut from the Scout tile
+  # in its inactive state, so it goes blind on the Scout screen itself - which
+  # is precisely where DIALOG_ADVANCE_ALT_MOUSE_POS parks the bot. Only one tab
+  # is ever active, so a second tile is always in its normal state and one of
+  # the two always matches. Race was measured against enhance and story: it
+  # scores 0.693 on the worst negative where story reaches 0.844, against a
+  # 0.85 threshold. See docs/screen-map.md.
+  "game_nav_alt": "assets/ui/game_nav_race.png",
   # The login bonus, which both the daily reset and the end of a career land
   # on. Nothing in this dict matched it, so it was the one screen in the
   # post-career walk that fell through to the blind taps. Its banner is
@@ -1224,7 +1232,7 @@ def career_lobby():
     # outside a career. The bar is checked too because the badge is missing from
     # some of the screens the game walks through after one, and those are
     # exactly where the blind tap was pressing Scout.
-    if matches["team_rank"] or matches["game_nav"]:
+    if matches["team_rank"] or matches["game_nav"] or matches["game_nav_alt"]:
       # A career that was running a moment ago is not over: the reload after a
       # date change lands here, and the career is behind the Career button.
       if RESUMING_CAREER:

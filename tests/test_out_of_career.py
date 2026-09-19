@@ -120,13 +120,32 @@ def test_the_game_navigation_bar():
   is the gacha, and it is why careers kept ending up in the summon menu. The
   bar is on the game's own screens and on none of the career's, so stopping on
   it is safe in the direction that matters.
+
+  One tile is not enough, which cost a whole evening. `game_nav` is cut from
+  the Scout tile in its INACTIVE state, so it matches every screen where Scout
+  is not the open tab and fails on the one screen where it is - the Scout
+  screen, which is exactly where the blind tap lands. Measured 2026-09-19:
+  0.451 there against 0.976 one tap later on Home.
+
+  Cutting a different tile only moves the blind spot: `game_home.png` was
+  captured with the Race tab open, so a Race-tile template fails on it for the
+  same reason. But only one tab can be active at a time, so for any two
+  distinct tiles at least one is always in its normal state - the union is
+  complete by construction rather than by luck. Race is the partner because
+  its worst negative is 0.693 where story reaches 0.844 against a threshold of
+  0.85.
   """
+  def on_bar(name):
+    m = matches(os.path.join(FIXTURES, name))
+    return bool(m["game_nav"] or m["game_nav_alt"])
+
   for name in ("game_home.png", "game_home_gl.png", "home_mid_career.png",
-               "scenario_select.png", "trainee_select.png"):
-    ok(f"{name}: the navigation bar is found", bool(matches(os.path.join(FIXTURES, name))["game_nav"]))
+               "scenario_select.png", "trainee_select.png",
+               "game_scout_active.png"):
+    ok(f"{name}: the navigation bar is found", on_bar(name))
   for name in ("in_career.png", "career_complete.png", "login_bonus.png",
                "date_changed.png", "continue_career.png"):
-    ok(f"{name}: and not there", not matches(os.path.join(FIXTURES, name))["game_nav"])
+    ok(f"{name}: and not there", not on_bar(name))
 
 def test_the_alt_tap_is_the_reason():
   """Kept as a measurement rather than a memory: where that blind tap lands.
