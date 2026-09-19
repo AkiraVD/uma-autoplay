@@ -78,6 +78,25 @@ Worth deriving properly if the behaviour ever looks wrong:
 
 ## Smaller open items
 
+- **Nothing starts a career.** `CAREER_BUTTON_MOUSE_POS` is clicked in exactly
+  one place (`core/execute.py:1232`) and only when `RESUMING_CAREER` is set by
+  the date-changed reload. At the home screen after a finished career the
+  `team_rank or game_nav` branch fires and the loop returns, so the run simply
+  ends. Scenario Select -> Trainee -> Legacy -> Support Formation -> Final
+  Confirmation are all measured in `screen-map.md`, but nothing drives them, so
+  every new career is started by hand. This, not anything inside a career, is
+  what stops a night of unattended runs: 2026-09-19 the bot finished its career
+  at 17:55 and stopped three times at the home screen within ten minutes.
+- **The nav bar goes blind on the Scout screen** (2026-09-19) - the one screen
+  the blind tap `DIALOG_ADVANCE_ALT_MOUSE_POS` (756,980) lands on. `game_nav`
+  reads 0.451 and `team_rank` 0.363 there, against 0.976 and 0.944 one tap later
+  on Home; `team_rank` is absent outright, since Scout draws gacha currency
+  where the badge sits. Kept as `out_of_career/game_scout_active.png`, scoring
+  0.428 - level with `login_bonus.png` and +0.004 over `in_career.png` - so no
+  threshold separates it, and four re-cut tiles (race, enhance, story, scout)
+  all fail to separate over the fixture set. Numbers in `screen-map.md`. The
+  existing template's margin is unchanged at +0.237, so this is a missing case
+  rather than a regression.
 - **A career that ends with chain steps left** has spent outings on a chain it
   never cashed. `outings.steps_remaining()` exists but nothing calls it.
   `logic.career_ending()` now names the last five turns off the year string,
