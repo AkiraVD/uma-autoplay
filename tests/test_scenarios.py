@@ -67,6 +67,26 @@ def test_trackblazer_has_its_own_race_day():
   ok("and sits on the TS Climax Race! button", tb_pos == (537, 908), tb_pos)
   ok("its asset is not URA's", tb_asset != ura_asset, tb_asset)
 
+def test_trackblazer_reads_its_own_turn_box():
+  """Its calendar box sets taller digits lower, so URA's crop guillotines them.
+
+  URA's region ends at y 106 and a Trackblazer glyph runs y 84..131, so the
+  crop kept the top 22px of every digit: None on 49 of 49 live frames while 17
+  fixtures passed. Guarded here because the tempting fix is to move the shared
+  constant, which silently breaks the URA and Grand Concert boxes that are
+  correct on it.
+  """
+  seen(trackblazer=True)
+  tb = sc.get("turn_digits_region")
+  seen()
+  ura = sc.get("turn_digits_region")
+  ok("Trackblazer's turn box is not URA's", tb != ura, f"{tb} vs {ura}")
+  ok("and sits lower on the card", tb[1] > ura[1], f"top {tb[1]} vs {ura[1]}")
+  seen(grand_concert=True)
+  ok("Grand Concert keeps URA's", sc.get("turn_digits_region") == ura)
+  seen(unity=True)
+  ok("Unity keeps URA's", sc.get("turn_digits_region") == ura)
+
 def test_grand_concert_shifts_for_its_extra_button():
   """Its lobby carries a fourth Lessons button, which moves two things left."""
   seen(grand_concert=True)
@@ -110,6 +130,7 @@ def test_flags_are_read_at_call_time():
 
 for test in [test_each_mode_resolves_to_itself, test_no_flags_is_ura,
              test_trackblazer_has_its_own_race_day,
+             test_trackblazer_reads_its_own_turn_box,
              test_grand_concert_shifts_for_its_extra_button,
              test_unity_inherits_the_ura_race_day,
              test_every_mode_names_an_asset_that_exists,
