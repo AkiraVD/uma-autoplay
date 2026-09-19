@@ -987,6 +987,16 @@ Measured on a live Trackblazer career, Maruzensky, Junior Year Pre-Debut.
   carries `Training banner not recognized: 'junior result pts 0 pts'`.
   Harmless so far, but it is the first thing to suspect if a Trackblazer
   career starts misreading the banner.
+- **The turn counter sits lower than URA's, with taller digits** (measured
+  2026-09-19 on three full frames). The white card spans `y 82..150` and the
+  digits `y 84..131` - h 47, w 16-17 a glyph, at x 284-339 - against URA's
+  36-40px. The shared `TURN_DIGITS_REGION` ends at `y 106`, so it keeps only
+  the top 22px of every glyph and `read_turn_digits` returned `None` on all 49
+  live frames, falling through to the OCR fallback every turn. Read it through
+  `scenarios.get("turn_digits_region")`, which gives Trackblazer
+  `TB_TURN_DIGITS_REGION = (258, 78, 112, 58)`: the same 112x58 window shifted
+  30px down onto the card. Do not move the shared constant - URA's and Grand
+  Concert's boxes are correct on it.
 - The right rail runs at x~1838: Jukebox 75, Sparks 230, Log 390, Career
   Profile 540, Agenda 700, Item Request 855, Menu 1010, with a red "!" at
   (1893,820) and a "NEW" tag at (1793,948).

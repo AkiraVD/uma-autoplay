@@ -101,17 +101,29 @@ Worth deriving properly if the behaviour ever looks wrong:
   fallback: the box text really was `'11 turn(s) left'` at high confidence, so
   the digit was never dropped by OCR.
 
-  **What is still open: the glyph bank declines on every live frame.** It read
-  `None` on 31 of 31 live captures while passing 17 of 17 fixtures, which is why
-  the fallback ran every single turn and why this hid for two careers. Cause:
-  the live lobby renders digits at **22-23px** where the fixtures are **36-40px**,
-  so `TURN_GLYPH_HEIGHT = (25, 50)` excludes them all. Widening it to (20, 45)
-  was tried and **reverted** - the components are then found, but per-glyph OCR
-  returns nothing at that scale, and touching digits merge into one ~32px blob
-  read as a single wrong character (`0` for 9, `2` for 6). Silent `None`s became
-  confident wrong numbers, which is worse. Fixing it properly needs a digit
-  bank cut from live crops the way `core/gains.py` works;
-  `tests/fixtures/turn/live/` holds 31 of them as material.
+  **Closed 2026-09-19: the reader was right, its crop was not.** The glyph pass
+  read `None` on 49 of 49 live captures while passing 17 of 17 fixtures, which
+  is why the fallback ran every single turn and why this hid for two careers.
+  Trackblazer draws the calendar box with taller digits set lower - measured
+  `y 84..131` (h 47) against URA's 36-40 - while `TURN_DIGITS_REGION` ends at
+  `y 106`. Every live crop held the top 22px of a glyph and nothing else.
+
+  That 22px is what made this look like a threshold bug for two days: it was
+  taken for the digits' true size, and `TURN_GLYPH_HEIGHT = (25, 50)` for too
+  strict. Widening it to (20, 45) was tried and **reverted**, because finding
+  the clipped tops turned silent `None`s into confident wrong numbers (`0` for
+  9, `2` for 6). **Both thresholds are correct as written** - a whole
+  Trackblazer glyph is h 47 and sits inside them, and a card-centred crop
+  clears `TURN_MIN_WHITE` at 0.58-0.69 rather than the clipped 0.29-0.38. The
+  digit bank cut from live crops that this entry used to propose could never
+  have worked either: those crops do not contain whole digits.
+
+  Fixed **per mode** (`TB_TURN_DIGITS_REGION`, read through
+  `turn_digits_region` in `core/scenarios.py`), not by moving the shared
+  constant - URA's `_blue` and Grand Concert's `_purple` boxes fit it, and 17
+  fixtures pass on it. `11_trackblazer*.png` guard the new crop, and the three
+  1920x1080 frames in `tests/fixtures/turn/candidates/` are what it was
+  measured from - the only artifact that made the diagnosis possible.
 - **The measured turn sequences, kept as the evidence behind the entry above.**
   Full unsampled sequence, 2026-09-18, Trackblazer/Maruzensky.
 
