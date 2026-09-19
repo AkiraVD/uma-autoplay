@@ -94,8 +94,20 @@ def _turn_value(text):
     return text
 
 
-def read_lines(paths, since=None):
-  """Every log line from the files, in order, from `since` onward."""
+def read_lines(paths, since=None, until=None):
+  """Every log line of ONE career: from `since` to where that career ends.
+
+  **Stopping matters as much as starting.** `--since` alone ran to the end of
+  the file, so a log holding several careers produced a fixture holding several
+  careers - 195 turns with Junior passed three times, which still satisfied
+  every per-turn check and looked entirely healthy. Two such files were built
+  and deleted on 2026-09-19 before this stop existed.
+
+  A career ends at the next `[BOT] Starting` after the anchor. That is used in
+  preference to `[BOT] Stopped`, which is not a reliable terminator: the bot can
+  be stopped and restarted mid-career (F1, or the config page), and a career
+  resumed after a stop is still the same career.
+  """
   started = since is None
   for path in paths:
     with open(path, encoding="utf-8", errors="ignore") as handle:
@@ -109,14 +121,18 @@ def read_lines(paths, since=None):
             started = True
           else:
             continue
+        elif "[BOT] Starting" in message and stamp != since:
+          return                      # the next career begins; this one is done
+        if until and stamp >= until:
+          return
         yield stamp, level, message
 
 
-def extract(paths, since=None):
+def extract(paths, since=None, until=None):
   """Group the log into one record per turn, keyed off the `Year:` line."""
   turns = []
   current = None
-  for stamp, _level, message in read_lines(paths, since):
+  for stamp, _level, message in read_lines(paths, since, until):
     hit = PATTERNS["year"].match(message)
     if hit:
       # A new Year line opens a turn. The facilities are read *before* it on
@@ -210,11 +226,14 @@ def main():
   ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
   ap.add_argument("logs", nargs="+", help="log files, rotated backup first")
   ap.add_argument("--since", help="timestamp of the run's [BOT] Starting line")
+  ap.add_argument("--until", help="stop at this timestamp; normally unnecessary,"
+                                  " since a career already ends at the next"
+                                  " [BOT] Starting")
   ap.add_argument("--out", required=True, help="JSON fixture to write")
   ap.add_argument("--label", default="", help="name for this career")
   a = ap.parse_args()
 
-  turns = extract(a.logs, a.since)
+  turns = extract(a.logs, a.since, a.until)
   # A turn with no board is a race day, a story screen or a partial read; keep
   # it, because "what did it do on the turns it could not score" is exactly the
   # question a backtest asks.

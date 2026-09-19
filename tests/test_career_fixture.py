@@ -65,6 +65,60 @@ def test_every_fixture_is_structurally_sound():
     ok(f"{name}: every board parsed its levels and gains", not bad, bad[:4])
 
 
+def test_each_fixture_holds_exactly_one_career():
+  """A fixture spanning two careers passes every other check in this file.
+
+  `--since` used to run to the end of the log, so extracting from a file that
+  held several careers produced one fixture containing all of them: 195 turns,
+  Junior passed three times, every per-turn check green. Two such files were
+  built and deleted on 2026-09-19 before the extractor learned to stop at the
+  next `[BOT] Starting`.
+
+  **Time is the invariant, not turn counts.** The first version of this check
+  counted rows per era and failed anything over 26, on the reasoning that a year
+  holds 24 dated turns. That was wrong twice over: it condemned two perfectly
+  clean Grand Concert careers, because that scenario re-reads the lobby after
+  each concert screen and legitimately logs the same date twice 30-70 seconds
+  apart; and it would have passed real contamination that happened to stay under
+  the threshold. Duplicate dates are not evidence of anything on their own.
+
+  A career runs forward in time. Two careers spliced together show a backwards
+  jump at the seam - the second run's clock starts over - and that holds
+  whatever the scenario, the turn count or the calendar.
+
+  **The log carries no date**, only `HH:MM:SS`, so a career that crosses
+  midnight wraps: `trackblazer_20260918.json` runs 23:57:17 -> 01:40:52 and its
+  first step is 23:57:17 -> 00:02:43. Comparing the strings calls that a
+  backwards jump. Simply allowing one jump would gut the check, because a
+  spliced file also shows exactly one (10:57:16 -> 02:02:42 when two real
+  careers are joined). So a wrap is *carried* - a day is added and the run must
+  stay forward afterwards - which separates five minutes over midnight from
+  nine hours backwards.
+  """
+  def seconds(stamp):
+    h, m, s = (int(p) for p in stamp.split(":"))
+    return h * 3600 + m * 60 + s
+
+  for path in CAREERS:
+    name = os.path.basename(path)
+    turns = load(path)["turns"]
+    stamps = [t["time"] for t in turns if t.get("time")]
+    day, wraps = 0, 0
+    for previous, current in zip(stamps, stamps[1:]):
+      if seconds(current) < seconds(previous):
+        day += 86400
+        wraps += 1
+    # A career is a couple of hours, so it can cross midnight at most once.
+    # More than one wrap means the clock restarted, which is a splice.
+    ok(f"{name}: crosses midnight at most once", wraps <= 1, f"{wraps} wraps")
+    # With the wrap carried, the whole run must span less than a day: two
+    # careers joined span the gap between them, which is far longer.
+    if stamps:
+      total = seconds(stamps[-1]) + (86400 if wraps else 0) - seconds(stamps[0])
+      ok(f"{name}: spans one sitting, not two", 0 < total < 6 * 3600,
+         f"{total // 3600}h{(total % 3600) // 60:02d}m")
+
+
 def test_every_scored_turn_carries_a_decision():
   """A turn that read a board and then did nothing is a hole, not a rest.
 
@@ -166,6 +220,7 @@ def test_the_career_covers_the_whole_run():
 
 for test in [test_there_is_something_to_replay,
              test_every_fixture_is_structurally_sound,
+             test_each_fixture_holds_exactly_one_career,
              test_every_scored_turn_carries_a_decision,
              test_energy_is_the_reading_the_decision_was_made_on,
              test_the_split_is_carried_where_the_career_is_new_enough,

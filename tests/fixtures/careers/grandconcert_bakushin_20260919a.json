@@ -1,0 +1,9182 @@
+{
+ "label": "grandconcert_bakushin_20260919a",
+ "source": {
+  "logs": [
+   "logs/log.txt.1",
+   "logs/log.txt"
+  ],
+  "since": "02:02:42"
+ },
+ "turns": [
+  {
+   "time": "02:02:42",
+   "year": null,
+   "facilities": {},
+   "energy_after": 100.0,
+   "energy": 100.0
+  },
+  {
+   "time": "02:02:55",
+   "year": "Junior Year Pre-Debut",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 2,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 12,
+      "pwr": 6,
+      "skill": 6
+     },
+     "energy_cost": -17,
+     "split": {
+      "spd": {
+       "blue": 1
+      },
+      "wit": {
+       "blue": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 2,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 11,
+      "guts": 9,
+      "skill": 5
+     },
+     "energy_cost": -17,
+     "split": {
+      "spd": {
+       "blue": 2
+      }
+     }
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 4,
+      "pwr": 9,
+      "skill": 5
+     },
+     "energy_cost": -17,
+     "split": {
+      "wit": {
+       "blue": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 2,
+      "pwr": 2,
+      "guts": 7,
+      "skill": 4
+     },
+     "energy_cost": -17
+    },
+    "wit": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 2,
+      "wit": 6,
+      "skill": 5
+     },
+     "energy_cost": 0
+    }
+   },
+   "turn": 11,
+   "criteria": "Run in Junior Make Debut",
+   "stats": {
+    "spd": 206,
+    "sta": 94,
+    "pwr": 172,
+    "guts": 128,
+    "wit": 130
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1394,
+    "sta": 506,
+    "pwr": 428,
+    "guts": 372,
+    "wit": 1070
+   },
+   "energy_after": 100.0,
+   "energy": 100.0,
+   "planner": {
+    "scores": {
+     "spd": 7.01,
+     "sta": 5.13,
+     "pwr": 2.83,
+     "wit": 0.63,
+     "guts": 0.62
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training SPD."
+  },
+  {
+   "time": "02:03:47",
+   "year": "Junior Year Pre-Debut",
+   "facilities": {
+    "spd": {
+     "supports": 3,
+     "levels": {
+      "gray": 0,
+      "blue": 3,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 0,
+      "pwr": 5,
+      "skill": 7
+     },
+     "energy_cost": -17,
+     "split": {
+      "spd": {
+       "blue": 1
+      },
+      "wit": {
+       "blue": 2
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 9,
+      "guts": 7,
+      "skill": 5
+     },
+     "energy_cost": -17,
+     "split": {
+      "spd": {
+       "blue": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 4,
+      "pwr": 9,
+      "skill": 4
+     },
+     "energy_cost": -17
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 0,
+      "pwr": 3,
+      "guts": 9,
+      "skill": 4
+     },
+     "energy_cost": -17,
+     "split": {
+      "spd": {
+       "blue": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 0,
+      "wit": 6,
+      "skill": 5
+     },
+     "energy_cost": 0
+    }
+   },
+   "turn": 10,
+   "criteria": "Run in Junior Make Debut",
+   "stats": {
+    "spd": 213,
+    "sta": 94,
+    "pwr": 183,
+    "guts": 128,
+    "wit": 130
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1387,
+    "sta": 506,
+    "pwr": 417,
+    "guts": 372,
+    "wit": 1070
+   },
+   "energy_after": 83.9,
+   "energy": 100.0,
+   "planner": {
+    "scores": {
+     "spd": 7.83,
+     "sta": 2.91,
+     "guts": 2.24,
+     "pwr": 0.78,
+     "wit": 0.5
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training SPD."
+  },
+  {
+   "time": "02:04:38",
+   "year": "Junior Year Pre-Debut",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 2,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 0,
+      "pwr": 6,
+      "skill": 6
+     },
+     "energy_cost": -19,
+     "split": {
+      "spd": {
+       "blue": 1
+      },
+      "wit": {
+       "blue": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 8,
+      "guts": 6,
+      "skill": 4
+     },
+     "energy_cost": -20
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 4,
+      "pwr": 10,
+      "skill": 4
+     },
+     "energy_cost": -20,
+     "split": {
+      "wit": {
+       "blue": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 0,
+      "pwr": 2,
+      "guts": 7,
+      "skill": 4
+     },
+     "energy_cost": -20
+    },
+    "wit": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 2,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 0,
+      "wit": 7,
+      "skill": 7
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "blue": 2
+      }
+     }
+    }
+   },
+   "turn": 9,
+   "criteria": "Run in Junior Make Debut",
+   "stats": {
+    "spd": 233,
+    "sta": 94,
+    "pwr": 188,
+    "guts": 128,
+    "wit": 130
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1367,
+    "sta": 506,
+    "pwr": 412,
+    "guts": 372,
+    "wit": 1070
+   },
+   "energy_after": 88.56,
+   "energy": 83.9,
+   "planner": {
+    "scores": {
+     "wit": 5.55,
+     "spd": 5.39,
+     "pwr": 2.86,
+     "sta": 0.77,
+     "guts": 0.49
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "wit",
+   "decided_by": "Training WIT."
+  },
+  {
+   "time": "02:05:12",
+   "year": "Junior Year Pre-Debut",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 2,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 0,
+      "pwr": 5,
+      "skill": 5
+     },
+     "energy_cost": -19,
+     "split": {
+      "spd": {
+       "blue": 1
+      },
+      "wit": {
+       "blue": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 8,
+      "guts": 6,
+      "skill": 4
+     },
+     "energy_cost": -20
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 4,
+      "pwr": 11,
+      "skill": 5
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "blue": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 0,
+      "pwr": 2,
+      "guts": 8,
+      "skill": 5
+     },
+     "energy_cost": -20,
+     "split": {
+      "wit": {
+       "blue": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 0,
+      "wit": 7,
+      "skill": 6
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "blue": 1
+      }
+     }
+    }
+   },
+   "turn": 8,
+   "criteria": "Run in Junior Make Debut",
+   "stats": {
+    "spd": 238,
+    "sta": 99,
+    "pwr": 188,
+    "guts": 128,
+    "wit": 137
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1362,
+    "sta": 501,
+    "pwr": 412,
+    "guts": 372,
+    "wit": 1063
+   },
+   "energy_after": 89.83,
+   "energy": 88.56,
+   "planner": {
+    "scores": {
+     "spd": 6.14,
+     "pwr": 3.61,
+     "wit": 3.06,
+     "guts": 2.16,
+     "sta": 0.77
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training SPD."
+  },
+  {
+   "time": "02:06:42",
+   "year": "Junior Year Pre-Debut",
+   "facilities": {
+    "spd": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 9,
+      "pwr": 4,
+      "skill": 4
+     },
+     "energy_cost": -19
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 8,
+      "guts": 6,
+      "skill": 4
+     },
+     "energy_cost": -20
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 4,
+      "pwr": 10,
+      "skill": 4
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "blue": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 2,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "pwr": 5,
+      "guts": 10,
+      "skill": 6
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "blue": 2
+      }
+     }
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 2,
+      "wit": 7,
+      "skill": 6
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "blue": 1
+      }
+     }
+    }
+   },
+   "turn": 6,
+   "criteria": "Run in Junior Make Debut",
+   "stats": {
+    "spd": 248,
+    "sta": 99,
+    "pwr": 193,
+    "guts": 138,
+    "wit": 137
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1352,
+    "sta": 501,
+    "pwr": 407,
+    "guts": 362,
+    "wit": 1063
+   },
+   "energy_after": 69.49,
+   "energy": 89.83,
+   "planner": {
+    "scores": {
+     "guts": 4.24,
+     "wit": 3.19,
+     "pwr": 2.86,
+     "spd": 0.89,
+     "sta": 0.77
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "guts",
+   "decided_by": "Training GUTS."
+  },
+  {
+   "time": "02:07:35",
+   "year": "Junior Year Pre-Debut",
+   "facilities": {},
+   "turn": 5,
+   "criteria": "Run in Junior Make Debut",
+   "energy_after": 69.49,
+   "energy": 69.49
+  },
+  {
+   "time": "02:08:14",
+   "year": "Junior Year Pre-Debut",
+   "facilities": {
+    "spd": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 13,
+      "pwr": 6,
+      "skill": 5
+     },
+     "energy_cost": -19,
+     "split": {
+      "spd": {
+       "blue": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 9,
+      "guts": 7,
+      "skill": 4
+     },
+     "energy_cost": -20
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 2,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 5,
+      "pwr": 12,
+      "skill": 7
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "blue": 1
+      },
+      "wit": {
+       "blue": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "pwr": 2,
+      "guts": 9,
+      "skill": 5
+     },
+     "energy_cost": -19,
+     "split": {
+      "friend": {
+       "blue": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "wit": 7,
+      "skill": 7
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "blue": 1
+      }
+     }
+    }
+   },
+   "turn": 5,
+   "criteria": "Run in Junior Make Debut",
+   "stats": {
+    "spd": 251,
+    "sta": 99,
+    "pwr": 203,
+    "guts": 148,
+    "wit": 142
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1349,
+    "sta": 501,
+    "pwr": 397,
+    "guts": 352,
+    "wit": 1058
+   },
+   "energy_after": 50.0,
+   "energy": 69.49,
+   "planner": {
+    "scores": {
+     "spd": 5.33,
+     "pwr": 5.11,
+     "wit": 3.27,
+     "guts": 1.87,
+     "sta": 0.87
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training SPD."
+  },
+  {
+   "time": "02:09:50",
+   "year": "Junior Year Pre-Debut",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 2,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 17,
+      "pwr": 5,
+      "skill": 5
+     },
+     "energy_cost": -18,
+     "split": {
+      "spd": {
+       "blue": 1
+      },
+      "friend": {
+       "blue": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 9,
+      "guts": 8,
+      "skill": 4
+     },
+     "energy_cost": -20
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 2,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 5,
+      "pwr": 14,
+      "skill": 6
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "blue": 1
+      },
+      "wit": {
+       "blue": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 2,
+      "pwr": 2,
+      "guts": 9,
+      "skill": 4
+     },
+     "energy_cost": -20
+    },
+    "wit": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "wit": 10,
+      "skill": 7
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "green": 1
+      },
+      "wit": {
+       "blue": 1
+      }
+     }
+    }
+   },
+   "turn": 4,
+   "criteria": "Run in Junior Make Debut",
+   "stats": {
+    "spd": 264,
+    "sta": 99,
+    "pwr": 214,
+    "guts": 148,
+    "wit": 142
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1336,
+    "sta": 501,
+    "pwr": 386,
+    "guts": 352,
+    "wit": 1058
+   },
+   "energy_after": 29.66,
+   "energy": 50.0,
+   "planner": {
+    "scores": {
+     "pwr": 9.87,
+     "spd": 9.62,
+     "wit": 6.77,
+     "sta": 0.91,
+     "guts": 0.71
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "pwr",
+   "decided_by": "Training PWR."
+  },
+  {
+   "time": "02:10:37",
+   "year": "Junior Year Pre-Debut",
+   "facilities": {},
+   "turn": 3,
+   "criteria": "Run in Junior Make Debut",
+   "energy_after": 29.66,
+   "energy": 29.66
+  },
+  {
+   "time": "02:11:15",
+   "year": "Junior Year Pre-Debut",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 2,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 16,
+      "pwr": 7,
+      "skill": 7
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "blue": 1
+      },
+      "wit": {
+       "blue": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 10,
+      "guts": 9,
+      "skill": 6
+     },
+     "energy_cost": -20,
+     "split": {
+      "wit": {
+       "blue": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 5,
+      "pwr": 11,
+      "skill": 5
+     },
+     "energy_cost": -19,
+     "split": {
+      "friend": {
+       "blue": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 5,
+      "pwr": 4,
+      "guts": 13,
+      "skill": 6
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "blue": 1,
+       "green": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 6,
+     "gains": {
+      "spd": 2,
+      "wit": 6,
+      "skill": 5
+     },
+     "energy_cost": 0
+    }
+   },
+   "turn": 3,
+   "criteria": "Run in Junior Make Debut",
+   "stats": {
+    "spd": 264,
+    "sta": 104,
+    "pwr": 228,
+    "guts": 148,
+    "wit": 147
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1336,
+    "sta": 496,
+    "pwr": 372,
+    "guts": 352,
+    "wit": 1053
+   },
+   "energy_after": 80.51,
+   "energy": 29.66,
+   "planner": {
+    "scores": {
+     "spd": 8.1,
+     "guts": 5.2,
+     "sta": 3.07,
+     "pwr": 2.31,
+     "wit": 0.63
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "rest",
+   "decided_by": "Energy 30 is under 35, resting instead of training."
+  },
+  {
+   "time": "02:11:52",
+   "year": "Junior Year Pre-Debut",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 16,
+      "pwr": 7,
+      "skill": 7
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "green": 1
+      },
+      "wit": {
+       "blue": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 2,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 11,
+      "guts": 10,
+      "skill": 5
+     },
+     "energy_cost": -18,
+     "split": {
+      "spd": {
+       "blue": 1
+      },
+      "friend": {
+       "blue": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 4,
+      "pwr": 10,
+      "skill": 4
+     },
+     "energy_cost": -20
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 2,
+      "pwr": 2,
+      "guts": 9,
+      "skill": 4
+     },
+     "energy_cost": -20
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "wit": 8,
+      "skill": 6
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "blue": 1
+      }
+     }
+    }
+   },
+   "turn": 2,
+   "criteria": "Run in Junior Make Debut",
+   "stats": {
+    "spd": 264,
+    "sta": 104,
+    "pwr": 228,
+    "guts": 148,
+    "wit": 152
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1336,
+    "sta": 496,
+    "pwr": 372,
+    "guts": 352,
+    "wit": 1048
+   },
+   "energy_after": 60.17,
+   "energy": 80.51,
+   "planner": {
+    "scores": {
+     "spd": 7.27,
+     "sta": 4.5,
+     "wit": 3.32,
+     "guts": 1.46,
+     "pwr": 0.84
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training SPD."
+  },
+  {
+   "time": "02:12:30",
+   "year": "Junior Year Pre-Debut",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 2,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 1,
+      "pwr": 5,
+      "skill": 5
+     },
+     "energy_cost": -18,
+     "split": {
+      "spd": {
+       "blue": 1
+      },
+      "friend": {
+       "blue": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 9,
+      "guts": 8,
+      "skill": 4
+     },
+     "energy_cost": -20
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 6,
+      "pwr": 17,
+      "skill": 7
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "blue": 1,
+       "green": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "pwr": 2,
+      "guts": 10,
+      "skill": 5
+     },
+     "energy_cost": -20,
+     "split": {
+      "wit": {
+       "blue": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "wit": 8,
+      "skill": 7
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "blue": 1
+      }
+     }
+    }
+   },
+   "turn": 1,
+   "criteria": "Run in Junior Make Debut",
+   "stats": {
+    "spd": 280,
+    "sta": 104,
+    "pwr": 235,
+    "guts": 148,
+    "wit": 152
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1320,
+    "sta": 496,
+    "pwr": 365,
+    "guts": 352,
+    "wit": 1048
+   },
+   "energy_after": 24.58,
+   "energy": 60.17,
+   "planner": {
+    "scores": {
+     "pwr": 5.43,
+     "spd": 4.56,
+     "guts": 3.74,
+     "wit": 3.34,
+     "sta": 0.91
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "pwr",
+   "decided_by": "Training PWR."
+  },
+  {
+   "time": "02:13:05",
+   "year": "Junior Year Pre-Debut",
+   "facilities": {},
+   "turn": "Race Day",
+   "criteria": "Run in Junior Make Debut",
+   "energy_after": 24.58,
+   "energy": 24.58
+  },
+  {
+   "time": "02:14:42",
+   "year": "Junior Year Early Jul",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 16,
+      "pwr": 7,
+      "skill": 7
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "green": 1
+      },
+      "wit": {
+       "blue": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 10,
+      "guts": 9,
+      "skill": 5
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "blue": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 2,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 5,
+      "pwr": 13,
+      "skill": 5
+     },
+     "energy_cost": -19,
+     "split": {
+      "wit": {
+       "blue": 1
+      },
+      "friend": {
+       "blue": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 3,
+      "pwr": 3,
+      "guts": 10,
+      "skill": 6
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "green": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 16,
+     "gains": {
+      "spd": 2,
+      "wit": 6,
+      "skill": 5
+     },
+     "energy_cost": 0
+    }
+   },
+   "turn": 8,
+   "criteria": "Place top 5 in Fantasy $. Entry criteria metl",
+   "stats": {
+    "spd": 285,
+    "sta": 118,
+    "pwr": 255,
+    "guts": 148,
+    "wit": 165
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1315,
+    "sta": 482,
+    "pwr": 345,
+    "guts": 352,
+    "wit": 1035
+   },
+   "energy_after": 75.42,
+   "energy": 24.58,
+   "planner": {
+    "scores": {
+     "spd": 7.27,
+     "pwr": 4.45,
+     "guts": 3.06,
+     "sta": 3.05,
+     "wit": 0.63
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "rest",
+   "decided_by": "Energy 25 is under 35, resting instead of training."
+  },
+  {
+   "time": "02:15:28",
+   "year": "Junior Year Late Jul",
+   "facilities": {},
+   "turn": 7,
+   "criteria": "Place top 5 in Fantasy $. Entry criteria metl",
+   "energy_after": 55.08,
+   "energy": 55.08
+  },
+  {
+   "time": "02:16:27",
+   "year": "Junior Year Early Aug",
+   "facilities": {},
+   "turn": 6,
+   "criteria": "Place top 5 in Fantasy $. Entry criteria metl",
+   "energy_after": 39.83,
+   "energy": 39.83
+  },
+  {
+   "time": "02:17:24",
+   "year": "Junior Year Late Aug",
+   "facilities": {},
+   "turn": 5,
+   "criteria": "Place top 5 in Fantasy $. Entry criteria metl",
+   "energy_after": 19.49,
+   "energy": 19.49
+  },
+  {
+   "time": "02:18:20",
+   "year": "Junior Year Early Sep",
+   "facilities": {},
+   "turn": 4,
+   "criteria": "Place top 5 in Fantasy $. Entry criteria metl",
+   "energy_after": 31.78,
+   "energy": 31.78
+  },
+  {
+   "time": "02:19:35",
+   "year": "Junior Year Late Sep",
+   "facilities": {},
+   "turn": 3,
+   "criteria": "Place top 5 in Fantasy $. Entry criteria metl",
+   "energy_after": 47.03,
+   "energy": 26.69
+  },
+  {
+   "time": "02:20:31",
+   "year": "Junior Year Late Oct",
+   "facilities": {},
+   "turn": 1,
+   "criteria": "Place top 5 in Fantasy $. Entry criteria metl",
+   "energy_after": 26.69,
+   "energy": 26.69
+  },
+  {
+   "time": "02:21:43",
+   "year": "Junior Year Early Nov",
+   "facilities": {},
+   "turn": "Race Day",
+   "criteria": "Place top 5 in Fantasy $. Entry criteria metl",
+   "energy_after": 26.69,
+   "energy": 26.69
+  },
+  {
+   "time": "02:22:57",
+   "year": "Junior Year Late Nov",
+   "facilities": {
+    "spd": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 11,
+      "pwr": 4,
+      "skill": 4
+     },
+     "energy_cost": -20
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 8,
+      "guts": 8,
+      "skill": 4
+     },
+     "energy_cost": -20
+    },
+    "pwr": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 4,
+      "pwr": 9,
+      "skill": 4
+     },
+     "energy_cost": -20
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 3,
+      "pwr": 3,
+      "guts": 10,
+      "skill": 6
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "green": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 3,
+     "levels": {
+      "gray": 0,
+      "blue": 3,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 12,
+     "gains": {
+      "spd": 5,
+      "wit": 13,
+      "skill": 9
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "blue": 1
+      },
+      "wit": {
+       "blue": 2
+      }
+     }
+    }
+   },
+   "turn": 1,
+   "criteria": "Place top 5 in Hanshin J.F Entry criteria metl",
+   "stats": {
+    "spd": 298,
+    "sta": 132,
+    "pwr": 269,
+    "guts": 146,
+    "wit": 179
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1302,
+    "sta": 468,
+    "pwr": 331,
+    "guts": 354,
+    "wit": 1021
+   },
+   "energy_after": 31.78,
+   "energy": 26.69,
+   "planner": {
+    "scores": {
+     "wit": 10.37,
+     "guts": 3.27,
+     "spd": 1.77,
+     "sta": 0.86,
+     "pwr": 0.78
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "wit",
+   "decided_by": "Training WIT."
+  },
+  {
+   "time": "02:23:50",
+   "year": "Junior Year Early Dec",
+   "facilities": {},
+   "turn": "Race Day",
+   "criteria": "Place top 5 in Hanshin J.F Entry criteria metl",
+   "energy_after": 31.78,
+   "energy": 31.78
+  },
+  {
+   "time": "02:25:05",
+   "year": "Junior Year Late Dec",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 16,
+      "pwr": 7,
+      "skill": 6
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "green": 1
+      },
+      "wit": {
+       "blue": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 10,
+      "guts": 9,
+      "skill": 6
+     },
+     "energy_cost": -21,
+     "split": {
+      "wit": {
+       "blue": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 2,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 6,
+      "pwr": 13,
+      "skill": 6
+     },
+     "energy_cost": -19,
+     "split": {
+      "spd": {
+       "blue": 1
+      },
+      "friend": {
+       "blue": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 2,
+      "pwr": 2,
+      "guts": 9,
+      "skill": 4
+     },
+     "energy_cost": -21
+    },
+    "wit": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 2,
+     "gains": {
+      "spd": 2,
+      "wit": 6,
+      "skill": 5
+     },
+     "energy_cost": 0
+    }
+   },
+   "turn": -1,
+   "criteria": "Place top 5 in Fillies' Revue Entry criteria metl",
+   "stats": {
+    "spd": 304,
+    "sta": 143,
+    "pwr": 270,
+    "guts": 152,
+    "wit": 193
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1296,
+    "sta": 457,
+    "pwr": 330,
+    "guts": 348,
+    "wit": 1007
+   },
+   "energy_after": 82.63,
+   "energy": 31.78,
+   "planner": {
+    "scores": {
+     "spd": 8.08,
+     "pwr": 4.52,
+     "sta": 3.75,
+     "guts": 0.71,
+     "wit": 0.63
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "rest",
+   "decided_by": "Energy 32 is under 35, resting instead of training."
+  },
+  {
+   "time": "02:27:46",
+   "year": "Classic Year Early Jan",
+   "facilities": {
+    "spd": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 15,
+      "pwr": 5,
+      "skill": 5
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "blue": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 2,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 12,
+      "guts": 10,
+      "skill": 7
+     },
+     "energy_cost": -18,
+     "split": {
+      "wit": {
+       "blue": 1
+      },
+      "friend": {
+       "blue": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 5,
+      "pwr": 14,
+      "skill": 5
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "green": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "pwr": 4,
+      "guts": 12,
+      "skill": 7
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "green": 1
+      },
+      "wit": {
+       "blue": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "wit": 7,
+      "skill": 6
+     },
+     "energy_cost": 0
+    }
+   },
+   "turn": 4,
+   "criteria": "Place top 5 in Fillies' Revue Entry criteria metl",
+   "stats": {
+    "spd": 332,
+    "sta": 146,
+    "pwr": 273,
+    "guts": 155,
+    "wit": 206
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1268,
+    "sta": 454,
+    "pwr": 327,
+    "guts": 345,
+    "wit": 994
+   },
+   "energy_after": 64.41,
+   "energy": 82.63,
+   "planner": {
+    "scores": {
+     "sta": 4.59,
+     "spd": 4.58,
+     "guts": 4.29,
+     "pwr": 3.15,
+     "wit": 0.78
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "sta",
+   "decided_by": "Training selected: STA with training weight 4.593 from 0 rainbow(s), 2 support(s) and 0% fail chance"
+  },
+  {
+   "time": "02:28:40",
+   "year": "Classic Year Late Jan",
+   "facilities": {
+    "spd": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 16,
+      "pwr": 7,
+      "skill": 7
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "green": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 9,
+      "guts": 8,
+      "skill": 4
+     },
+     "energy_cost": -21
+    },
+    "pwr": {
+     "supports": 3,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 2,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 8,
+      "pwr": 20,
+      "skill": 6
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "green": 2
+      },
+      "wit": {
+       "blue": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "pwr": 2,
+      "guts": 12,
+      "skill": 5
+     },
+     "energy_cost": -19,
+     "split": {
+      "friend": {
+       "blue": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "wit": 10,
+      "skill": 6
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "green": 1
+      }
+     }
+    }
+   },
+   "turn": 3,
+   "criteria": "Place top 5 in Fillies' Revue Entry criteria metl",
+   "stats": {
+    "spd": 350,
+    "sta": 158,
+    "pwr": 273,
+    "guts": 178,
+    "wit": 206
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1250,
+    "sta": 442,
+    "pwr": 327,
+    "guts": 322,
+    "wit": 994
+   },
+   "energy_after": 33.47,
+   "energy": 64.41,
+   "planner": {
+    "scores": {
+     "pwr": 7.71,
+     "spd": 4.05,
+     "wit": 3.45,
+     "guts": 2.0,
+     "sta": 0.91
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "pwr",
+   "decided_by": "Training selected: PWR with training weight 6.357 from 0 rainbow(s), 3 support(s) and 0% fail chance"
+  },
+  {
+   "time": "02:29:25",
+   "year": "Classic Year Early Feb",
+   "facilities": {
+    "spd": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 17,
+      "pwr": 8,
+      "skill": 6
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "green": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 11,
+      "guts": 10,
+      "skill": 7
+     },
+     "energy_cost": -20,
+     "split": {
+      "wit": {
+       "green": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 6,
+      "pwr": 14,
+      "skill": 6
+     },
+     "energy_cost": -18,
+     "split": {
+      "spd": {
+       "green": 1
+      },
+      "friend": {
+       "blue": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 3,
+      "pwr": 2,
+      "guts": 12,
+      "skill": 5
+     },
+     "energy_cost": -20,
+     "split": {
+      "wit": {
+       "green": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "wit": 9,
+      "skill": 7
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "yellow": 1
+      }
+     }
+    }
+   },
+   "turn": 2,
+   "criteria": "Place top 5 in Fillies' Revue Entry criteria metl",
+   "stats": {
+    "spd": 350,
+    "sta": 166,
+    "pwr": 295,
+    "guts": 183,
+    "wit": 211
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1250,
+    "sta": 434,
+    "pwr": 305,
+    "guts": 317,
+    "wit": 989
+   },
+   "energy_after": 100.0,
+   "energy": 33.47,
+   "planner": {
+    "scores": {
+     "spd": 5.72,
+     "pwr": 4.58,
+     "guts": 3.28,
+     "sta": 3.19,
+     "wit": 2.58
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "rest",
+   "decided_by": "Energy 33 is under 35, resting instead of training."
+  },
+  {
+   "time": "02:29:54",
+   "year": "Classic Year Late Feb",
+   "facilities": {},
+   "turn": 1,
+   "criteria": "Place top 5 in Fillies' Revue Entry criteria metl",
+   "energy_after": 100.0,
+   "energy": 100.0
+  },
+  {
+   "time": "02:31:01",
+   "year": "Classic Year Late Feb",
+   "facilities": {
+    "spd": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 13,
+      "pwr": 6,
+      "skill": 7
+     },
+     "energy_cost": -17
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 11,
+      "guts": 10,
+      "skill": 9
+     },
+     "energy_cost": -17,
+     "split": {
+      "spd": {
+       "green": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 3,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 2,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 7,
+      "pwr": 17,
+      "skill": 9
+     },
+     "energy_cost": -15,
+     "split": {
+      "spd": {
+       "green": 1
+      },
+      "wit": {
+       "green": 1
+      },
+      "friend": {
+       "blue": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "pwr": 3,
+      "guts": 11,
+      "skill": 7
+     },
+     "energy_cost": -17
+    },
+    "wit": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 4,
+      "wit": 12,
+      "skill": 13
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "yellow": 1
+      },
+      "wit": {
+       "green": 1
+      }
+     }
+    }
+   },
+   "turn": 1,
+   "criteria": "Place top 5 in Fillies' Revue Entry criteria metl",
+   "stats": {
+    "spd": 350,
+    "sta": 166,
+    "pwr": 295,
+    "guts": 191,
+    "wit": 215
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1250,
+    "sta": 434,
+    "pwr": 305,
+    "guts": 309,
+    "wit": 985
+   },
+   "energy_after": 84.75,
+   "energy": 100.0,
+   "planner": {
+    "scores": {
+     "pwr": 11.55,
+     "wit": 5.44,
+     "sta": 3.23,
+     "spd": 1.32,
+     "guts": 0.97
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "pwr",
+   "decided_by": "Training selected: PWR with training weight 10.876 from 0 rainbow(s), 3 support(s) and 0% fail chance"
+  },
+  {
+   "time": "02:31:47",
+   "year": "Classic Year Early Mar",
+   "facilities": {},
+   "turn": "Race Day",
+   "criteria": "Place top 5 in Fillies' Revue Entry criteria metl",
+   "energy_after": 84.75,
+   "energy": 84.75
+  },
+  {
+   "time": "02:32:25",
+   "year": "Classic Year Early Mar",
+   "facilities": {},
+   "turn": "Race Day",
+   "criteria": "Place top 5 in Fillies' Revue Entry criteria metl",
+   "energy_after": 84.75,
+   "energy": 84.75
+  },
+  {
+   "time": "02:34:46",
+   "year": "Classic Year Late Mar",
+   "facilities": {
+    "spd": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 16,
+      "pwr": 7,
+      "skill": 9
+     },
+     "energy_cost": -20,
+     "split": {
+      "wit": {
+       "green": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 12,
+      "guts": 10,
+      "skill": 9
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "green": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 4,
+      "pwr": 13,
+      "skill": 6
+     },
+     "energy_cost": -22
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 5,
+      "pwr": 4,
+      "guts": 12,
+      "skill": 8
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "yellow": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "wit": 11,
+      "skill": 9
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "green": 1
+      },
+      "friend": {
+       "blue": 1
+      }
+     }
+    }
+   },
+   "turn": 1,
+   "criteria": "Place top 5 in Oka Sho Entry criteria metl",
+   "stats": {
+    "spd": 353,
+    "sta": 177,
+    "pwr": 315,
+    "guts": 198,
+    "wit": 223
+   },
+   "caps": {
+    "spd": 1632,
+    "sta": 1316,
+    "pwr": 1334,
+    "guts": 1500,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1247,
+    "sta": 423,
+    "pwr": 285,
+    "guts": 302,
+    "wit": 977
+   },
+   "energy_after": 64.41,
+   "energy": 84.75,
+   "planner": {
+    "scores": {
+     "wit": 5.23,
+     "spd": 4.09,
+     "sta": 4.03,
+     "guts": 2.3,
+     "pwr": 1.79
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training selected: SPD with training weight 4.089 from 0 rainbow(s), 1 support(s) and 0% fail chance"
+  },
+  {
+   "time": "02:35:57",
+   "year": "Classic Year Early Apr",
+   "facilities": {},
+   "turn": "Race Day",
+   "criteria": "Place top 5 in Oka Sho Entry criteria metl",
+   "energy_after": 64.41,
+   "energy": 64.41
+  },
+  {
+   "time": "02:38:53",
+   "year": "Classic Year Late Apr",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 26,
+      "pwr": 15,
+      "skill": 14
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "green": 1,
+       "yellow": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 11,
+      "guts": 10,
+      "skill": 7
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "yellow": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 5,
+      "pwr": 14,
+      "skill": 7
+     },
+     "energy_cost": -19,
+     "split": {
+      "friend": {
+       "blue": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "pwr": 3,
+      "guts": 11,
+      "skill": 7
+     },
+     "energy_cost": -21
+    },
+    "wit": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 2,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "wit": 13,
+      "skill": 11
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "green": 2
+      }
+     }
+    }
+   },
+   "turn": 10,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 418,
+    "sta": 199,
+    "pwr": 373,
+    "guts": 204,
+    "wit": 239
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1182,
+    "sta": 401,
+    "pwr": 227,
+    "guts": 296,
+    "wit": 961
+   },
+   "energy_after": 44.07,
+   "energy": 64.41,
+   "planner": {
+    "scores": {
+     "spd": 6.93,
+     "wit": 6.23,
+     "pwr": 3.27,
+     "sta": 2.51,
+     "guts": 0.97
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training selected: SPD with training weight 9.406 from 1 rainbow(s), 2 support(s) and 0% fail chance"
+  },
+  {
+   "time": "02:39:48",
+   "year": "Classic Year Early May",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 2,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 14,
+     "gains": {
+      "spd": 18,
+      "pwr": 9,
+      "skill": 8
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "green": 1
+      },
+      "wit": {
+       "green": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 12,
+      "guts": 11,
+      "skill": 8
+     },
+     "energy_cost": -18,
+     "split": {
+      "friend": {
+       "blue": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 4,
+      "pwr": 13,
+      "skill": 6
+     },
+     "energy_cost": -21
+    },
+    "guts": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 4,
+      "pwr": 6,
+      "guts": 14,
+      "skill": 8
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "yellow": 1
+      },
+      "wit": {
+       "green": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 2,
+      "wit": 7,
+      "skill": 8
+     },
+     "energy_cost": 0
+    }
+   },
+   "turn": 9,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 447,
+    "sta": 219,
+    "pwr": 388,
+    "guts": 204,
+    "wit": 239
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1153,
+    "sta": 381,
+    "pwr": 212,
+    "guts": 296,
+    "wit": 961
+   },
+   "energy_after": 23.73,
+   "energy": 44.07,
+   "planner": {
+    "scores": {
+     "spd": 6.78,
+     "guts": 4.04,
+     "sta": 2.63,
+     "pwr": 1.79,
+     "wit": 0.75
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training selected: SPD with training weight 5.959 from 0 rainbow(s), 2 support(s) and 14% fail chance"
+  },
+  {
+   "time": "02:40:37",
+   "year": "Classic Year Late May",
+   "facilities": {
+    "spd": {
+     "supports": 3,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 2,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 39,
+      "pwr": 20,
+      "skill": 18
+     },
+     "energy_cost": -14,
+     "split": {
+      "spd": {
+       "yellow": 2
+      },
+      "friend": {
+       "blue": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 9,
+      "guts": 8,
+      "skill": 6
+     },
+     "energy_cost": -21
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 5,
+      "pwr": 15,
+      "skill": 9
+     },
+     "energy_cost": -22,
+     "split": {
+      "wit": {
+       "green": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 5,
+      "pwr": 4,
+      "guts": 12,
+      "skill": 8
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "yellow": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 18,
+     "gains": {
+      "spd": 4,
+      "wit": 13,
+      "skill": 11
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "yellow": 1
+      }
+     }
+    }
+   },
+   "turn": 8,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 467,
+    "sta": 219,
+    "pwr": 399,
+    "guts": 204,
+    "wit": 241
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1133,
+    "sta": 381,
+    "pwr": 201,
+    "guts": 296,
+    "wit": 959
+   },
+   "energy_after": 74.58,
+   "energy": 23.73,
+   "planner": {
+    "scores": {
+     "spd": 8.96,
+     "pwr": 4.71,
+     "wit": 2.99,
+     "guts": 2.3,
+     "sta": 1.7
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "rest",
+   "decided_by": "Energy 24 is under 35, resting instead of training."
+  },
+  {
+   "time": "02:41:04",
+   "year": "Classic Year Early Jun",
+   "facilities": {
+    "spd": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 15,
+      "pwr": 6,
+      "skill": 7
+     },
+     "energy_cost": -21
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 10,
+      "guts": 9,
+      "skill": 7
+     },
+     "energy_cost": -20
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 2,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 6,
+      "pwr": 19,
+      "skill": 8
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "yellow": 2
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "pwr": 3,
+      "guts": 12,
+      "skill": 7
+     },
+     "energy_cost": -20,
+     "split": {
+      "wit": {
+       "yellow": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 4,
+      "wit": 12,
+      "skill": 12
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "yellow": 1
+      },
+      "wit": {
+       "green": 1
+      }
+     }
+    }
+   },
+   "turn": 7,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 467,
+    "sta": 219,
+    "pwr": 399,
+    "guts": 204,
+    "wit": 241
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1133,
+    "sta": 381,
+    "pwr": 201,
+    "guts": 296,
+    "wit": 959
+   },
+   "energy_after": 53.39,
+   "energy": 74.58,
+   "planner": {
+    "scores": {
+     "wit": 5.42,
+     "pwr": 4.96,
+     "guts": 2.09,
+     "spd": 1.45,
+     "sta": 1.07
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "pwr",
+   "decided_by": "Training selected: PWR with training weight 4.960 from 0 rainbow(s), 2 support(s) and 0% fail chance"
+  },
+  {
+   "time": "02:41:40",
+   "year": "Classic Year Late Jun",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 2,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 29,
+      "pwr": 12,
+      "skill": 13
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "yellow": 2
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 11,
+      "guts": 10,
+      "skill": 7
+     },
+     "energy_cost": -19,
+     "split": {
+      "friend": {
+       "blue": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 5,
+      "pwr": 15,
+      "skill": 9
+     },
+     "energy_cost": -21,
+     "split": {
+      "wit": {
+       "green": 1,
+       "yellow": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 2,
+      "pwr": 3,
+      "guts": 10,
+      "skill": 6
+     },
+     "energy_cost": -20
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "wit": 8,
+      "skill": 8
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "yellow": 1
+      }
+     }
+    }
+   },
+   "turn": -1,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 467,
+    "sta": 225,
+    "pwr": 418,
+    "guts": 204,
+    "wit": 236
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1133,
+    "sta": 375,
+    "pwr": 182,
+    "guts": 296,
+    "wit": 964
+   },
+   "energy_after": 83.9,
+   "energy": 53.39,
+   "planner": {
+    "scores": {
+     "spd": 6.12,
+     "pwr": 5.38,
+     "wit": 2.54,
+     "sta": 2.51,
+     "guts": 0.84
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "rest",
+   "decided_by": "inferred: board scored, no training executed"
+  },
+  {
+   "time": "02:44:01",
+   "year": "Classic Year Early Jul",
+   "facilities": {},
+   "turn": 5,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "energy_after": 83.9,
+   "energy": 83.9
+  },
+  {
+   "time": "02:44:33",
+   "year": "Classic Year Early Jul",
+   "facilities": {
+    "spd": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 19,
+      "pwr": 8,
+      "skill": 7
+     },
+     "energy_cost": -25
+    },
+    "sta": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 18,
+      "guts": 14,
+      "skill": 8
+     },
+     "energy_cost": -23,
+     "split": {
+      "spd": {
+       "yellow": 1
+      },
+      "friend": {
+       "blue": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 2,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 9,
+      "pwr": 23,
+      "skill": 8
+     },
+     "energy_cost": -26,
+     "split": {
+      "spd": {
+       "yellow": 2
+      }
+     }
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 4,
+      "pwr": 4,
+      "guts": 14,
+      "skill": 6
+     },
+     "energy_cost": -26
+    },
+    "wit": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 9,
+      "wit": 23,
+      "skill": 13
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "green": 1,
+       "yellow": 1
+      }
+     }
+    }
+   },
+   "turn": 5,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 470,
+    "sta": 228,
+    "pwr": 443,
+    "guts": 207,
+    "wit": 239
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1130,
+    "sta": 372,
+    "pwr": 157,
+    "guts": 293,
+    "wit": 961
+   },
+   "energy_after": 57.2,
+   "energy": 83.9,
+   "planner": {
+    "scores": {
+     "wit": 6.5,
+     "pwr": 4.59,
+     "sta": 4.43,
+     "spd": 1.83,
+     "guts": 1.2
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "pwr",
+   "decided_by": "Training selected: PWR with training weight 4.588 from 0 rainbow(s), 2 support(s) and 0% fail chance"
+  },
+  {
+   "time": "02:45:09",
+   "year": "Classic Year Late Jul",
+   "facilities": {},
+   "turn": 4,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "energy_after": 57.2,
+   "energy": 57.2
+  },
+  {
+   "time": "02:46:04",
+   "year": "Classic Year Late Jul",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 1,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 27,
+      "pwr": 14,
+      "skill": 11
+     },
+     "energy_cost": -15,
+     "split": {
+      "spd": {
+       "yellow": 1
+      },
+      "friend": {
+       "blue": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 16,
+      "guts": 12,
+      "skill": 7
+     },
+     "energy_cost": -27,
+     "split": {
+      "wit": {
+       "yellow": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 9,
+      "pwr": 23,
+      "skill": 8
+     },
+     "energy_cost": -27,
+     "split": {
+      "spd": {
+       "yellow": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 6,
+      "pwr": 4,
+      "guts": 16,
+      "skill": 7
+     },
+     "energy_cost": -27,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 6,
+      "wit": 15,
+      "skill": 8
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "green": 1
+      }
+     }
+    }
+   },
+   "turn": 4,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 500,
+    "sta": 237,
+    "pwr": 474,
+    "guts": 207,
+    "wit": 239
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1100,
+    "sta": 363,
+    "pwr": 126,
+    "guts": 293,
+    "wit": 961
+   },
+   "energy_after": 41.95,
+   "energy": 57.2,
+   "planner": {
+    "scores": {
+     "spd": 6.88,
+     "wit": 4.02,
+     "pwr": 3.24,
+     "sta": 2.87,
+     "guts": 2.51
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training selected: SPD with training weight 9.358 from 1 rainbow(s), 2 support(s) and 0% fail chance"
+  },
+  {
+   "time": "02:46:41",
+   "year": "Classic Year Early Aug",
+   "facilities": {},
+   "turn": 3,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "energy_after": 41.95,
+   "energy": 41.95
+  },
+  {
+   "time": "02:47:20",
+   "year": "Classic Year Early Aug",
+   "facilities": {
+    "spd": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 19,
+     "gains": {
+      "spd": 17,
+      "pwr": 8,
+      "skill": 6
+     },
+     "energy_cost": -25
+    },
+    "sta": {
+     "supports": 3,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 2
+     },
+     "failure": 17,
+     "gains": {
+      "sta": 21,
+      "guts": 16,
+      "skill": 8
+     },
+     "energy_cost": -27,
+     "split": {
+      "spd": {
+       "yellow": 1,
+       "max": 2
+      }
+     }
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 18,
+     "gains": {
+      "sta": 9,
+      "pwr": 22,
+      "skill": 8
+     },
+     "energy_cost": -27,
+     "split": {
+      "wit": {
+       "green": 1,
+       "yellow": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 14,
+     "gains": {
+      "spd": 4,
+      "pwr": 4,
+      "guts": 17,
+      "skill": 7
+     },
+     "energy_cost": -24,
+     "split": {
+      "friend": {
+       "green": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 5,
+      "wit": 11,
+      "skill": 7
+     },
+     "energy_cost": 0
+    }
+   },
+   "turn": 3,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 527,
+    "sta": 245,
+    "pwr": 488,
+    "guts": 207,
+    "wit": 239
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1073,
+    "sta": 355,
+    "pwr": 112,
+    "guts": 293,
+    "wit": 961
+   },
+   "energy_after": 18.22,
+   "energy": 41.95,
+   "planner": {
+    "scores": {
+     "sta": 6.71,
+     "pwr": 5.21,
+     "guts": 2.43,
+     "spd": 1.67,
+     "wit": 1.2
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "guts",
+   "decided_by": "Training selected: GUTS with training weight 2.426 from 0 rainbow(s), 1 support(s) and 14% fail chance"
+  },
+  {
+   "time": "02:48:24",
+   "year": "Classic Year Late Aug",
+   "facilities": {
+    "spd": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 28,
+      "pwr": 14,
+      "skill": 9
+     },
+     "energy_cost": -17,
+     "split": {
+      "spd": {
+       "yellow": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 15,
+      "guts": 12,
+      "skill": 8
+     },
+     "energy_cost": -17,
+     "split": {
+      "wit": {
+       "green": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 8,
+      "pwr": 18,
+      "skill": 7
+     },
+     "energy_cost": -17,
+     "split": {
+      "wit": {
+       "yellow": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 7,
+      "pwr": 7,
+      "guts": 20,
+      "skill": 8
+     },
+     "energy_cost": -17,
+     "split": {
+      "spd": {
+       "max": 2
+      }
+     }
+    },
+    "wit": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 30,
+     "gains": {
+      "spd": 5,
+      "wit": 11,
+      "skill": 7
+     },
+     "energy_cost": 0
+    }
+   },
+   "turn": 2,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 531,
+    "sta": 245,
+    "pwr": 502,
+    "guts": 228,
+    "wit": 239
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1069,
+    "sta": 355,
+    "pwr": 98,
+    "guts": 272,
+    "wit": 961
+   },
+   "energy_after": 59.32,
+   "energy": 18.22,
+   "planner": {
+    "scores": {
+     "spd": 4.43,
+     "sta": 4.26,
+     "guts": 4.01,
+     "pwr": 2.89,
+     "wit": 1.95
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "rest",
+   "decided_by": "Energy 18 is under 35, resting instead of training."
+  },
+  {
+   "time": "02:49:02",
+   "year": "Classic Year Early Sep",
+   "facilities": {
+    "spd": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 1,
+      "pwr": 6,
+      "skill": 7
+     },
+     "energy_cost": -18,
+     "split": {
+      "friend": {
+       "green": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 11,
+      "guts": 10,
+      "skill": 8
+     },
+     "energy_cost": -20,
+     "split": {
+      "wit": {
+       "green": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 6,
+      "pwr": 18,
+      "skill": 9
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "max": 2
+      }
+     }
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 2,
+      "pwr": 3,
+      "guts": 10,
+      "skill": 6
+     },
+     "energy_cost": -20
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 4,
+      "wit": 11,
+      "skill": 8
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "yellow": 1
+      }
+     }
+    }
+   },
+   "turn": 1,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 531,
+    "sta": 250,
+    "pwr": 507,
+    "guts": 228,
+    "wit": 244
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1069,
+    "sta": 350,
+    "pwr": 93,
+    "guts": 272,
+    "wit": 956
+   },
+   "energy_after": 86.86,
+   "energy": 59.32,
+   "planner": {
+    "scores": {
+     "wit": 5.2,
+     "pwr": 4.18,
+     "sta": 3.96,
+     "spd": 2.93,
+     "guts": 0.84
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "wit",
+   "decided_by": "Training selected: WIT with training weight 7.675 from 1 rainbow(s), 1 support(s) and 0% fail chance"
+  },
+  {
+   "time": "02:50:12",
+   "year": "Classic Year Late Sep",
+   "facilities": {},
+   "turn": "Race Day",
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "energy_after": 86.86,
+   "energy": 86.86
+  },
+  {
+   "time": "02:52:54",
+   "year": "Classic Year Early Oct",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 1,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 27,
+      "pwr": 9,
+      "skill": 12
+     },
+     "energy_cost": -22,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "green": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 10,
+      "guts": 9,
+      "skill": 7
+     },
+     "energy_cost": -21
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 5,
+      "pwr": 15,
+      "skill": 7
+     },
+     "energy_cost": -22,
+     "split": {
+      "wit": {
+       "yellow": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "pwr": 5,
+      "guts": 13,
+      "skill": 9
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "wit": 9,
+      "skill": 8
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "yellow": 1
+      }
+     }
+    }
+   },
+   "turn": 11,
+   "criteria": "Place top 3 in Takamatsunomiya Kinen Entry criteria metl",
+   "stats": {
+    "spd": 557,
+    "sta": 253,
+    "pwr": 510,
+    "guts": 240,
+    "wit": 263
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1043,
+    "sta": 347,
+    "pwr": 90,
+    "guts": 260,
+    "wit": 937
+   },
+   "energy_after": 75.42,
+   "energy": 86.86,
+   "planner": {
+    "scores": {
+     "spd": 8.21,
+     "guts": 2.82,
+     "wit": 2.6,
+     "pwr": 2.57,
+     "sta": 1.07
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training selected: SPD with training weight 10.683 from 1 rainbow(s), 2 support(s) and 0% fail chance"
+  },
+  {
+   "time": "02:54:55",
+   "year": "Classic Year Late Oct",
+   "facilities": {
+    "spd": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 17,
+      "pwr": 6,
+      "skill": 7
+     },
+     "energy_cost": -22
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 11,
+      "guts": 10,
+      "skill": 7
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 5,
+      "pwr": 14,
+      "skill": 7
+     },
+     "energy_cost": -22
+    },
+    "guts": {
+     "supports": 3,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 2,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 7,
+      "pwr": 9,
+      "guts": 17,
+      "skill": 14
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "yellow": 1,
+       "max": 1
+      },
+      "wit": {
+       "yellow": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 5,
+      "wit": 10,
+      "skill": 8
+     },
+     "energy_cost": 0
+    }
+   },
+   "turn": 10,
+   "criteria": "Place top 3 in Takamatsunomiya Kinen Entry criteria metl",
+   "stats": {
+    "spd": 592,
+    "sta": 253,
+    "pwr": 523,
+    "guts": 244,
+    "wit": 263
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 1008,
+    "sta": 347,
+    "pwr": 77,
+    "guts": 256,
+    "wit": 937
+   },
+   "energy_after": 44.92,
+   "energy": 75.42,
+   "planner": {
+    "scores": {
+     "guts": 5.18,
+     "sta": 2.51,
+     "spd": 1.59,
+     "pwr": 1.17,
+     "wit": 1.15
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "guts",
+   "decided_by": "Training selected: GUTS with training weight 5.184 from 0 rainbow(s), 3 support(s) and 0% fail chance"
+  },
+  {
+   "time": "02:55:40",
+   "year": "Classic Year Early Nov",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 1
+     },
+     "failure": 12,
+     "gains": {
+      "spd": 29,
+      "pwr": 9,
+      "skill": 12
+     },
+     "energy_cost": -22,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "yellow": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 11,
+      "guts": 10,
+      "skill": 7
+     },
+     "energy_cost": -20,
+     "split": {
+      "wit": {
+       "yellow": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 5,
+      "pwr": 15,
+      "skill": 7
+     },
+     "energy_cost": -22
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 5,
+      "pwr": 3,
+      "guts": 10,
+      "skill": 7
+     },
+     "energy_cost": -20
+    },
+    "wit": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 6,
+      "wit": 12,
+      "skill": 8
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "friend": {
+       "yellow": 1
+      }
+     }
+    }
+   },
+   "turn": 9,
+   "criteria": "Place top 3 in Takamatsunomiya Kinen Entry criteria metl",
+   "stats": {
+    "spd": 614,
+    "sta": 253,
+    "pwr": 532,
+    "guts": 261,
+    "wit": 263
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 986,
+    "sta": 347,
+    "pwr": 68,
+    "guts": 239,
+    "wit": 937
+   },
+   "energy_after": 23.73,
+   "energy": 44.92,
+   "planner": {
+    "scores": {
+     "spd": 9.94,
+     "pwr": 5.22,
+     "wit": 4.65,
+     "sta": 2.51,
+     "guts": 1.06
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training selected: SPD with training weight 12.415 from 1 rainbow(s), 2 support(s) and 12% fail chance"
+  },
+  {
+   "time": "02:56:18",
+   "year": "Classic Year Late Nov",
+   "facilities": {},
+   "turn": 8,
+   "criteria": "Place top 3 in Takamatsunomiya Kinen Entry criteria metl",
+   "energy_after": 44.07,
+   "energy": 44.07
+  },
+  {
+   "time": "02:57:32",
+   "year": "Classic Year Late Nov",
+   "facilities": {
+    "spd": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 14,
+     "gains": {
+      "spd": 17,
+      "pwr": 6,
+      "skill": 7
+     },
+     "energy_cost": -21
+    },
+    "sta": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 14,
+      "guts": 12,
+      "skill": 9
+     },
+     "energy_cost": -18,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "friend": {
+       "yellow": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 5,
+      "pwr": 13,
+      "skill": 7
+     },
+     "energy_cost": -21
+    },
+    "guts": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 6,
+      "pwr": 6,
+      "guts": 14,
+      "skill": 8
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "yellow": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 7,
+      "wit": 18,
+      "skill": 15
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "yellow": 1
+      }
+     }
+    }
+   },
+   "turn": 8,
+   "criteria": "Place top 3 in Takamatsunomiya Kinen Entry criteria metl",
+   "stats": {
+    "spd": 646,
+    "sta": 253,
+    "pwr": 553,
+    "guts": 261,
+    "wit": 263
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 954,
+    "sta": 347,
+    "pwr": 47,
+    "guts": 239,
+    "wit": 937
+   },
+   "energy_after": 41.95,
+   "energy": 44.07,
+   "planner": {
+    "scores": {
+     "wit": 6.98,
+     "sta": 4.15,
+     "guts": 3.63,
+     "spd": 1.59,
+     "pwr": 1.11
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "wit",
+   "decided_by": "Training selected: WIT with training weight 9.450 from 1 rainbow(s), 2 support(s) and 0% fail chance"
+  },
+  {
+   "time": "02:58:33",
+   "year": "Classic Year Early Dec",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 1
+     },
+     "failure": 12,
+     "gains": {
+      "spd": 29,
+      "pwr": 9,
+      "skill": 8
+     },
+     "energy_cost": -14,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "friend": {
+       "yellow": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 15,
+     "gains": {
+      "sta": 13,
+      "guts": 11,
+      "skill": 8
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 16,
+     "gains": {
+      "sta": 5,
+      "pwr": 13,
+      "skill": 7
+     },
+     "energy_cost": -22
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 18,
+     "gains": {
+      "spd": 5,
+      "pwr": 3,
+      "guts": 10,
+      "skill": 7
+     },
+     "energy_cost": -21
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 6,
+      "wit": 17,
+      "skill": 11
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "yellow": 1
+      }
+     }
+    }
+   },
+   "turn": 7,
+   "criteria": "Place top 3 in Takamatsunomiya Kinen Entry criteria metl",
+   "stats": {
+    "spd": 663,
+    "sta": 263,
+    "pwr": 553,
+    "guts": 261,
+    "wit": 281
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 937,
+    "sta": 337,
+    "pwr": 47,
+    "guts": 239,
+    "wit": 919
+   },
+   "energy_after": 28.81,
+   "energy": 41.95,
+   "planner": {
+    "scores": {
+     "spd": 6.61,
+     "wit": 5.86,
+     "sta": 3.44,
+     "pwr": 1.86,
+     "guts": 1.06
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training selected: SPD with training weight 9.085 from 1 rainbow(s), 2 support(s) and 12% fail chance"
+  },
+  {
+   "time": "02:59:35",
+   "year": "Classic Year Late Dec",
+   "facilities": {
+    "spd": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 26,
+      "pwr": 8,
+      "skill": 9
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 12,
+      "guts": 10,
+      "skill": 9
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 6,
+      "pwr": 16,
+      "skill": 8
+     },
+     "energy_cost": -21,
+     "split": {
+      "wit": {
+       "yellow": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 1
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 6,
+      "pwr": 6,
+      "guts": 14,
+      "skill": 9
+     },
+     "energy_cost": -18,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "friend": {
+       "yellow": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 8,
+     "gains": {
+      "spd": 6,
+      "wit": 16,
+      "skill": 13
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "yellow": 1
+      }
+     }
+    }
+   },
+   "turn": -1,
+   "criteria": "Place top 3 in Takamatsunomiya Kinen Entry criteria metl",
+   "stats": {
+    "spd": 702,
+    "sta": 263,
+    "pwr": 562,
+    "guts": 265,
+    "wit": 281
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 898,
+    "sta": 337,
+    "pwr": 38,
+    "guts": 235,
+    "wit": 919
+   },
+   "energy_after": 79.66,
+   "energy": 28.81,
+   "planner": {
+    "scores": {
+     "wit": 4.11,
+     "spd": 3.98,
+     "guts": 3.65,
+     "pwr": 3.24,
+     "sta": 2.61
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "rest",
+   "decided_by": "Energy 29 is under 35, resting instead of training."
+  },
+  {
+   "time": "03:01:51",
+   "year": "Senior Year Early Jan",
+   "facilities": {},
+   "turn": 5,
+   "criteria": "Place top 3 in Takamatsunomiya Kinen Entry criteria metl",
+   "energy_after": 79.66,
+   "energy": 79.66
+  },
+  {
+   "time": "03:02:42",
+   "year": "Senior Year Early Jan",
+   "facilities": {
+    "spd": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 31,
+      "pwr": 9,
+      "skill": 10
+     },
+     "energy_cost": -22,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 12,
+      "guts": 11,
+      "skill": 9
+     },
+     "energy_cost": -21,
+     "split": {
+      "wit": {
+       "yellow": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 6,
+      "pwr": 19,
+      "skill": 8
+     },
+     "energy_cost": -22,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "yellow": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 5,
+      "pwr": 3,
+      "guts": 11,
+      "skill": 7
+     },
+     "energy_cost": -21
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 5,
+      "wit": 13,
+      "skill": 9
+     },
+     "energy_cost": 0,
+     "split": {
+      "friend": {
+       "yellow": 1
+      }
+     }
+    }
+   },
+   "turn": 5,
+   "criteria": "Place top 3 in Takamatsunomiya Kinen Entry criteria metl",
+   "stats": {
+    "spd": 724,
+    "sta": 273,
+    "pwr": 572,
+    "guts": 275,
+    "wit": 291
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 876,
+    "sta": 327,
+    "pwr": 28,
+    "guts": 225,
+    "wit": 909
+   },
+   "energy_after": 78.81,
+   "energy": 79.66,
+   "planner": {
+    "scores": {
+     "spd": 5.13,
+     "sta": 4.08,
+     "wit": 3.77,
+     "pwr": 3.44,
+     "guts": 1.1
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training selected: SPD with training weight 7.607 from 1 rainbow(s), 1 support(s) and 0% fail chance"
+  },
+  {
+   "time": "03:03:43",
+   "year": "Senior Year Late Jan",
+   "facilities": {
+    "spd": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 20,
+      "pwr": 7,
+      "skill": 7
+     },
+     "energy_cost": -24
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 13,
+      "guts": 11,
+      "skill": 8
+     },
+     "energy_cost": -21,
+     "split": {
+      "wit": {
+       "yellow": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 6,
+      "pwr": 18,
+      "skill": 8
+     },
+     "energy_cost": -19,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "friend": {
+       "yellow": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 4,
+      "pwr": 3,
+      "guts": 10,
+      "skill": 6
+     },
+     "energy_cost": -21
+    },
+    "wit": {
+     "supports": 3,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 9,
+      "wit": 26,
+      "skill": 20
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "max": 2
+      },
+      "wit": {
+       "yellow": 1
+      }
+     }
+    }
+   },
+   "turn": 4,
+   "criteria": "Place top 3 in Takamatsunomiya Kinen Entry criteria metl",
+   "stats": {
+    "spd": 759,
+    "sta": 288,
+    "pwr": 586,
+    "guts": 280,
+    "wit": 306
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 841,
+    "sta": 312,
+    "pwr": 14,
+    "guts": 220,
+    "wit": 894
+   },
+   "energy_after": 58.05,
+   "energy": 78.81,
+   "planner": {
+    "scores": {
+     "wit": 8.41,
+     "sta": 2.69,
+     "pwr": 2.68,
+     "spd": 1.84,
+     "guts": 0.98
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "sta",
+   "decided_by": "Training selected: STA with training weight 2.685 from 0 rainbow(s), 1 support(s) and 0% fail chance"
+  },
+  {
+   "time": "03:04:28",
+   "year": "Senior Year Early Feb",
+   "facilities": {},
+   "turn": 3,
+   "criteria": "Place top 3 in Takamatsunomiya Kinen Entry criteria metl",
+   "energy_after": 58.05,
+   "energy": 58.05
+  },
+  {
+   "time": "03:05:14",
+   "year": "Senior Year Early Feb",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 55,
+      "pwr": 24,
+      "skill": 19
+     },
+     "energy_cost": -24,
+     "split": {
+      "spd": {
+       "max": 2
+      }
+     }
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 12,
+      "guts": 9,
+      "skill": 7
+     },
+     "energy_cost": -20
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 9,
+      "pwr": 19,
+      "skill": 9
+     },
+     "energy_cost": -18,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "friend": {
+       "yellow": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 6,
+      "pwr": 4,
+      "guts": 14,
+      "skill": 8
+     },
+     "energy_cost": -20,
+     "split": {
+      "wit": {
+       "yellow": 1,
+       "max": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 5,
+      "wit": 11,
+      "skill": 8
+     },
+     "energy_cost": 0
+    }
+   },
+   "turn": 3,
+   "criteria": "Place top 3 in Takamatsunomiya Kinen Entry criteria metl",
+   "stats": {
+    "spd": 771,
+    "sta": 301,
+    "pwr": 586,
+    "guts": 291,
+    "wit": 306
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 829,
+    "sta": 299,
+    "pwr": 14,
+    "guts": 209,
+    "wit": 894
+   },
+   "energy_after": 34.75,
+   "energy": 58.05,
+   "planner": {
+    "scores": {
+     "spd": 12.07,
+     "pwr": 6.86,
+     "wit": 5.22,
+     "guts": 3.52,
+     "sta": 1.17
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training selected: SPD with training weight 16.191 from 2 rainbow(s), 2 support(s) and 0% fail chance"
+  },
+  {
+   "time": "03:06:00",
+   "year": "Senior Year Late Feb",
+   "facilities": {},
+   "turn": 2,
+   "criteria": "Place top 3 in Takamatsunomiya Kinen Entry criteria metl",
+   "energy_after": 34.75,
+   "energy": 34.75
+  },
+  {
+   "time": "03:06:39",
+   "year": "Senior Year Late Feb",
+   "facilities": {
+    "spd": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 20,
+      "pwr": 7,
+      "skill": 7
+     },
+     "energy_cost": -23
+    },
+    "sta": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 1
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 15,
+      "guts": 12,
+      "skill": 8
+     },
+     "energy_cost": -18,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "friend": {
+       "yellow": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 1
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 9,
+      "pwr": 20,
+      "skill": 8
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "yellow": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 5,
+      "pwr": 5,
+      "guts": 13,
+      "skill": 8
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 7,
+      "wit": 20,
+      "skill": 12
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "max": 1
+      }
+     }
+    }
+   },
+   "turn": 2,
+   "criteria": "Place top 3 in Takamatsunomiya Kinen Entry criteria metl",
+   "stats": {
+    "spd": 830,
+    "sta": 301,
+    "pwr": 620,
+    "guts": 291,
+    "wit": 318
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 770,
+    "sta": 299,
+    "pwr": 0,
+    "guts": 209,
+    "wit": 882
+   },
+   "energy_after": 73.31,
+   "energy": 34.75,
+   "planner": {
+    "scores": {
+     "wit": 4.57,
+     "sta": 4.19,
+     "guts": 2.87,
+     "spd": 1.46
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "wit",
+   "decided_by": "Training selected: WIT with training weight 7.047 from 1 rainbow(s), 1 support(s) and 0% fail chance"
+  },
+  {
+   "time": "03:07:33",
+   "year": "Senior Year Early Mar",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 38,
+      "pwr": 17,
+      "skill": 12
+     },
+     "energy_cost": -23,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 13,
+      "guts": 10,
+      "skill": 7
+     },
+     "energy_cost": -18,
+     "split": {
+      "friend": {
+       "yellow": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 9,
+      "pwr": 20,
+      "skill": 8
+     },
+     "energy_cost": -22,
+     "split": {
+      "spd": {
+       "max": 2
+      }
+     }
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 5,
+      "pwr": 3,
+      "guts": 11,
+      "skill": 7
+     },
+     "energy_cost": -20
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 7,
+      "wit": 20,
+      "skill": 14
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "yellow": 1
+      }
+     }
+    }
+   },
+   "turn": 1,
+   "criteria": "Place top 3 in Takamatsunomiya Kinen Entry criteria metl",
+   "stats": {
+    "spd": 837,
+    "sta": 301,
+    "pwr": 620,
+    "guts": 291,
+    "wit": 338
+   },
+   "caps": {
+    "spd": 1640,
+    "sta": 1322,
+    "pwr": 1347,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 763,
+    "sta": 299,
+    "pwr": 0,
+    "guts": 209,
+    "wit": 862
+   },
+   "energy_after": 50.0,
+   "energy": 73.31,
+   "planner": {
+    "scores": {
+     "spd": 6.8,
+     "wit": 3.71,
+     "sta": 2.62,
+     "guts": 0.94
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training selected: SPD with training weight 9.273 from 1 rainbow(s), 2 support(s) and 0% fail chance"
+  },
+  {
+   "time": "03:09:07",
+   "year": "Senior Year Late Mar",
+   "facilities": {},
+   "turn": "Race Day",
+   "criteria": "Place top 3 in Takamatsunomiya Kinen Entry criteria metl",
+   "energy_after": 34.75,
+   "energy": 34.75
+  },
+  {
+   "time": "03:16:51",
+   "year": "Senior Year Late Apr",
+   "facilities": {
+    "spd": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 19,
+      "pwr": 7,
+      "skill": 7
+     },
+     "energy_cost": -23
+    },
+    "sta": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 17,
+      "guts": 14,
+      "skill": 9
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 7,
+      "pwr": 15,
+      "skill": 7
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 3,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 2,
+      "max": 1
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 6,
+      "pwr": 7,
+      "guts": 16,
+      "skill": 14
+     },
+     "energy_cost": -18,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "yellow": 1
+      },
+      "friend": {
+       "yellow": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 5,
+      "wit": 12,
+      "skill": 8
+     },
+     "energy_cost": 0
+    }
+   },
+   "turn": 10,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 900,
+    "sta": 333,
+    "pwr": 695,
+    "guts": 294,
+    "wit": 341
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": 1354,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 700,
+    "sta": 267,
+    "pwr": 0,
+    "guts": 206,
+    "wit": 859
+   },
+   "energy_after": 85.59,
+   "energy": 34.75,
+   "planner": {
+    "scores": {
+     "guts": 5.88,
+     "sta": 5.08,
+     "spd": 2.14,
+     "wit": 1.28
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "rest",
+   "decided_by": "Energy 35 is under 35, resting instead of training."
+  },
+  {
+   "time": "03:17:42",
+   "year": "Senior Year Early May",
+   "facilities": {
+    "spd": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 31,
+      "pwr": 8,
+      "skill": 8
+     },
+     "energy_cost": -23,
+     "split": {
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 13,
+      "guts": 10,
+      "skill": 7
+     },
+     "energy_cost": -20
+    },
+    "pwr": {
+     "supports": 3,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 3
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 10,
+      "pwr": 26,
+      "skill": 12
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "max": 3
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 6,
+      "pwr": 4,
+      "guts": 13,
+      "skill": 8
+     },
+     "energy_cost": -20,
+     "split": {
+      "wit": {
+       "yellow": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 5,
+      "wit": 12,
+      "skill": 8
+     },
+     "energy_cost": 0,
+     "split": {
+      "friend": {
+       "yellow": 1
+      }
+     }
+    }
+   },
+   "turn": 9,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 910,
+    "sta": 333,
+    "pwr": 695,
+    "guts": 294,
+    "wit": 341
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": -1,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 690,
+    "sta": 267,
+    "pwr": 0,
+    "guts": 206,
+    "wit": 859
+   },
+   "energy_after": 62.29,
+   "energy": 85.59,
+   "planner": {
+    "scores": {
+     "spd": 4.61,
+     "guts": 2.94,
+     "wit": 2.93,
+     "sta": 1.27
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training selected: SPD with training weight 4.606 from 0 rainbow(s), 1 support(s) and 0% fail chance"
+  },
+  {
+   "time": "03:18:18",
+   "year": "Senior Year Late May",
+   "facilities": {
+    "spd": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 34,
+      "pwr": 14,
+      "skill": 13
+     },
+     "energy_cost": -24,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 14,
+      "guts": 11,
+      "skill": 8
+     },
+     "energy_cost": -19,
+     "split": {
+      "friend": {
+       "yellow": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 8,
+      "pwr": 16,
+      "skill": 8
+     },
+     "energy_cost": -22,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 5,
+      "pwr": 3,
+      "guts": 11,
+      "skill": 7
+     },
+     "energy_cost": -20,
+     "split": {
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 5,
+      "wit": 14,
+      "skill": 8
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    }
+   },
+   "turn": 8,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 932,
+    "sta": 333,
+    "pwr": 703,
+    "guts": 294,
+    "wit": 341
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": 1354,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 668,
+    "sta": 267,
+    "pwr": 0,
+    "guts": 206,
+    "wit": 859
+   },
+   "energy_after": 38.98,
+   "energy": 62.29,
+   "planner": {
+    "scores": {
+     "spd": 4.15,
+     "wit": 3.06,
+     "guts": 2.77,
+     "sta": 2.74
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training selected: SPD with training weight 6.629 from 1 rainbow(s), 1 support(s) and 0% fail chance"
+  },
+  {
+   "time": "03:18:54",
+   "year": "Senior Year Early Jun",
+   "facilities": {},
+   "turn": 7,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "energy_after": 38.98,
+   "energy": 38.98
+  },
+  {
+   "time": "03:19:39",
+   "year": "Senior Year Early Jun",
+   "facilities": {
+    "spd": {
+     "supports": 3,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 2
+     },
+     "failure": 17,
+     "gains": {
+      "spd": 52,
+      "pwr": 23,
+      "skill": 14
+     },
+     "energy_cost": -16,
+     "split": {
+      "spd": {
+       "max": 2
+      },
+      "friend": {
+       "yellow": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 12,
+      "guts": 9,
+      "skill": 7
+     },
+     "energy_cost": -21
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 8,
+      "pwr": 16,
+      "skill": 8
+     },
+     "energy_cost": -22,
+     "split": {
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 5,
+      "pwr": 4,
+      "guts": 12,
+      "skill": 9
+     },
+     "energy_cost": -21,
+     "split": {
+      "wit": {
+       "yellow": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 5,
+      "wit": 12,
+      "skill": 8
+     },
+     "energy_cost": 0
+    }
+   },
+   "turn": 7,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 977,
+    "sta": 333,
+    "pwr": 717,
+    "guts": 294,
+    "wit": 363
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": -1,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 623,
+    "sta": 267,
+    "pwr": 0,
+    "guts": 206,
+    "wit": 837
+   },
+   "energy_after": 89.83,
+   "energy": 38.98,
+   "planner": {
+    "scores": {
+     "spd": 12.66,
+     "guts": 2.1,
+     "wit": 1.28,
+     "sta": 1.17
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "rest",
+   "decided_by": "inferred: board scored, no training executed"
+  },
+  {
+   "time": "03:20:16",
+   "year": "Senior Year Late Jun",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 40,
+      "pwr": 15,
+      "skill": 14
+     },
+     "energy_cost": -25,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "yellow": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 14,
+      "guts": 11,
+      "skill": 8
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 8,
+      "pwr": 19,
+      "skill": 8
+     },
+     "energy_cost": -22,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 5,
+      "pwr": 4,
+      "guts": 13,
+      "skill": 8
+     },
+     "energy_cost": -18,
+     "split": {
+      "friend": {
+       "yellow": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 5,
+      "wit": 12,
+      "skill": 8
+     },
+     "energy_cost": 0
+    }
+   },
+   "turn": 6,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 977,
+    "sta": 333,
+    "pwr": 717,
+    "guts": 294,
+    "wit": 363
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": -1,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 623,
+    "sta": 267,
+    "pwr": 0,
+    "guts": 206,
+    "wit": 837
+   },
+   "energy_after": 64.41,
+   "energy": 89.83,
+   "planner": {
+    "scores": {
+     "spd": 10.22,
+     "sta": 2.74,
+     "guts": 2.12,
+     "wit": 1.28
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training selected: SPD with training weight 12.695 from 1 rainbow(s), 2 support(s) and 0% fail chance"
+  },
+  {
+   "time": "03:22:26",
+   "year": "Senior Year Early Jul",
+   "facilities": {},
+   "turn": 5,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "energy_after": 64.41,
+   "energy": 64.41
+  },
+  {
+   "time": "03:23:51",
+   "year": "Senior Year Early Jul",
+   "facilities": {
+    "spd": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 24,
+      "pwr": 10,
+      "skill": 8
+     },
+     "energy_cost": -22,
+     "split": {
+      "friend": {
+       "yellow": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 17,
+      "guts": 12,
+      "skill": 7
+     },
+     "energy_cost": -27
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 14,
+      "pwr": 29,
+      "skill": 12
+     },
+     "energy_cost": -27,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 8,
+      "pwr": 5,
+      "guts": 20,
+      "skill": 8
+     },
+     "energy_cost": -27,
+     "split": {
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 22,
+      "wit": 20,
+      "skill": 12
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "max": 2
+      }
+     }
+    }
+   },
+   "turn": 5,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 1051,
+    "sta": 343,
+    "pwr": 742,
+    "guts": 304,
+    "wit": 385
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": -1,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 549,
+    "sta": 257,
+    "pwr": 0,
+    "guts": 196,
+    "wit": 815
+   },
+   "energy_after": 37.71,
+   "energy": 64.41,
+   "planner": {
+    "scores": {
+     "wit": 7.14,
+     "guts": 6.62,
+     "spd": 3.39,
+     "sta": 1.57
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "guts",
+   "decided_by": "Training selected: GUTS with training weight 6.623 from 0 rainbow(s), 1 support(s) and 0% fail chance"
+  },
+  {
+   "time": "03:24:27",
+   "year": "Senior Year Late Jul",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 61,
+      "pwr": 22,
+      "skill": 17
+     },
+     "energy_cost": -25,
+     "split": {
+      "spd": {
+       "max": 2
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 21,
+      "guts": 15,
+      "skill": 8
+     },
+     "energy_cost": -27,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 12,
+      "pwr": 22,
+      "skill": 8
+     },
+     "energy_cost": -27,
+     "split": {
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 8,
+      "pwr": 5,
+      "guts": 19,
+      "skill": 8
+     },
+     "energy_cost": -23,
+     "split": {
+      "friend": {
+       "yellow": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 15,
+      "wit": 29,
+      "skill": 13
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "max": 1
+      }
+     }
+    }
+   },
+   "turn": 4,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 1059,
+    "sta": 343,
+    "pwr": 747,
+    "guts": 324,
+    "wit": 385
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": -1,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 541,
+    "sta": 257,
+    "pwr": 0,
+    "guts": 176,
+    "wit": 815
+   },
+   "energy_after": 46.19,
+   "energy": 37.71,
+   "planner": {
+    "scores": {
+     "spd": 11.67,
+     "wit": 9.71,
+     "guts": 6.58,
+     "sta": 3.29
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "wit",
+   "decided_by": "Training WIT."
+  },
+  {
+   "time": "03:25:05",
+   "year": "Senior Year Early Aug",
+   "facilities": {
+    "spd": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 12,
+     "gains": {
+      "spd": 49,
+      "pwr": 18,
+      "skill": 14
+     },
+     "energy_cost": -25,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 3,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 3
+     },
+     "failure": 10,
+     "gains": {
+      "sta": 27,
+      "guts": 19,
+      "skill": 8
+     },
+     "energy_cost": -27,
+     "split": {
+      "spd": {
+       "max": 2
+      },
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 11,
+     "gains": {
+      "sta": 11,
+      "pwr": 21,
+      "skill": 8
+     },
+     "energy_cost": -27,
+     "split": {
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 14,
+     "gains": {
+      "spd": 7,
+      "pwr": 4,
+      "guts": 16,
+      "skill": 7
+     },
+     "energy_cost": -27
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 9,
+      "wit": 17,
+      "skill": 9
+     },
+     "energy_cost": 0,
+     "split": {
+      "friend": {
+       "yellow": 1
+      }
+     }
+    }
+   },
+   "turn": 3,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 1073,
+    "sta": 343,
+    "pwr": 747,
+    "guts": 324,
+    "wit": 414
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": -1,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 527,
+    "sta": 257,
+    "pwr": 0,
+    "guts": 176,
+    "wit": 786
+   },
+   "energy_after": 20.34,
+   "energy": 46.19,
+   "planner": {
+    "scores": {
+     "spd": 9.99,
+     "sta": 6.49,
+     "guts": 5.29,
+     "wit": 3.55
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training selected: SPD with training weight 12.464 from 1 rainbow(s), 1 support(s) and 12% fail chance"
+  },
+  {
+   "time": "03:26:44",
+   "year": "Senior Year Late Aug",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 1
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 42,
+      "pwr": 19,
+      "skill": 16
+     },
+     "energy_cost": -15,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "friend": {
+       "yellow": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 16,
+      "guts": 11,
+      "skill": 6
+     },
+     "energy_cost": -19
+    },
+    "pwr": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 10,
+      "pwr": 19,
+      "skill": 7
+     },
+     "energy_cost": -19
+    },
+    "guts": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 10,
+      "pwr": 9,
+      "guts": 25,
+      "skill": 12
+     },
+     "energy_cost": -19,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 26,
+     "gains": {
+      "spd": 19,
+      "wit": 32,
+      "skill": 16
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "max": 1
+      }
+     }
+    }
+   },
+   "turn": 2,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 1113,
+    "sta": 343,
+    "pwr": 789,
+    "guts": 350,
+    "wit": 414
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": -1,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 487,
+    "sta": 257,
+    "pwr": 0,
+    "guts": 150,
+    "wit": 786
+   },
+   "energy_after": 61.44,
+   "energy": 20.34,
+   "planner": {
+    "scores": {
+     "wit": 10.99,
+     "spd": 6.39,
+     "sta": 5.46,
+     "guts": 4.12
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "rest",
+   "decided_by": "Energy 20 is under 35, resting instead of training."
+  },
+  {
+   "time": "03:27:19",
+   "year": "Senior Year Early Sep",
+   "facilities": {
+    "spd": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 37,
+      "pwr": 13,
+      "skill": 11
+     },
+     "energy_cost": -25,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 12,
+      "guts": 9,
+      "skill": 7
+     },
+     "energy_cost": -20
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 8,
+      "pwr": 17,
+      "skill": 8
+     },
+     "energy_cost": -18,
+     "split": {
+      "wit": {
+       "max": 1
+      },
+      "friend": {
+       "yellow": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 7,
+      "pwr": 6,
+      "guts": 14,
+      "skill": 8
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 8,
+      "wit": 22,
+      "skill": 16
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "max": 1
+      }
+     }
+    }
+   },
+   "turn": 1,
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "stats": {
+    "spd": 1113,
+    "sta": 358,
+    "pwr": 794,
+    "guts": 355,
+    "wit": 414
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": -1,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 487,
+    "sta": 242,
+    "pwr": 0,
+    "guts": 145,
+    "wit": 786
+   },
+   "energy_after": 70.34,
+   "energy": 61.44,
+   "planner": {
+    "scores": {
+     "wit": 8.85,
+     "spd": 8.31,
+     "guts": 2.3,
+     "sta": 1.17
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "wit",
+   "decided_by": "Training selected: WIT with training weight 11.325 from 1 rainbow(s), 1 support(s) and 0% fail chance"
+  },
+  {
+   "time": "03:27:54",
+   "year": "Senior Year Late Sep",
+   "facilities": {},
+   "turn": "Race Day",
+   "criteria": "Place Ist in Sprinters $. Entry criteria metl",
+   "energy_after": 70.34,
+   "energy": 70.34
+  },
+  {
+   "time": "03:31:12",
+   "year": "Senior Year Early Oct",
+   "facilities": {
+    "spd": {
+     "supports": 3,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 3
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 73,
+      "pwr": 28,
+      "skill": 22
+     },
+     "energy_cost": -25,
+     "split": {
+      "spd": {
+       "max": 2
+      },
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 11,
+      "guts": 8,
+      "skill": 6
+     },
+     "energy_cost": -20
+    },
+    "pwr": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 7,
+      "pwr": 14,
+      "skill": 7
+     },
+     "energy_cost": -21
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 6,
+      "pwr": 4,
+      "guts": 12,
+      "skill": 8
+     },
+     "energy_cost": -20
+    },
+    "wit": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 11,
+      "wit": 26,
+      "skill": 19
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "max": 1
+      }
+     }
+    }
+   },
+   "turn": 7,
+   "criteria": "Place Ist in URA Finale Qualifier Entry criteria metl",
+   "stats": {
+    "spd": 1124,
+    "sta": 361,
+    "pwr": 797,
+    "guts": 358,
+    "wit": 439
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": -1,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 476,
+    "sta": 239,
+    "pwr": 0,
+    "guts": 142,
+    "wit": 761
+   },
+   "energy_after": 44.92,
+   "energy": 70.34,
+   "planner": {
+    "scores": {
+     "spd": 14.21,
+     "wit": 6.12,
+     "sta": 5.06,
+     "guts": 1.07
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training selected: SPD with training weight 18.333 from 2 rainbow(s), 3 support(s) and 0% fail chance"
+  },
+  {
+   "time": "03:32:40",
+   "year": "Senior Year Late Oct",
+   "facilities": {
+    "spd": {
+     "supports": 3,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 1,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 36,
+      "pwr": 28,
+      "skill": 17
+     },
+     "energy_cost": -15,
+     "split": {
+      "spd": {
+       "max": 2
+      },
+      "friend": {
+       "yellow": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 3,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 3
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 18,
+      "guts": 14,
+      "skill": 14
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "max": 2
+      }
+     }
+    },
+    "pwr": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 7,
+      "pwr": 14,
+      "skill": 7
+     },
+     "energy_cost": -22
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 6,
+      "pwr": 3,
+      "guts": 11,
+      "skill": 7
+     },
+     "energy_cost": -20
+    },
+    "wit": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 6,
+      "wit": 11,
+      "skill": 8
+     },
+     "energy_cost": 0
+    }
+   },
+   "turn": 6,
+   "criteria": "Place Ist in URA Finale Qualifier Entry criteria metl",
+   "stats": {
+    "spd": 1188,
+    "sta": 383,
+    "pwr": 825,
+    "guts": 364,
+    "wit": 445
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": 1354,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 412,
+    "sta": 217,
+    "pwr": 0,
+    "guts": 136,
+    "wit": 755
+   },
+   "energy_after": 29.66,
+   "energy": 44.92,
+   "planner": {
+    "scores": {
+     "spd": 9.25,
+     "sta": 5.9,
+     "wit": 1.28,
+     "guts": 1.01
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training selected: SPD with training weight 13.375 from 2 rainbow(s), 3 support(s) and 0% fail chance"
+  },
+  {
+   "time": "03:33:18",
+   "year": "Senior Year Early Nov",
+   "facilities": {},
+   "turn": 5,
+   "criteria": "Place Ist in URA Finale Qualifier Entry criteria metl",
+   "energy_after": 29.66,
+   "energy": 29.66
+  },
+  {
+   "time": "03:34:13",
+   "year": "Senior Year Early Nov",
+   "facilities": {
+    "spd": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 10,
+      "pwr": 8,
+      "skill": 7
+     },
+     "energy_cost": -26
+    },
+    "sta": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 12,
+      "guts": 9,
+      "skill": 7
+     },
+     "energy_cost": -20
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 9,
+      "pwr": 22,
+      "skill": 9
+     },
+     "energy_cost": -22,
+     "split": {
+      "spd": {
+       "max": 2
+      }
+     }
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 2,
+      "pwr": 3,
+      "guts": 12,
+      "skill": 7
+     },
+     "energy_cost": -20
+    },
+    "wit": {
+     "supports": 4,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 4
+     },
+     "failure": 4,
+     "gains": {
+      "spd": 6,
+      "wit": 42,
+      "skill": 32
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "max": 2
+      },
+      "friend": {
+       "max": 1
+      }
+     }
+    }
+   },
+   "turn": 5,
+   "criteria": "Place Ist in URA Finale Qualifier Entry criteria metl",
+   "stats": {
+    "spd": 1224,
+    "sta": 407,
+    "pwr": 853,
+    "guts": 386,
+    "wit": 445
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": 1354,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 376,
+    "sta": 193,
+    "pwr": 0,
+    "guts": 114,
+    "wit": 755
+   },
+   "energy_after": 100.0,
+   "energy": 29.66,
+   "planner": {
+    "scores": {
+     "wit": 10.8,
+     "guts": 4.92,
+     "spd": 1.46,
+     "sta": 1.17
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "rest",
+   "decided_by": "Energy 30 is under 35, resting instead of training."
+  },
+  {
+   "time": "03:35:04",
+   "year": "Senior Year Late Nov",
+   "facilities": {
+    "spd": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 10,
+      "pwr": 8,
+      "skill": 7
+     },
+     "energy_cost": -25
+    },
+    "sta": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 16,
+      "guts": 12,
+      "skill": 9
+     },
+     "energy_cost": -17,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "friend": {
+       "max": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 7,
+      "pwr": 15,
+      "skill": 7
+     },
+     "energy_cost": -20
+    },
+    "guts": {
+     "supports": 3,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 3
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "pwr": 9,
+      "guts": 18,
+      "skill": 13
+     },
+     "energy_cost": -19,
+     "split": {
+      "spd": {
+       "max": 2
+      },
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 4,
+      "wit": 20,
+      "skill": 14
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "max": 1
+      }
+     }
+    }
+   },
+   "turn": 4,
+   "criteria": "Place Ist in URA Finale Qualifier Entry criteria metl",
+   "stats": {
+    "spd": 1224,
+    "sta": 412,
+    "pwr": 853,
+    "guts": 386,
+    "wit": 445
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": -1,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 376,
+    "sta": 188,
+    "pwr": 0,
+    "guts": 114,
+    "wit": 755
+   },
+   "energy_after": 70.34,
+   "energy": 100.0,
+   "planner": {
+    "scores": {
+     "guts": 8.65,
+     "wit": 7.78,
+     "sta": 4.26,
+     "spd": 1.46
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "guts",
+   "decided_by": "Training selected: GUTS with training weight 8.655 from 0 rainbow(s), 3 support(s) and 0% fail chance"
+  },
+  {
+   "time": "03:35:40",
+   "year": "Senior Year Early Dec",
+   "facilities": {},
+   "turn": 3,
+   "criteria": "Place Ist in URA Finale Qualifier Entry criteria metl",
+   "energy_after": 70.34,
+   "energy": 70.34
+  },
+  {
+   "time": "03:36:13",
+   "year": "Senior Year Early Dec",
+   "facilities": {
+    "spd": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 24,
+      "pwr": 22,
+      "skill": 14
+     },
+     "energy_cost": -25,
+     "split": {
+      "spd": {
+       "max": 2
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 13,
+      "guts": 10,
+      "skill": 8
+     },
+     "energy_cost": -20,
+     "split": {
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 7,
+      "pwr": 15,
+      "skill": 8
+     },
+     "energy_cost": -21,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "guts": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 2,
+      "pwr": 3,
+      "guts": 10,
+      "skill": 6
+     },
+     "energy_cost": -20
+    },
+    "wit": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 4,
+      "wit": 24,
+      "skill": 16
+     },
+     "energy_cost": 0,
+     "split": {
+      "wit": {
+       "max": 1
+      },
+      "friend": {
+       "max": 1
+      }
+     }
+    }
+   },
+   "turn": 3,
+   "criteria": "Place Ist in URA Finale Qualifier Entry criteria metl",
+   "stats": {
+    "spd": 1230,
+    "sta": 412,
+    "pwr": 862,
+    "guts": 410,
+    "wit": 445
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": -1,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 370,
+    "sta": 188,
+    "pwr": 0,
+    "guts": 90,
+    "wit": 755
+   },
+   "energy_after": 44.92,
+   "energy": 70.34,
+   "planner": {
+    "scores": {
+     "spd": 10.75,
+     "wit": 5.73,
+     "sta": 2.64,
+     "guts": 0.81
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "spd",
+   "decided_by": "Training selected: SPD with training weight 14.873 from 2 rainbow(s), 2 support(s) and 0% fail chance"
+  },
+  {
+   "time": "03:36:59",
+   "year": "Senior Year Late Dec",
+   "facilities": {},
+   "turn": 2,
+   "criteria": "Place Ist in URA Finale Qualifier Entry criteria metl",
+   "energy_after": 44.92,
+   "energy": 44.92
+  },
+  {
+   "time": "03:37:50",
+   "year": "Senior Year Late Dec",
+   "facilities": {
+    "spd": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 14,
+     "gains": {
+      "spd": 9,
+      "pwr": 8,
+      "skill": 6
+     },
+     "energy_cost": -26
+    },
+    "sta": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 14,
+      "guts": 11,
+      "skill": 8
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 8,
+      "pwr": 21,
+      "skill": 8
+     },
+     "energy_cost": -22,
+     "split": {
+      "spd": {
+       "max": 2
+      }
+     }
+    },
+    "guts": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 2,
+      "pwr": 3,
+      "guts": 12,
+      "skill": 9
+     },
+     "energy_cost": -20,
+     "split": {
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 2,
+      "wit": 11,
+      "skill": 8
+     },
+     "energy_cost": 0
+    }
+   },
+   "turn": 2,
+   "criteria": "Place Ist in URA Finale Qualifier Entry criteria metl",
+   "stats": {
+    "spd": 1261,
+    "sta": 422,
+    "pwr": 894,
+    "guts": 426,
+    "wit": 461
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": -1,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 339,
+    "sta": 178,
+    "pwr": 0,
+    "guts": 74,
+    "wit": 739
+   },
+   "energy_after": 24.58,
+   "energy": 44.92,
+   "planner": {
+    "scores": {
+     "guts": 6.04,
+     "sta": 4.09,
+     "spd": 1.31,
+     "wit": 1.15
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "guts",
+   "decided_by": "Training selected: GUTS with training weight 6.035 from 0 rainbow(s), 1 support(s) and 0% fail chance"
+  },
+  {
+   "time": "03:40:37",
+   "year": "Finale Underway",
+   "facilities": {
+    "spd": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 23,
+      "pwr": 21,
+      "skill": 14
+     },
+     "energy_cost": -23,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 14,
+      "guts": 10,
+      "skill": 7
+     },
+     "energy_cost": -19,
+     "split": {
+      "friend": {
+       "max": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 20,
+     "gains": {
+      "sta": 7,
+      "pwr": 13,
+      "skill": 6
+     },
+     "energy_cost": -22
+    },
+    "guts": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 20,
+     "gains": {
+      "spd": 3,
+      "pwr": 4,
+      "guts": 14,
+      "skill": 8
+     },
+     "energy_cost": -22,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 16,
+     "gains": {
+      "spd": 2,
+      "wit": 13,
+      "skill": 8
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "max": 1
+      }
+     }
+    }
+   },
+   "turn": 1,
+   "criteria": "Place Ist in URA Finale Qualifier Entry criteria metl",
+   "stats": {
+    "spd": 1269,
+    "sta": 434,
+    "pwr": 909,
+    "guts": 450,
+    "wit": 473
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": -1,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 331,
+    "sta": 166,
+    "pwr": 0,
+    "guts": 50,
+    "wit": 727
+   },
+   "energy_after": 95.76,
+   "energy": 24.58,
+   "planner": {
+    "scores": {
+     "wit": 6.93,
+     "sta": 6.68,
+     "spd": 4.97,
+     "guts": 3.31
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "rest",
+   "decided_by": "Energy 25 is under 35, resting instead of training."
+  },
+  {
+   "time": "03:41:13",
+   "year": "Finale Underway",
+   "facilities": {},
+   "turn": "Race Day",
+   "criteria": "Place Ist in URA Finale Qualifier Entry criteria metl",
+   "energy_after": 95.76,
+   "energy": 95.76
+  },
+  {
+   "time": "03:44:15",
+   "year": "Finale Underway",
+   "facilities": {
+    "spd": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 9,
+      "pwr": 8,
+      "skill": 6
+     },
+     "energy_cost": -25
+    },
+    "sta": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 16,
+      "guts": 12,
+      "skill": 8
+     },
+     "energy_cost": -20,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 7,
+      "pwr": 13,
+      "skill": 6
+     },
+     "energy_cost": -22
+    },
+    "guts": {
+     "supports": 3,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 3
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 4,
+      "pwr": 4,
+      "guts": 16,
+      "skill": 9
+     },
+     "energy_cost": -18,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "max": 1
+      },
+      "friend": {
+       "max": 1
+      }
+     }
+    },
+    "wit": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 2,
+      "wit": 11,
+      "skill": 8
+     },
+     "energy_cost": 0
+    }
+   },
+   "turn": 1,
+   "criteria": "Place Ist in URA Finale Semifinal Entry criteria metl",
+   "stats": {
+    "spd": 1275,
+    "sta": 447,
+    "pwr": 922,
+    "guts": 463,
+    "wit": 486
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": -1,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 325,
+    "sta": 153,
+    "pwr": 0,
+    "guts": 37,
+    "wit": 714
+   },
+   "energy_after": 75.42,
+   "energy": 95.76,
+   "planner": {
+    "scores": {
+     "sta": 4.24,
+     "guts": 4.08,
+     "spd": 1.31,
+     "wit": 1.15
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "sta",
+   "decided_by": "Training selected: STA with training weight 4.240 from 0 rainbow(s), 2 support(s) and 0% fail chance"
+  },
+  {
+   "time": "03:44:52",
+   "year": "Finale Underway",
+   "facilities": {},
+   "turn": "Race Day",
+   "criteria": "Place Ist in URA Finale Semifinal Entry criteria metl",
+   "energy_after": 75.42,
+   "energy": 75.42
+  },
+  {
+   "time": "03:48:05",
+   "year": "Finale Underway",
+   "facilities": {
+    "spd": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 11,
+      "pwr": 9,
+      "skill": 7
+     },
+     "energy_cost": -22,
+     "split": {
+      "friend": {
+       "max": 1
+      }
+     }
+    },
+    "sta": {
+     "supports": 1,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 1
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 14,
+      "guts": 10,
+      "skill": 7
+     },
+     "energy_cost": -20,
+     "split": {
+      "wit": {
+       "max": 1
+      }
+     }
+    },
+    "pwr": {
+     "supports": 0,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 0
+     },
+     "failure": 0,
+     "gains": {
+      "sta": 7,
+      "pwr": 12,
+      "skill": 6
+     },
+     "energy_cost": -22
+    },
+    "guts": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 3,
+      "pwr": 5,
+      "guts": 15,
+      "skill": 8
+     },
+     "energy_cost": -22,
+     "split": {
+      "spd": {
+       "max": 2
+      }
+     }
+    },
+    "wit": {
+     "supports": 2,
+     "levels": {
+      "gray": 0,
+      "blue": 0,
+      "green": 0,
+      "yellow": 0,
+      "max": 2
+     },
+     "failure": 0,
+     "gains": {
+      "spd": 5,
+      "wit": 29,
+      "skill": 21
+     },
+     "energy_cost": 0,
+     "split": {
+      "spd": {
+       "max": 1
+      },
+      "wit": {
+       "max": 1
+      }
+     }
+    }
+   },
+   "turn": 1,
+   "criteria": "Place Ist in URA Finale Finals Entry criteria metl",
+   "stats": {
+    "spd": 1281,
+    "sta": 476,
+    "pwr": 935,
+    "guts": 488,
+    "wit": 499
+   },
+   "caps": {
+    "spd": 1644,
+    "sta": 1325,
+    "pwr": -1,
+    "guts": 1501,
+    "wit": 1300
+   },
+   "headroom": {
+    "spd": 319,
+    "sta": 124,
+    "pwr": 0,
+    "guts": 12,
+    "wit": 701
+   },
+   "energy_after": 55.08,
+   "energy": 75.42,
+   "planner": {
+    "scores": {
+     "wit": 10.29,
+     "sta": 3.35,
+     "spd": 3.24,
+     "guts": 2.16
+    },
+    "verdict": "defer",
+    "why": "no measurable goal this turn",
+    "goal": "None"
+   },
+   "action": "train",
+   "trained": "sta",
+   "decided_by": "Training selected: STA with training weight 3.351 from 0 rainbow(s), 1 support(s) and 0% fail chance"
+  },
+  {
+   "time": "03:48:50",
+   "year": "Finale Underway",
+   "facilities": {},
+   "turn": "Race Day",
+   "criteria": "Place Ist in URA Finale Finals Entry criteria metl"
+  }
+ ]
+}
