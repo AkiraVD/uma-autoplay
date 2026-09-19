@@ -1183,10 +1183,15 @@ What this changes:
   cost and effect. The 55 and 70 tiers are still unnamed.
 - **Glow Stick's `unverified` flag can be cleared**, and its vague "race reward
   boost" replaced with the game's own wording, **"Race fan gain +50%"**.
-- **Ankle Weights is the one effect mismatch.** The file says "+50% to one
-  training for 1 turn"; the game says "Increase training gains/Energy cost",
-  naming an Energy cost the file does not mention and no percentage. The row
-  text may simply be abbreviated - treat the file's numbers as unconfirmed.
+- ~~**Ankle Weights is the one effect mismatch.**~~ **Resolved 2026-09-19.**
+  This read the file as not mentioning the Energy cost the game's row text
+  names. It does: the regenerated catalogue carries two clauses per item,
+  `training_bonus` 50% for 1 turn and `energy_cost_up` 20% for 1 turn, both
+  scoped to the item's facility, and master.mdb agrees exactly
+  (`effect_type` 11 and 12, `effect_value_1` the facility code,
+  `effect_value_2` 50 and 20, `turn` 1). The shelf row text is simply
+  abbreviated, naming both effects without either number. See the effect-code
+  table below; the file's numbers are no longer unconfirmed.
 - **"N turn(s)" is per item, not a shop-wide refresh.** The seven rows read
   1,1,1,2,2,2,2 at the same moment, which the file's single `refresh_turns: 6`
   does not describe. Whether it counts down to expiry or to restock is
@@ -1324,6 +1329,59 @@ turns."*
 
 This settles `TRAINING_BONUS_IS_PERCENT` in `core/shop_choice.py`, which was
 carrying a sevenfold valuation swing.
+
+#### Item effects live in master.mdb, keyed by code (2026-09-19)
+
+`single_mode_free_shop_item` joins `single_mode_free_shop_effect` on
+`effect_group_id`; the effect row carries `effect_type`, four `effect_value_N`
+columns and `turn`. A shop reader should key on these rather than parse the
+on-screen effect text. An item can own several effect rows under one group.
+
+**`effect_value_1` is a target code** wherever the effect is scoped: `1` spd,
+`2` sta, `3` pwr, `4` guts, `5` wit for direct stat adds; `10` energy, `11` max
+energy, `20` mood; and for facility-scoped effects `101` spd, `102` pwr, `103`
+guts, `105` sta, `106` wit. **`0` means every facility.**
+
+| type | What it is | Items | Shape |
+|---|---|---|---|
+| 1 | direct add | Notepad / Manual / Scroll, Vita, Kale, Energy Drink, Cupcake | `[target, amount]`, turn 0 |
+| 2 | training level +1 | the five Training Applications | `[facility, 1]` |
+| 3 | unresolved | Yummy Cat Food, Grilled Carrots | `[?, ?, 5]` |
+| 6 | condition cure / hint | Mirror, Binoculars, Miracle Cure | `[kind, id]` |
+| 10 | reset | Reset Whistle | no values |
+| **11** | **training bonus - a multiplier** | **Megaphones, Ankle Weights** | `[facility or 0, percent]`, `turn` |
+| 12 | energy-cost increase | Ankle Weights only | `[facility, 20]`, turn 1 |
+| 13 | failure rate | Good-Luck Charm | no values, turn 1 |
+| 14 | race / fan bonus | Cleat Hammers, Glow Sticks | `[kind, percent]`, turn 1 |
+
+The Megaphones are `effect_type 11` with `effect_value_1 = 0`, `effect_value_2`
+of 20 / 40 / 60 and `turn` 4 / 3 / 2 for the 40 / 55 / 70-coin tiers - which is
+why the measured buff scaled *every* facility.
+
+**Note the mdb stores a bare integer.** Nothing in the schema says "percent":
+`effect_value_2 = 40` is identical whether the game means x1.4 or +40, so
+master.mdb could never have settled that question on its own, and
+`data/trackblazer_shop.json`'s `"percent"` key is an interpretation added when
+that file was generated, not something the mdb asserts. The measurement above
+is what supplies the unit.
+
+Two things this settles beyond the Megaphone:
+
+- **Ankle Weights share `effect_type 11` with the Megaphones**, so the measured
+  multiplier applies to them too - scoped to one facility
+  (`effect_value_1` 101/102/103/105) at **50** for **1 turn**, i.e. x1.5 on that
+  facility. The catalogue's "+50% to one training for 1 turn" was right after
+  all.
+- **Their energy penalty is a second row at `effect_type 12`**, same facility,
+  value **20**, 1 turn - the half the game's shelf text means by "Increase
+  training gains/Energy cost". `data/trackblazer_shop.json` already carries
+  both rows per item (`training_bonus` 50/1 and `energy_cost_up` 20/1, each
+  facility-scoped), so the mdb confirms the catalogue here rather than
+  correcting it.
+
+Royal Kale Juice is the worked example of a multi-row item: two rows under one
+group, `[10, 100]` energy +100 and `[20, -1]` mood -1, matching its shelf text
+exactly.
 
 #### Read the name, never the price
 
