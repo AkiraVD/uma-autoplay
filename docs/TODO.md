@@ -162,6 +162,13 @@ Worth deriving properly if the behaviour ever looks wrong:
   years of both previous careers, six times over. The whole Junior year then
   ran `11` down to `1` and into Classic Early Jan at `24`: **24 numeric turns,
   0 fallback warnings, 0 unreadable `-1`s.**
+
+  Over that whole career, Junior Pre-Debut through the Climax: **75 numeric
+  turns, 0 fallback warnings, 1 unreadable `-1`** - against 49 of 49 frames
+  falling through to the fallback before the fix. The lone `-1` was not traced
+  to a frame, so treat it as unconfirmed; a Climax race day has no turn counter
+  at all (the box carries a red "Race Day" pill instead), which is the likeliest
+  source and is expected behaviour rather than a reader failure.
 - **The measured turn sequences, kept as the evidence behind the entry above.**
   Full unsampled sequence, 2026-09-18, Trackblazer/Maruzensky.
 
