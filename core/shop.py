@@ -121,17 +121,28 @@ def read_shelf():
   the name alone.
   """
   seen, rows = set(), []
+  boxes = unreadable = duplicates = 0
   for box in menu_scan.rows(LIST):
     if state.stop_event.is_set():
       return rows
+    boxes += 1
     row = read_row(box)
     if row is None:
+      unreadable += 1
       continue
     key = (row["name"], row["cost"])
     if key in seen:
+      duplicates += 1
       continue
     seen.add(key)
     rows.append(row)
+  # Counted out loud, because a short shelf and a truncated scan look identical
+  # otherwise. `menu_scan` stops when a drag leaves the picture unchanged, so a
+  # scroller that under-advances far enough would call the bottom early and
+  # quietly hide the rows below - and the only trace would be a row count that
+  # nobody had anything to compare against.
+  debug(f"Shop shelf: {len(rows)} distinct row(s) from {boxes} anchor(s)"
+        f" ({duplicates} repeat, {unreadable} unreadable).")
   return rows
 
 
@@ -227,6 +238,21 @@ def buy(wanted, use_now=()):
 
   names = {r["name"] for r in ticked}
   using = [n for n in (use_now or ()) if n in names]
+  # Only a one-row basket may be used on purchase. `Exchange Complete` carries
+  # one quantity stepper PER ROW (y 222/337/452, a 115px pitch) and the rows
+  # there are NOT in basket order - screen-map measured the basket listing
+  # Ankle Weights, Megaphone, Training Application and the next screen listing
+  # them Training Application, Megaphone, Ankle Weights. So stepping the first
+  # stepper uses whatever happens to sort first, not what was intended, and a
+  # Coaching Megaphone used at Junior Early Jul spends its four turns on
+  # nothing. Targeting a row by name needs the name positions on that screen,
+  # which are not measured, so a mixed basket is stored instead - which is what
+  # screen-map recommends for everything but the flat stat items anyway.
+  if using and len(ticked) > 1:
+    info(f"Shop: {len(ticked)} items in one basket, so storing rather than"
+         f" using {', '.join(using)} - the quantity stepper is per row and the"
+         " rows do not come back in basket order.")
+    using = []
   if using:
     control.click(*constants.SHOP_QTY_PLUS_MOUSE_POS)
     sleep(0.5)
