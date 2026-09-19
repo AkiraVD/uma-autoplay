@@ -143,6 +143,13 @@ Worth deriving properly if the behaviour ever looks wrong:
   fixtures pass on it. `11_trackblazer*.png` guard the new crop, and the three
   1920x1080 frames in `tests/fixtures/turn/candidates/` are what it was
   measured from - the only artifact that made the diagnosis possible.
+
+  **Confirmed live 18:33-18:36 on 2026-09-19**, the first career to run on the
+  fixed code: Junior Pre-Debut read `11, 10, 9, 8, 7` on consecutive turns with
+  **0** `came from the OCR fallback` warnings and **0** unreadable `-1`s, where
+  every turn of the two careers before it had used the fallback. The first
+  reading was `11` - the exact two-digit value that used to come back as `1`,
+  which is the symptom that opened this entry.
 - **The measured turn sequences, kept as the evidence behind the entry above.**
   Full unsampled sequence, 2026-09-18, Trackblazer/Maruzensky.
 
