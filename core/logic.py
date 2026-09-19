@@ -248,6 +248,23 @@ def set_stat_headroom(current_stats, game_caps=None):
   }
   debug(f"Stat headroom: {_stat_headroom}")
 
+
+def stat_headroom():
+  """The per-stat room left, as a copy, for callers outside this module.
+
+  `core/shop_choice.py` needs it so an item for a capped stat scores zero -
+  a Speed Scroll is worth nothing once Speed has no room. Handed out as a copy
+  because the caller has no business editing the scorer's view.
+
+  **It is up to one turn stale.** `set_stat_headroom` runs inside
+  `do_something()`, so anything consulting this earlier in the turn - the shop
+  visit does - sees the previous turn's reading, and an empty dict on the first
+  turn of a career. That is deliberate rather than worth re-reading the stats
+  for: caps move by tens of points a turn at most, and `value_of` already
+  treats a missing stat as unknown-so-score-in-full rather than as no room.
+  """
+  return dict(_stat_headroom)
+
 # Room enough for a strong training to land in full. Facilities pay about 40
 # to 50 in their own stat at the top end, so past this there is nothing to
 # discount.

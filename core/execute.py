@@ -15,8 +15,9 @@ import time
 from rapidfuzz import fuzz
 import core.state as state
 import core.scenarios as scenarios
+import core.shop as shop
 from core.state import check_support_card, check_unity_icons, check_failure, check_turn, check_mood, check_current_year, check_criteria, check_skill_pts, check_energy_level, check_energy_reserved, get_race_type, check_status_effects, check_aptitudes, check_credit, check_outing_available, check_recreation_panel, read_log_lines
-from core.logic import do_something, decide_race_for_goal, training_value, should_recreate, has_extreme_burst, set_goal_context
+from core.logic import do_something, decide_race_for_goal, training_value, should_recreate, has_extreme_burst, set_goal_context, stat_headroom
 
 from utils.log import info, warning, error, debug
 import utils.constants as constants
@@ -144,6 +145,13 @@ templates = {
   # scores 0.693 on the worst negative where story reaches 0.844, against a
   # 0.85 threshold. See docs/screen-map.md.
   "game_nav_alt": "assets/ui/game_nav_race.png",
+  # Trackblazer's Climax Store button, in the facility grid between Recreation
+  # and Races. Cut from the word and its frame rather than the badges: the
+  # button carries an "ON SALE!" ribbon, a coin balance and a pink "N turn(s)"
+  # tag that all change. It is a presence check, not decoration - the button
+  # only exists after the debut race, and a race day replaces the whole
+  # facility row, so clicking its position unguarded is a blind click.
+  "tb_shop": "assets/trackblazer/shop_btn.png",
   # The login bonus, which both the daily reset and the end of a career land
   # on. Nothing in this dict matched it, so it was the one screen in the
   # post-career walk that fell through to the blind taps. Its banner is
@@ -1296,6 +1304,10 @@ def career_lobby():
       # fixed mode is set afresh.
       state.apply_scenario(new_career=True)
       lessons.reset()
+      # And a shelf nothing has read yet. The ledger holds a turn number, so
+      # without this a second career in the same process that reached the same
+      # turn as the last visit would silently skip its first shop.
+      shop.reset()
       RACE_RETRIES = 0
       sleep(4)
       continue
@@ -1499,6 +1511,31 @@ def career_lobby():
         continue
       race_day()
       continue
+
+    # Trackblazer's Climax Store. The Shop button belongs to no other mode, so
+    # seeing it is how Trackblazer announces itself - the same way the Lessons
+    # button announces Grand Concert above.
+    if not state.TRACKBLAZER_SEEN and matches["tb_shop"]:
+      state.saw_scenario("trackblazer", "Shop button in the lobby")
+    # Deliberately BELOW the race-day branch. A race day replaces the whole
+    # facility row, so the button is not there and its position belongs to
+    # something else entirely; `tb_shop` is a presence check for the same
+    # reason, since the button only appears after the debut race.
+    #
+    # Buying costs no turn, so this settles before the turn is planned, the way
+    # the Lessons visit does. The headroom is the previous turn's reading -
+    # set_stat_headroom runs inside do_something, which has not happened yet -
+    # and stat_headroom() documents why that is close enough.
+    #
+    # The visit is noted before it is attempted, not after: a shop that fails
+    # to open should cost this turn one try, not retry on every pass of the
+    # loop until the turn changes.
+    if matches["tb_shop"] and shop.should_visit(turn):
+      shop.note_visit(turn)
+      if shop.open_shop(matches["tb_shop"][0]):
+        shop.visit(stat_headroom())
+        shop.leave()
+        continue
 
     # Mood check
     if year_parts[0] == "Junior":

@@ -232,11 +232,74 @@ def buy(wanted, use_now=()):
   return ticked
 
 
+# One shop visit per turn at most. The shelf scan is several passes of OCR, so
+# re-reading it on a turn already walked would cost a lot for nothing: the
+# lineup only changes on the game's own restock windows.
+_visited = {"turn": None}
+
+
+def reset():
+  """Forget the visit ledger. Called when a new career starts."""
+  _visited["turn"] = None
+
+
+def should_visit(turn):
+  """True if this turn has not already had its shelf read."""
+  return turn is not None and _visited["turn"] != turn
+
+
+def note_visit(turn):
+  _visited["turn"] = turn
+
+
+def open_shop(box=None):
+  """Open the shop from the lobby. True if the shelf came up.
+
+  Takes the matched button box rather than trusting the position: the shop
+  button only exists after the debut race and a race day replaces the whole
+  facility row, so a bare click at SHOP_BUTTON_MOUSE_POS could land on
+  anything. The position is only the fallback for a matched-but-boxless call.
+  """
+  if box is not None and len(box) >= 2:
+    control.click(int(box[0]), int(box[1]))
+  else:
+    control.click(*constants.SHOP_BUTTON_MOUSE_POS)
+  sleep(2)
+  for _ in range(4):
+    if state.stop_event.is_set():
+      return False
+    if read_coins() is not None:
+      return True
+    sleep(1)
+  warning("TB-SHOP-OPEN: the shop did not come up, leaving it for this turn.")
+  return False
+
+
+def leave():
+  """Back out of the shop to the lobby."""
+  control.click(*constants.SHOP_BACK_MOUSE_POS)
+  sleep(1.5)
+
+
+def cheapest_cost():
+  """The cheapest thing the catalogue sells, or 0 if it will not load."""
+  costs = [e.get("cost", 0) for e in trackblazer.catalogue() if e.get("cost")]
+  return min(costs) if costs else 0
+
+
 def visit(headroom=None):
   """Read the shelf, decide, buy. Assumes the shop screen is already open."""
   coins = read_coins()
   if coins is None:
     warning("TB-SHOP-COINS: the Shop Coins balance did not read, skipping.")
+    return []
+  # Bail before the scan, not after. Reading the shelf is several passes of
+  # OCR and there is no point paying for it with nothing affordable on the
+  # other side - early careers sit on single-digit coins for a long while.
+  floor = cheapest_cost()
+  if floor and coins < floor:
+    debug(f"Shop: {coins} coins, under the cheapest item at {floor}, not reading"
+          " the shelf.")
     return []
   rows = read_shelf()
   if not rows:
