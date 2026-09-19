@@ -336,10 +336,26 @@ Still to do:
     high under-advances into extra overlap, which costs passes but never skips
     a row; erring low skips rows. Re-measure against `slow_drag` on a live
     shelf.
-  - Nothing calls `shop.visit()` yet. It wants a branch in `career_lobby()`
-    that opens the shop from `SHOP_BUTTON_MOUSE_POS`, visits, and leaves by
-    `SHOP_BACK_MOUSE_POS`, with the stat headroom passed through so a capped
-    stat's item scores zero.
+  - ~~Nothing calls `shop.visit()` yet.~~ **Wired and proven live 2026-09-19.**
+    At Junior Early Jul it read the shelf, priced four rows and bought Vita 20,
+    Guts Notepad, Wit Notepad and a Coaching Megaphone for 95 of 100 coins,
+    every tick confirmed against the coin counter, and the balance read `5` on
+    the next visit. The hook sits **below** the race-day branch in
+    `career_lobby()`, because a race day replaces the facility row and the
+    button's position then belongs to something else; `tb_shop` is the presence
+    check, and seeing it also reports `saw_scenario("trackblazer")`. The coin
+    gate works too: at 5 coins it logged "under the cheapest item at 10" and
+    skipped the scan rather than paying for it.
+  - **Use-on-purchase only works for a one-row basket.** `Exchange Complete`
+    carries one quantity stepper **per row** (y 222/337/452) and does not list
+    the rows in basket order, so stepping the first one uses whatever sorted
+    first rather than what was intended - a Coaching Megaphone burned at Junior
+    Early Jul would spend its four turns on nothing. The item **name**
+    positions on that screen are not measured, and that is the only thing
+    stopping a targeted use; until they are, a mixed basket is stored. It did
+    no harm on the first outing: the zero-support gains either side of the
+    purchase were identical (SPD `spd 11` at turn 1 and again at turn 12, where
+    +20% would read 13), so nothing was wasted - by luck rather than design.
 - ~~**Is a training bonus a percentage or a flat number?**~~ **A percentage**,
   settled 2026-09-19 by measurement. The board was read twice on one turn
   (Classic Late Nov, turn 3) with a Motivating Megaphone (+40%, the tier the
