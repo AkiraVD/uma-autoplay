@@ -150,6 +150,12 @@ Worth deriving properly if the behaviour ever looks wrong:
   every turn of the two careers before it had used the fallback. The first
   reading was `11` - the exact two-digit value that used to come back as `1`,
   which is the symptom that opened this entry.
+
+  The decisive reading came at 18:45:30: **Junior Year Late Jul read `11`**.
+  That is the turn this entry was written about - it read `1` in all three
+  years of both previous careers, six times over. The whole Junior year then
+  ran `11` down to `1` and into Classic Early Jan at `24`: **24 numeric turns,
+  0 fallback warnings, 0 unreadable `-1`s.**
 - **The measured turn sequences, kept as the evidence behind the entry above.**
   Full unsampled sequence, 2026-09-18, Trackblazer/Maruzensky.
 
