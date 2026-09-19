@@ -303,8 +303,15 @@ Still to do:
   present on those screens and collapse the sequence. Cutting those two
   templates is still worth doing for a deliberate handler, but nothing is
   waiting on them.
-- **Auto-detect.** `saw_scenario("trackblazer", ...)` still has no caller. The
-  lobby's Result Pts badge or the Shop facility button are the obvious tells.
+- ~~**Auto-detect.**~~ **Done 2026-09-19**, and it was the Shop button, as this
+  entry guessed. `core/execute.py` reports
+  `saw_scenario("trackblazer", "Shop button in the lobby")` when `tb_shop`
+  matches and the flag is not already set, mirroring how the Lessons button
+  announces Grand Concert. It only ever fires under `scenario: auto`: a fixed
+  config has `apply_scenario()` set `TRACKBLAZER_SEEN` before the first lobby,
+  so the guard is correctly a no-op there - which is why the 2026-09-19 career,
+  pinned to `trackblazer`, logged no such line. The Result Pts badge is still
+  available as a second tell if one is ever wanted.
 - **Result Pts HUD.** The in-career badge reads `<Year> Result Pts` and a bare
   count - no `/target`, unlike the How to Play mock-up. Expect a digit-template
   bank rather than easyocr, as `core/gains.py` needed.
