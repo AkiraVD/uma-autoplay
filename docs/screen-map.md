@@ -1250,19 +1250,70 @@ tuple resolved 5/5 rows from the capture and 212/212 on a round-trip.
 
 The catch looked downstream: `race_select` (core/execute.py:723) clicks a race
 only via `assets/races/<name>.png`, and 169 of those 212 races have no picture,
-which would leave most of a schedule unclickable. It does not bite, because a
-scheduled race announces itself - **the game raises a notification window on
-race day** (user, 2026-09-20). The bot accepts that window instead of hunting
-the race list, so the missing pictures stop mattering and the agenda becomes
-the way into races the bot could never otherwise click.
+which would leave most of a schedule unclickable.
 
-Two consequences. The window is **not yet captured** - it needs a populated
-agenda and a turn that reaches a scheduled race day - so no template exists for
-it. And it must be handled *ahead* of the generic Cancel/Close handlers, the
-way Grand Concert's Schedule Notification is: a race-day popup that falls
-through to the generic dismissers would be cancelled, and the bot would train
-through its own scheduled race while looking like the agenda never loaded.
-That failure would be silent, so it is worth a log line either way.
+**Measured on a live career, 2026-09-20, Junior Late Aug.** There is no
+notification *window* on the lobby - this note used to say there was, on a
+reasonable reading of how the feature was described, and direct observation
+contradicts it. A scheduled race announces itself as a pink **"Scheduled Race"**
+ribbon on the Races button, and the lobby is otherwise ordinary: the facility
+row is intact and every other control is where it always is. A window may exist
+at some other moment; none appears here.
+
+| Element | Position |
+|---|---|
+| badge template | `assets/trackblazer/scheduled_race_badge.png`, 146x118 at (687,892) |
+| `sep` | worst positive 1.000, best negative 0.482, **margin +0.518** |
+| click target | the match's own centre, ~(760,951), inside the Races button |
+
+The cut deliberately spans the ribbon *and* part of the Races button, so the
+match doubles as the click target - the `gc_to_lessons` pattern, one asset that
+both recognises and aims.
+
+**`check_turn()` reports an ordinary number on that turn**, not `"Race Day"`:
+the live log read `Year: Junior Year Late Aug` with `Turn: 9`. So the branch at
+core/execute.py:1507 never fires for a scheduled race, and nothing on that path
+consults the agenda.
+
+That has a consequence the code does not currently handle. Because the turn is
+ordinary and the facility row is present, `matches["tb_shop"]` is true and the
+shop hook at core/execute.py:1533 fires **first** - on the live run the bot went
+shopping on its own scheduled race turn, then decided to race and found
+`Training button is not found`, because it was standing in the shop. The
+comment at :1521 justifying the shop hook's position reasons only about
+`"Race Day"` turns, where the facility row is replaced; it does not cover a
+scheduled race, which looks like any other turn.
+
+#### The Race List on a scheduled turn (2026-09-20)
+
+**The agenda has already chosen.** Clicking Races opens the list with the
+scheduled race selected: banner art loaded, a selection frame, and a pink
+`Scheduled` badge on its card. So the bot never searches the list and never
+matches a picture - `has_image` is irrelevant on this path, which is what
+retires the "169 races have no asset" problem for scheduled races.
+
+| Element | Position |
+|---|---|
+| `Scheduled` badge on the selected card | (360,704), 107x30 |
+| green `Race` button | (552,911), 236x61 |
+| `Predictions` / `Back` | (345,913) / (216,1039) |
+
+Measured against the bot's existing templates on that exact frame:
+
+| template | best score | what it means |
+|---|---|---|
+| `match_track.png` | **1.000, two hits** | fires on *both* cards |
+| `race_btn.png` | 0.926 | sound target for pressing Race |
+| `race_preview_btn.png` | 0.850 | exactly the threshold - a coin flip |
+| `scheduled_race_badge.png` | 0.272 | correctly absent off the lobby |
+
+Two traps follow. **`race_select(False, None)` must not run here**: it clicks an
+aptitude-match badge, and the losing card (`Clover Sho`, OP Sapporo Turf 1500m)
+carries one too, so the "any" path can deselect the scheduled race and enter the
+wrong one. Press Race on what is already chosen, and use the card's `Scheduled`
+badge to confirm the right race before pressing. And **do not lean on
+`race_preview_btn.png`** for this screen: 0.850 against a production threshold
+of 0.85 is not a match, it is a tie; `race_btn.png` at 0.926 is the one to use.
 
 The threat is precise. The generic `matches["cancel"]` at core/execute.py:1360
 clicks Cancel and passes no `text=`, so it logs **nothing** - the same handler

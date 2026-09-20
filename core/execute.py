@@ -44,6 +44,12 @@ templates = {
   # template. Cut from the live frame; scores 1.000/0.999/0.996 on three
   # captures from three sessions against a best negative of 0.351 over nine
   # other screens, so 0.8 has enormous margin.
+  # The pink "Scheduled Race" ribbon on the lobby's Races button, which is how a
+  # Trackblazer agenda race announces itself. There is no notification popup:
+  # check_turn() reports an ordinary number on that turn (measured live at
+  # Junior Late Aug, "Turn: 9"), so the race-day branch never fires for it and
+  # without this key the turn looks like any other. sep: best negative 0.482.
+  "scheduled_race": "assets/trackblazer/scheduled_race_badge.png",
   "race_preview": "assets/buttons/race_preview_btn.png",
   # And the screen the preview leads to: the fullscreen runner lineup, whose
   # "Race!" is a different button again (the preview's scores 0.33 on it).
@@ -1530,6 +1536,25 @@ def career_lobby():
     # The visit is noted before it is attempted, not after: a shop that fails
     # to open should cost this turn one try, not retry on every pass of the
     # loop until the turn changes.
+    # A scheduled agenda race, and it must be settled BEFORE the shop. The turn
+    # is an ordinary numbered one and the facility row is intact, so `tb_shop`
+    # matches and the shop hook below would otherwise take the turn first: on
+    # the live run of 2026-09-20 the bot went shopping on its own scheduled race
+    # turn, then decided to race and logged "Training button is not found",
+    # because it was standing in the shop.
+    #
+    # This only presses Races. It deliberately does NOT call do_race(), which
+    # routes into race_select(False, None) - that clicks an aptitude-match
+    # badge, and on a scheduled turn the losing card carries one too (measured:
+    # match_track.png scores 1.000 on *both* cards), so it can deselect the
+    # scheduled race and enter the wrong one. The agenda has already chosen; the
+    # list opens with the race selected and a "Scheduled" badge on its card, and
+    # the generic race handlers press Race from there.
+    if matches["scheduled_race"]:
+      click(boxes=matches["scheduled_race"][0],
+            text="Scheduled race this turn; opening the race list.")
+      continue
+
     if matches["tb_shop"] and shop.should_visit(turn):
       shop.note_visit(turn)
       if shop.open_shop(matches["tb_shop"][0]):
