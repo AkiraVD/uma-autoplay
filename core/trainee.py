@@ -8,8 +8,12 @@ aptitudes, growth rates and intended running style are all in master.mdb, so
 
 What it is **not**: the career goal list. "Place top 3 in Nikkei Shinshun Hai"
 is composed at runtime from a race and a condition, and is not in text_data in
-any form I could find - category 290 looks like it but holds epithet objectives
-("Attain at least 600 Stamina"). So `race_schedule` stays a human decision.
+any form I could find. Category 290 is the closest thing, but it holds the
+per-trainee goal *objectives* ("Attain at least 600 Stamina", "Win the Japan
+Cup"), keyed by trainee, not the composed line. It is **not** the epithet
+table, as this note used to claim: epithet names are category 130 and their
+conditions 131 - see core/epithets.py. So `race_schedule` stays a human
+decision.
 
 This only warns. A config that disagrees with the trainee is usually a mistake
 worth catching before a career is spent on it, but running an unusual style on
