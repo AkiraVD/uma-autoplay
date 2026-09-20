@@ -315,6 +315,11 @@ SKIP_CUTSCENE_MOUSE_POS = (395, 665)
 RACE_PLAYBACK_CHECKBOX_BBOX = (401, 562, 451, 612)
 RACE_PLAYBACK_CHECKBOX_MOUSE_POS = (426, 587)
 RACE_PLAYBACK_OK_MOUSE_POS = (686, 703)
+# "This will put you at N consecutive races.", raised when the race list is
+# opened on a third race in a row. Measured 2026-09-20: OK is 235x61 centred on
+# (686,702) - the same geometry as the Race Playback OK a line above, one pixel
+# apart, so these confirmations share a layout. Cancel sits at (419,702).
+CONSECUTIVE_RACES_OK_MOUSE_POS = (686, 702)
 # The Lessons button carries a pink "!" when something on the board is
 # learnable, and a "Scheduled" tag or a note badge otherwise. The same "!"
 # artwork appears elsewhere in the lobby (0.93 on a Unity lobby), so it is only
