@@ -4,20 +4,23 @@ The output is the shape `config.race_schedule` already takes -
 `{"name", "year", "date"}` - so a plan can be dropped straight into the config
 the bot reads, and typed into the game's own agenda by hand.
 
-**Why this is not a per-race score.** The obvious design gives every race a
-number and takes the best one per turn. That is wrong for epithets, because an
-epithet pays **once**, when its last qualifying race is won. Scoring each
-qualifying race with the epithet's value counts it three or nine times over and
-steers the whole schedule toward whichever epithet has the most candidates.
-So the solver commits to a target set first, reserves exactly the races those
-targets need, and only then fills the turns left over by per-race value.
+**Nothing here scores a race.** The obvious design gives every race a number
+and takes the best one per turn, and it is wrong twice over. First for
+epithets: an epithet pays **once**, when its last qualifying race is won, so
+scoring each qualifying race with the epithet's value counts it three or nine
+times and steers the schedule toward whichever epithet has the most candidates.
+Second because the ranking does not matter - Trackblazer races a great deal by
+its nature, so which race fills a given turn barely moves the outcome.
 
-**What a race is worth on its own** comes from the game's own tables via
-`core.trackblazer`: Result Pts by grade and placement, shop coins (flat across
-grades - a Pre-OP win pays what a G1 win pays), and fans. Per-race *stat* and
-skill-point gain are deliberately absent: they are not in master.mdb, and a
-weight invented for them would quietly dominate a score built from real
-numbers. `WEIGHTS` says so in the open rather than hiding a zero.
+Fan counts are ignored for the same reason, and one more: any error in them is
+roughly proportional across every race, so it cancels out of a ranking
+entirely. (Measured 2026-09-20: a race whose master.mdb base was 3,100 paid
+5,533 in play, and a G1's 7,000 base likewise - the game multiplies them.)
+
+So the solver commits to a target set, reserves exactly the races those targets
+need, and fills any turns left over in calendar order. Result Pts and shop
+coins are still *reported* from `core.trackblazer`, because Trackblazer's year
+targets are denominated in Result Pts - but they decide nothing.
 
 **Everything is passed in.** The race pool defaults to
 `master_data.get_plan_races()`, which admits OP races, but any list of race
@@ -35,18 +38,11 @@ YEARS = ("Junior Year", "Classic Year", "Senior Year")
 # means every number here is a ceiling, not a forecast.
 ASSUMED_PLACE = 1
 
-# Per-unit value of each thing a race pays. Points and coins are in the
-# scenario's own currencies and fans are raw, so the defaults put them on a
-# comparable footing rather than pretending one is worth exactly another.
-# `epithet` multiplies the epithet's TOTAL stat gain (per-stat value x 2).
-WEIGHTS = {
-  "epithet": 1.0,
-  "points": 0.20,
-  "coins": 0.05,
-  "fans": 0.0008,
-  # No "stats" or "skill_points" key on purpose: master.mdb carries no per-race
-  # stat or SP gain, so there is nothing honest to weight. See the docstring.
-}
+# There is no scoring table here on purpose. Trackblazer races a great deal by
+# its nature, so which race fills a given turn barely moves the outcome - and
+# fan counts moved it least of all, since any error in them is proportional
+# across every race and cancels out of a ranking. The only thing a schedule is
+# judged on is which epithets it earns.
 
 # Racing back to back costs energy the schedule cannot see. The game allows it;
 # this is a planning guard, not a rule, and 3 matches the usual advice.
@@ -85,14 +81,11 @@ def pool(races=None):
   return out
 
 
-def race_value(race, weights=None):
-  """What one race pays on its own, ignoring epithets, assuming a win."""
-  w = dict(WEIGHTS, **(weights or {}))
-  grade = race.get("grade", "")
-  fans = (race.get("fans") or {}).get("gained", 0)
-  return (w["points"] * trackblazer.points_for(grade, ASSUMED_PLACE)
-          + w["coins"] * trackblazer.coins_for(ASSUMED_PLACE)
-          + w["fans"] * fans)
+# race_value() used to live here, ranking races by points, coins and fans.
+# Removed: races are no longer scored. Where a choice between equivalent
+# candidates is needed, calendar order is used instead - earning an epithet
+# sooner leaves more free turns for the next one, which is the only objective
+# left.
 
 
 def runnable(race, aptitudes=None, min_grade=None):
@@ -173,7 +166,7 @@ def _cost(name, candidates, taken):
   if shortfall <= 0:
     return []
   picked, used = [], set()
-  for r in sorted(free, key=lambda x: -race_value(x)):
+  for r in sorted(free, key=_sort_key):
     if _turn(r) in used:
       continue
     picked.append(r)
@@ -212,15 +205,17 @@ def _why_missed(rule, candidates, taken):
   return "not enough free turns"
 
 
-def plan(targets=None, aptitudes=None, weights=None, races=None,
+def plan(targets=None, aptitudes=None, races=None,
          max_consecutive=MAX_CONSECUTIVE, fill=True):
   """Build a schedule.
 
-  `targets` is the epithets to chase, best-value-first when omitted. Returns
-  the schedule, which epithets it earns, which it could not fit and why, and
-  the totals - so the caller can show the trade rather than just the answer.
+  `targets` is the epithets to chase, scarcest-first when omitted. Returns the
+  schedule, which epithets it earns, which it could not fit and why, and the
+  totals - so the caller can show the trade rather than just the answer.
+
+  Races are not scored and not ranked. Only the epithets a schedule earns
+  decide anything; everything else is reported, not optimised.
   """
-  w = dict(WEIGHTS, **(weights or {}))
   everything = [r for r in pool(races) if runnable(r, aptitudes)]
   table = epithets.load()
 
@@ -260,7 +255,7 @@ def plan(targets=None, aptitudes=None, weights=None, races=None,
     earned.append(name)
 
   if fill:
-    for race in sorted(everything, key=lambda r: -race_value(r, w)):
+    for race in sorted(everything, key=_sort_key):
       if _turn(race) not in taken:
         taken[_turn(race)] = race
 
@@ -278,7 +273,7 @@ def plan(targets=None, aptitudes=None, weights=None, races=None,
                   "total": epithets.value_of(n) * 2,
                   "hint": table[n].get("hint")} for n in earned],
     "missed": missed,
-    "totals": totals(schedule, earned, w),
+    "totals": totals(schedule, earned),
   }
 
 
@@ -286,9 +281,11 @@ def _thin_runs(schedule, limit, reserved=()):
   """Break any run of more than `limit` races on consecutive turns.
 
   Racing back to back costs energy a schedule cannot see, so a run of five
-  reads well and plays badly. The cheapest race in an over-long run goes first,
-  and a turn an epithet depends on is never dropped - losing that would cost
-  the epithet the run was built around, which is the opposite of the trade.
+  reads well and plays badly. The LAST race in an over-long run goes first -
+  races are not scored any more, so there is no cheapest one, and dropping the
+  latest keeps the earlier entries in line with the earliest-first ordering
+  used everywhere else here. A turn an epithet depends on is never dropped:
+  losing that would cost the epithet the run was built around.
 
   Returns a new list; the input is not modified.
   """
@@ -308,18 +305,22 @@ def _thin_runs(schedule, limit, reserved=()):
       if len(run) > limit:
         droppable = [r for r in run if _turn(r) not in reserved]
         if droppable:
-          out.remove(min(droppable, key=race_value))
+          out.remove(max(droppable, key=_sort_key))
           break                      # list changed; rescan from the top
       run = [race] if race is not None else []
     else:
       return out
 
 
-def totals(schedule, earned, weights=None):
-  w = dict(WEIGHTS, **(weights or {}))
+def totals(schedule, earned):
+  """Reported, never scored.
+
+  Points and coins stay because Trackblazer's year targets are denominated in
+  Result Pts, so a caller wants to see them - but nothing ranks or chooses by
+  them, and fans are gone entirely.
+  """
   points = sum(trackblazer.points_for(r.get("grade", ""), ASSUMED_PLACE) for r in schedule)
   coins = sum(trackblazer.coins_for(ASSUMED_PLACE) for r in schedule)
-  fans = sum((r.get("fans") or {}).get("gained", 0) for r in schedule)
   stats = sum(epithets.value_of(n) * 2 for n in earned)
   return {
     "races": len(schedule),
@@ -327,7 +328,4 @@ def totals(schedule, earned, weights=None):
     "epithet_stats": stats,
     "points": points,
     "coins": coins,
-    "fans": fans,
-    "score": round(w["epithet"] * stats + w["points"] * points
-                   + w["coins"] * coins + w["fans"] * fans, 1),
   }

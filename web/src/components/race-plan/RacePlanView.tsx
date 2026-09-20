@@ -41,8 +41,6 @@ type PlanResult = {
     epithet_stats: number;
     points: number;
     coins: number;
-    fans: number;
-    score: number;
   };
 };
 
