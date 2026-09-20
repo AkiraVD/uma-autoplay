@@ -20,22 +20,30 @@ import AdvancedSection from "./components/general/AdvancedSection";
 import GrandConcertSection from "./components/grand-concert/GrandConcertSection";
 import LogView from "./components/logs/LogView";
 import ThemeToggle from "./components/ThemeToggle";
+import RacePlanView from "./components/race-plan/RacePlanView";
 import ToolsView from "./components/tools/ToolsView";
 import BotToggle from "./components/BotToggle";
 
-type View = "config" | "logs" | "tools";
+type View = "config" | "logs" | "plan" | "tools";
 
 const VIEWS: [View, string][] = [
   ["config", "Configuration"],
   ["logs", "Live Log"],
+  ["plan", "Race Plan"],
   ["tools", "Tools"],
 ];
 
 function App() {
   const defaultConfig = rawConfig as Config;
-  // "#logs" and "#tools" open those views straight away, so a bookmark can land on them.
+  // "#logs", "#plan" and "#tools" open those views straight away, so a bookmark can land on them.
   const [view, setView] = useState<View>(() =>
-    window.location.hash === "#logs" ? "logs" : window.location.hash === "#tools" ? "tools" : "config"
+    window.location.hash === "#logs"
+      ? "logs"
+      : window.location.hash === "#plan"
+        ? "plan"
+        : window.location.hash === "#tools"
+          ? "tools"
+          : "config"
   );
   const showView = (next: View) => {
     setView(next);
@@ -90,6 +98,10 @@ function App() {
 
         {view === "logs" ? (
           <LogView />
+        ) : view === "plan" ? (
+          // Only the runnable races come back - the planner marks the rest
+          // "agenda only", since race_select cannot click a race with no picture.
+          <RacePlanView onUseSchedule={(rows) => updateConfig("race_schedule", rows)} />
         ) : view === "tools" ? (
           <ToolsView />
         ) : (
