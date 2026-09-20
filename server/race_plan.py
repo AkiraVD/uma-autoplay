@@ -266,7 +266,7 @@ def _ordered_targets(table, everything):
 
 def plan(targets=None, aptitudes=None, races=None,
          max_consecutive=MAX_CONSECUTIVE, fill=True, include_op=True,
-         min_aptitude=DEFAULT_FLOOR, locks=None, skip=None):
+         min_aptitude=DEFAULT_FLOOR, locks=None, skip=None, race_bonus=0.0):
   """Build a schedule.
 
   `targets` is the epithets to chase, scarcest-first when omitted. `locks` pins
@@ -330,25 +330,28 @@ def plan(targets=None, aptitudes=None, races=None,
   placed = {_turn(r): r for r in schedule}
 
   return {
-    "schedule": [_entry(r) for r in schedule],
-    "turns": _grid(by_turn, placed, reserved, blocked),
+    "schedule": [_entry(r, race_bonus) for r in schedule],
+    "turns": _grid(by_turn, placed, reserved, blocked, race_bonus),
     "epithets": [{"name": n, "value": epithets.value_of(n),
                   "total": epithets.value_of(n) * 2,
                   "hint": table[n].get("hint")} for n in earned],
     "progress": progress(schedule, earned),
     "missed": missed,
-    "totals": totals(schedule, earned),
+    "totals": totals(schedule, earned, race_bonus),
   }
 
 
-def _entry(race):
+def _entry(race, race_bonus=0.0):
+  grade = race.get("grade")
   return {"name": race["name"], "year": race["year"], "date": race["date"],
-          "grade": race.get("grade"), "racetrack": race.get("racetrack"),
+          "grade": grade, "racetrack": race.get("racetrack"),
           "terrain": race.get("terrain"), "distance": race.get("distance"),
+          "stats": trackblazer.stats_for(grade, race_bonus),
+          "sp": trackblazer.skill_points_for(grade, race_bonus),
           "has_image": race.get("has_image", False)}
 
 
-def _grid(by_turn, placed, reserved, blocked):
+def _grid(by_turn, placed, reserved, blocked, race_bonus=0.0):
   """Every career turn with what it could hold and what it did.
 
   The UI needs the empty turns too - that is where "no race" and a manual pick
@@ -364,8 +367,8 @@ def _grid(by_turn, placed, reserved, blocked):
       "picked": race["name"] if race else None,
       "pinned": turn in reserved,
       "skipped": turn in blocked,
-      "options": [_entry(r) for r in sorted(by_turn.get(turn, []),
-                                            key=lambda r: r["name"])],
+      "options": [_entry(r, race_bonus) for r in sorted(by_turn.get(turn, []),
+                                                        key=lambda r: r["name"])],
     })
   return out
 
@@ -471,21 +474,27 @@ def catalogue():
   return {"epithets": out}
 
 
-def totals(schedule, earned):
+def totals(schedule, earned, race_bonus=0.0):
   """Reported, never scored.
 
-  Points and coins stay because Trackblazer's year targets are denominated in
-  Result Pts, so a caller wants to see them - but nothing ranks or chooses by
-  them. There is no stat, skill-point or fan column: master.mdb does not carry
-  per-race stat or SP gains, and a made-up number would look authoritative.
+  Everything here is shown and nothing here chooses. Result Pts and coins stay
+  because Trackblazer's year targets are denominated in Result Pts. Race stats
+  and race SP are a grade lookup from `core.trackblazer.BASE_REWARD`, not
+  measured per race - see the note there - so ranking races by them would give
+  a guess the authority of data. The epithets a schedule earns remain the only
+  thing the solver optimises.
   """
   points = sum(trackblazer.points_for(r.get("grade", ""), ASSUMED_PLACE) for r in schedule)
   coins = sum(trackblazer.coins_for(ASSUMED_PLACE) for r in schedule)
   stats = sum(epithets.value_of(n) * 2 for n in earned)
+  race_stats = sum(trackblazer.stats_for(r.get("grade", ""), race_bonus) for r in schedule)
+  race_sp = sum(trackblazer.skill_points_for(r.get("grade", ""), race_bonus) for r in schedule)
   return {
     "races": len(schedule),
     "epithets": len(earned),
     "epithet_stats": stats,
+    "race_stats": race_stats,
+    "race_sp": race_sp,
     "points": points,
     "coins": coins,
     "longest_run": longest_run(schedule),

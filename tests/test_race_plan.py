@@ -172,6 +172,46 @@ def main():
   ok("progress never exceeds need",
      all(e["have"] <= e["need"] for e in out["progress"]))
 
+  print("\n-- race stats and SP come from the grade table")
+  graded = [race("A G1", constants.DATE_ARRAY[0], grade="G1"),
+            race("A G3", constants.DATE_ARRAY[1], grade="G3"),
+            race("An OP", constants.DATE_ARRAY[2], grade="OP")]
+  out = P.plan(races=graded, targets=[], fill=True, max_consecutive=0)
+  by = {r["name"]: r for r in out["schedule"]}
+  ok("G1 pays 10 stats / 35 SP", (by["A G1"]["stats"], by["A G1"]["sp"]) == (10, 35),
+     (by["A G1"]["stats"], by["A G1"]["sp"]))
+  ok("G3 pays 8 / 25", (by["A G3"]["stats"], by["A G3"]["sp"]) == (8, 25),
+     (by["A G3"]["stats"], by["A G3"]["sp"]))
+  ok("OP pays 5 / 15", (by["An OP"]["stats"], by["An OP"]["sp"]) == (5, 15),
+     (by["An OP"]["stats"], by["An OP"]["sp"]))
+  ok("the totals sum the schedule",
+     (out["totals"]["race_stats"], out["totals"]["race_sp"]) == (23, 75),
+     (out["totals"]["race_stats"], out["totals"]["race_sp"]))
+
+  # The bonus is the only place the arithmetic can go wrong, because it turns
+  # exact integers into floats. These particular bases all land cleanly - 35 *
+  # 1.3 really is 45.5 here, and a naive int() agrees with the rounded floor on
+  # every grade and every bonus checked - so `_scaled`'s round-before-floor is
+  # insurance against a bonus that lands a hair under an integer, not a fix for
+  # a bug anyone has seen. These cases pin the floor either way.
+  out = P.plan(races=graded, targets=[], fill=True, max_consecutive=0, race_bonus=0.30)
+  by = {r["name"]: r for r in out["schedule"]}
+  ok("a 30% bonus floors rather than rounds",
+     (by["A G1"]["stats"], by["A G1"]["sp"]) == (13, 45),
+     (by["A G1"]["stats"], by["A G1"]["sp"]))
+  ok("and reaches every grade", (by["A G3"]["stats"], by["A G3"]["sp"]) == (10, 32),
+     (by["A G3"]["stats"], by["A G3"]["sp"]))
+  ok("a 0 bonus changes nothing",
+     P.plan(races=graded, targets=[], fill=True, max_consecutive=0,
+            race_bonus=0.0)["totals"]["race_sp"] == 75)
+
+  print("\n-- an unknown grade pays nothing rather than guessing")
+  out = P.plan(races=[race("Mystery", constants.DATE_ARRAY[0], grade="???")],
+               targets=[], fill=True)
+  ok("0 stats and 0 SP",
+     (out["totals"]["race_stats"], out["totals"]["race_sp"]) == (0, 0),
+     (out["totals"]["race_stats"], out["totals"]["race_sp"]))
+
   print("\n-- totals add up")
   out = P.plan(targets=["Eat My Dust", "Playing Dirty"], races=dirt_pool(20), fill=False)
   want = sum(E.value_of(e["name"]) * 2 for e in out["epithets"])
@@ -179,8 +219,10 @@ def main():
      out["totals"]["epithet_stats"] == want, (out["totals"]["epithet_stats"], want))
   ok("races counted matches the schedule",
      out["totals"]["races"] == len(out["schedule"]))
-  ok("no stat, SP or fan column is reported",
-     not ({"stats", "sp", "fans", "score"} & set(out["totals"])), sorted(out["totals"]))
+  ok("fans and an overall score are still not reported",
+     not ({"fans", "score"} & set(out["totals"])), sorted(out["totals"]))
+  ok("race stats and SP are reported",
+     {"race_stats", "race_sp"} <= set(out["totals"]), sorted(out["totals"]))
 
   print("\n-- filling adds races but never removes epithets")
   bare = P.plan(races=dirt_pool(20), fill=False)

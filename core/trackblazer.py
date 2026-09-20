@@ -17,6 +17,7 @@ The numbers below come from the game's own master.mdb rather than from guides:
 single_mode_free_win_point for points, single_mode_free_coin_race for coins.
 """
 import json
+import math
 import os
 
 from utils.log import warning
@@ -55,6 +56,58 @@ POINTS_BY_GRADE = {"G1": 100, "G2": 80, "G3": 60, "OP": 40, "Pre-OP": 20}
 # taken from single_mode_free_win_point alone.
 PLACEMENT_KEPT = {1: 1.0, 2: 0.6, 3: 0.4, 4: 0.2, 5: 0.2}
 PLACEMENT_KEPT_TAIL = 0.1
+
+# Stats and skill points a race pays, by grade.
+#
+# **Not from master.mdb, because it isn't there.** Checked on 2026-09-20: the
+# mdb carries no per-race stat or skill-point reward at all. Its
+# `single_mode_reward_set` is a prize table - Support Points (item 110), Monies
+# (59), Carats (43) - keyed by finishing position, and 777 race programs share
+# only 53 reward sets, so it cannot be per-race data either way.
+# `single_mode_hint_gain` is keyed by support card, not by race.
+#
+# So these ten numbers come from the community tables (gametora, by way of
+# daftuyda's Trackblazer scheduler, used with the author's permission on
+# 2026-09-20), the same place `core/epithets.py` takes its prices from.
+#
+# They are a grade lookup wearing the costume of per-race data: every G2 and G3
+# pays identically, and a 1200m sprint pays what a 3200m race of its grade
+# pays. Treat them as indicative, not measured.
+BASE_REWARD = {
+  "G1": {"stats": 10, "sp": 35},
+  "G2": {"stats": 8, "sp": 25},
+  "G3": {"stats": 8, "sp": 25},
+  "OP": {"stats": 5, "sp": 15},
+  "Pre-OP": {"stats": 5, "sp": 10},
+}
+
+
+def _scaled(value, bonus):
+  """`value` raised by a race bonus and floored, the way the game shows it.
+
+  Rounded to six places before flooring on purpose. The bonus arrives as a
+  float, so an exact result can land a hair under its integer - 8 * 1.15 is
+  9.199999999999999 - and flooring that directly would quietly pay one point
+  less on some grades and not others.
+  """
+  return int(math.floor(round(value * (1.0 + (bonus or 0.0)), 6)))
+
+
+def stats_for(grade, bonus=0.0):
+  """Stat points a race of `grade` pays. `bonus` is a fraction: 0.25 is +25%.
+
+  0 for an unknown grade, the same contract `points_for` keeps: a grade this
+  does not recognise means the race list read something unexpected, and
+  guessing would quietly skew every total built on it.
+  """
+  base = BASE_REWARD.get(grade)
+  return _scaled(base["stats"], bonus) if base else 0
+
+
+def skill_points_for(grade, bonus=0.0):
+  """Skill points a race of `grade` pays, with the same rules as `stats_for`."""
+  base = BASE_REWARD.get(grade)
+  return _scaled(base["sp"], bonus) if base else 0
 
 # Shop coins by placement, from single_mode_free_coin_race. Unlike the points
 # above, coins do NOT scale with grade: all nine grade codes give the same

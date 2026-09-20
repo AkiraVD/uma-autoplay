@@ -151,6 +151,7 @@ def race_plan_data(options: dict = Body(default={})):
     min_aptitude=options.get("min_aptitude", race_plan.DEFAULT_FLOOR),
     locks=options.get("locks"),
     skip=options.get("skip"),
+    race_bonus=options.get("race_bonus", 0.0),
     max_consecutive=options.get("max_consecutive", race_plan.MAX_CONSECUTIVE),
   )
 

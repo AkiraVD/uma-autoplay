@@ -41,6 +41,8 @@ type PlannedRace = {
   racetrack: string | null;
   terrain: string | null;
   distance: Distance | null;
+  stats: number;
+  sp: number;
   has_image: boolean;
 };
 
@@ -76,6 +78,8 @@ type PlanResult = {
     races: number;
     epithets: number;
     epithet_stats: number;
+    race_stats: number;
+    race_sp: number;
     points: number;
     coins: number;
     longest_run: number;
@@ -116,6 +120,7 @@ type Settings = {
   distances: string[];
   minAptitude: string;
   maxConsecutive: number;
+  raceBonus: number;
   targets: string[];
   locks: Record<string, string>;
   skip: string[];
@@ -129,6 +134,7 @@ const DEFAULTS: Settings = {
   distances: ["mile", "medium"],
   minAptitude: "b",
   maxConsecutive: 3,
+  raceBonus: 0,
   targets: [],
   locks: {},
   skip: [],
@@ -237,6 +243,8 @@ function RacePlanView() {
           include_op: current.includeOp,
           min_aptitude: current.minAptitude,
           max_consecutive: current.maxConsecutive,
+          // The server wants a fraction; the field is a percentage.
+          race_bonus: (current.raceBonus || 0) / 100,
           targets: current.targets.length ? current.targets : null,
           locks: current.locks,
           skip: current.skip,
@@ -479,6 +487,20 @@ function RacePlanView() {
                 0 removes the limit. A turn an epithet needs is never broken, so a run can still
                 exceed this — the real figure is in Longest run.
               </p>
+              <label className="mt-3 flex items-center justify-between gap-2 text-sm">
+                <span className="text-muted-foreground">Deck race bonus %</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={settings.raceBonus}
+                  onChange={(e) => set("raceBonus", Number(e.target.value))}
+                  className="h-8 w-16 rounded-md border border-border bg-background px-2 text-right tabular-nums"
+                />
+              </label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Scales the stats and skill points each race pays.
+              </p>
             </Section>
 
             <Section
@@ -692,11 +714,13 @@ function RacePlanView() {
           {plan && (
             <>
               <div className={CARD}>
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
                   {[
                     ["Races", plan.totals.races],
                     ["Epithets", plan.totals.epithets],
                     ["Epithet stats", plan.totals.epithet_stats],
+                    ["Race stats", plan.totals.race_stats],
+                    ["Race SP", plan.totals.race_sp],
                     ["Result Pts", plan.totals.points],
                     ["Longest run", plan.totals.longest_run],
                   ].map(([label, value]) => (
@@ -707,9 +731,10 @@ function RacePlanView() {
                   ))}
                 </div>
                 <p className="mt-3 text-xs text-muted-foreground">
-                  Assumes every scheduled race is won, so these are ceilings. Per-race stat and
-                  skill-point gain are not in the game's data, so no race is scored or ranked —
-                  only the epithets a schedule earns decide anything.
+                  Assumes every scheduled race is won, so these are ceilings. Race stats and SP
+                  come from a per-grade table rather than the game's own files — every G2 and G3
+                  pays the same, whatever the distance — so they are reported, never used to rank
+                  races. Only the epithets a schedule earns decide anything.
                 </p>
               </div>
 
@@ -797,12 +822,18 @@ function RacePlanView() {
                                 <option key={o.name} value={o.name}>{o.name}</option>
                               ))}
                             </select>
-                            <span className="hidden w-52 shrink-0 truncate text-xs text-muted-foreground sm:block">
+                            <span className="hidden w-48 shrink-0 truncate text-xs text-muted-foreground sm:block">
                               {race
                                 ? [race.racetrack, race.terrain,
                                    race.distance ? `${race.distance.meters}m` : null]
                                     .filter(Boolean).join(" · ")
                                 : ""}
+                            </span>
+                            <span
+                              className="hidden w-24 shrink-0 text-xs tabular-nums text-muted-foreground md:block"
+                              title="Stats and skill points this race pays, at the deck race bonus set in the sidebar"
+                            >
+                              {race ? `+${race.stats} · ${race.sp} SP` : ""}
                             </span>
                             <span className="flex shrink-0 items-center gap-1">
                               {turn.pinned && (
