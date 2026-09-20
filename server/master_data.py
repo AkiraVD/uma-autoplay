@@ -43,14 +43,6 @@ PERMISSION_YEARS = {
 YEAR_ORDER = ["Junior Year", "Classic Year", "Senior Year"]
 GRADES = {100: "G1", 200: "G2", 300: "G3"}
 
-# The schedule planner wants a wider pool than the race picker. OP races double
-# Junior year's options, and `Pro Racer` counts wins of "OP level or higher";
-# Maiden (800) and Debut (900) are neither schedulable nor OP-level, so they
-# stay out. Kept apart from GRADES deliberately: the config UI's picker must
-# only offer races the bot can click, and race_select finds a race by
-# assets/races/<name>.png, which OP races do not have. A planner has no such
-# limit, because its schedule is typed into the game's own agenda by hand.
-PLAN_GRADES = {**GRADES, 400: "OP", 700: "Pre-OP"}
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 # text_data categories.
@@ -189,28 +181,6 @@ def get_races():
         warning(f"MDB-RACES-READ: master.mdb unreadable, using data/races.json: {e}")
     return _races_from_json()
   return _cached("races", build)
-
-
-def get_plan_races():
-  """The planner's race pool: GRADES plus OP and Pre-OP.
-
-  Deliberately not get_races(): that one feeds the config UI's race picker,
-  which must only offer races `race_select` can click by picture. Admitting OP
-  there would let the goal-race path pick a race with no
-  `assets/races/<name>.png` and silently burn the turn. The planner is safe
-  because its output is typed into the game's own agenda by hand.
-
-  Falls back to data/races.json, which holds only G1s, when master.mdb cannot
-  be read - so the pool is much smaller without the game installed.
-  """
-  def build(has_mdb):
-    if has_mdb:
-      try:
-        return _races_from_mdb(PLAN_GRADES)
-      except (sqlite3.Error, OSError) as e:
-        warning(f"MDB-PLAN-RACES: master.mdb unreadable, using data/races.json: {e}")
-    return _races_from_json()
-  return _cached("plan_races", build)
 
 
 # ---------------------------------------------------------------- trainees

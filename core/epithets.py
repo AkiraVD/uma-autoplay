@@ -95,15 +95,14 @@ CHAINED = {
 # is how the first attempt missed two of the graded eight: Copa Republica
 # Argentina and Saudi Arabia Royal Cup. "Japan" already covers "Japanese Oaks"
 # and "Tokyo Yushun Japanese Derby", so no demonym entry is needed. Re-audited
-# over the OP pool (master_data.get_plan_races), which added Brazil Cup.
+# over the OP-level races as well, which added Brazil Cup.
 #
 # "Nippon" is left out on purpose. Radio Nippon Sho and Zen-Nippon Junior
 # Yushun carry Japan's name in Japanese and the condition says "a country's
 # name", so they may well count - but nothing here can confirm it, and the two
-# errors are not symmetric. Omitting a race that qualifies only makes the
-# planner choose another; counting one the game does not builds a schedule
-# around an epithet that never fires, which fails silently. Confirm in game
-# before adding it.
+# errors are not symmetric. Omitting a race that qualifies only understates the
+# list; counting one the game does not credits an epithet that never fires,
+# which fails silently. Confirm in game before adding it.
 COUNTRIES = ("Japan", "American", "New Zealand", "Saudi Arabia", "Argentina",
              "Brazil")
 

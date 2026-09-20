@@ -7,7 +7,7 @@ import sys
 import time
 
 from server.utils import load_config, save_config
-from server import configs, master_data, images, race_plan, tools
+from server import configs, master_data, images, tools
 import core.state as state
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools"))
@@ -84,22 +84,6 @@ def trainee_data():
 def event_data():
   """Events and their choices for the Event pickers; see server/master_data.py."""
   return master_data.get_events()
-
-@app.post("/data/race_plan")
-def race_plan_data(options: dict = Body(default={})):
-  """A Trackblazer schedule chosen to earn epithets; see server/race_plan.py.
-
-  POST because it takes options - aptitudes, target epithets - rather than
-  because it changes anything; nothing is written. Like every route here it
-  has to sit above the /{path:path} fallback, or the catch-all answers with
-  index.html and the caller gets HTML where it expected JSON.
-  """
-  return race_plan.plan(
-    targets=options.get("targets"),
-    aptitudes=options.get("aptitudes"),
-    fill=bool(options.get("fill", False)),
-    max_consecutive=options.get("max_consecutive", race_plan.MAX_CONSECUTIVE),
-  )
 
 @app.get("/data/images/{kind}/{item_id}.png")
 def image(kind: str, item_id: str):
