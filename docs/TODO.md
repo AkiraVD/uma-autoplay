@@ -440,6 +440,18 @@ Still to do:
   "Junior Stakes" wins, `Umatastic` 3 "Umamusume Stakes", `Globe-Trotter` 3
   with a country in the name, and five more want graded wins at a named group
   of racecourses - so an agenda can target them deliberately.
+- **`Session Error` has no branch, and it stalls rather than loops.** "Returning
+  to Title screen due to inactivity." with a single `Title Screen` button at
+  (553,704) - no Cancel, so the generic dismissers cannot touch it, and nothing
+  in `templates` matched it at even 0.80 when measured on 2026-09-20. The loop
+  therefore falls through to the blind-tap recovery, whose
+  `DIALOG_ADVANCE_MOUSE_POS` (553,400) lands on empty dialog body and never
+  advances it: an unbounded stall, not a repeating loop, so the "one identical
+  log line repeating" signature in screen-map.md will not catch it either.
+  CLAUDE.md's daily-reset path (a "Date Changed" dialog resumed through
+  Continue Career) is a *different* dialog and does not cover this one. It
+  appeared after the game sat on dialogs for ~2.5h, so it is reachable whenever
+  the bot wedges - which is exactly when nobody is watching.
 - **Post-race Victory events are scored blind.** `core/event_effects.py` has no
   rule for either line such an event offers - "Stat gains based on race grade"
   and "Chance to gain a random skill" - so on 2026-09-20 every branch scored 0
