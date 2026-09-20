@@ -155,6 +155,31 @@ def race_plan_data(options: dict = Body(default={})):
     max_consecutive=options.get("max_consecutive", race_plan.MAX_CONSECUTIVE),
   )
 
+RACE_ASSETS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "races")
+
+@app.get("/data/race_image/{name}")
+def race_image(name: str):
+  """The bot's own race picture, for the races that have one.
+
+  These are the template-matching crops in `assets/races/` - about 140x70, and
+  the only race artwork available offline. The game's own thumbnails live in
+  its encrypted asset bundles, and GameTora (where server/images.py gets
+  character and support art) does not host race art. So 30 of the planner's 402
+  races have a picture and the rest do not; the picker draws its own tile for
+  those rather than a broken image.
+
+  The name reaches the filesystem, so it is matched against a whitelist and the
+  resolved path has to sit inside the folder - the same discipline the
+  `/{path:path}` fallback and server/configs.py use.
+  """
+  if not re.fullmatch(r"[A-Za-z0-9 '.\-()]{1,80}", name):
+    raise HTTPException(status_code=404)
+  path = os.path.realpath(os.path.join(RACE_ASSETS, f"{name}.png"))
+  if not path.startswith(os.path.realpath(RACE_ASSETS) + os.sep) or not os.path.isfile(path):
+    raise HTTPException(status_code=404)
+  return FileResponse(path, media_type="image/png",
+                      headers={"Cache-Control": "public, max-age=604800"})
+
 @app.get("/data/images/{kind}/{item_id}.png")
 def image(kind: str, item_id: str):
   """Character or support card picture, cached on disk; see server/images.py."""

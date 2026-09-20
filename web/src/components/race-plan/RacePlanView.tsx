@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CalendarRange, Loader2, AlertTriangle, Check, Link2, RotateCcw, Save, Trash2, Search, Pin,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import RacePicker from "./RacePicker";
 import { URL } from "@/constants";
 
 // A Trackblazer schedule chosen to earn epithets. Modelled on daftuyda's
@@ -33,7 +35,7 @@ const NONE = "__none__";
 
 type Distance = { type: string; meters: number };
 
-type PlannedRace = {
+export type PlannedRace = {
   name: string;
   year: string;
   date: string;
@@ -46,7 +48,7 @@ type PlannedRace = {
   has_image: boolean;
 };
 
-type Turn = {
+export type Turn = {
   key: string;
   year: string;
   date: string;
@@ -209,6 +211,9 @@ function RacePlanView() {
   const [listName, setListName] = useState("");
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
+  // Which turn's race picker is open, by turn key. One at a time, so the modal
+  // is rendered once below rather than 59 times inside the grid.
+  const [pickerTurn, setPickerTurn] = useState<string | null>(null);
 
   // Every settings change marks the plan stale rather than rebuilding on each
   // keystroke. Without this, ticking a distance appeared to do nothing at all -
@@ -806,22 +811,38 @@ function RacePlanView() {
                             <span className="w-9 shrink-0 text-xs font-medium">
                               {race?.grade ?? ""}
                             </span>
-                            <select
-                              value={turnValue(turn)}
-                              onChange={(e) => setTurn(turn.key, e.target.value)}
-                              disabled={busy}
-                              className={`h-8 min-w-0 flex-1 rounded-md border bg-background px-2 text-sm ${
-                                overridden ? "border-primary" : "border-border/40"
+                            <button
+                              type="button"
+                              disabled={busy || turn.options.length === 0}
+                              onClick={() => setPickerTurn(turn.key)}
+                              title={turn.options.length === 0
+                                ? "No race runs on this turn"
+                                : "Choose the race for this turn"}
+                              className={`flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md border bg-background px-2 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                                overridden
+                                  ? "border-primary"
+                                  : "border-border/40 hover:border-primary/60"
                               }`}
                             >
-                              <option value={AUTO}>
-                                {turn.picked ? `Auto — ${turn.picked}` : "Auto — no race"}
-                              </option>
-                              <option value={NONE}>No race</option>
-                              {turn.options.map((o) => (
-                                <option key={o.name} value={o.name}>{o.name}</option>
-                              ))}
-                            </select>
+                              {race?.has_image && (
+                                <img
+                                  src={`${URL}/data/race_image/${encodeURIComponent(race.name)}`}
+                                  alt=""
+                                  loading="lazy"
+                                  className="h-5 w-9 shrink-0 rounded-sm object-contain"
+                                />
+                              )}
+                              <span className="truncate">
+                                {turnValue(turn) === NONE
+                                  ? "No race"
+                                  : turnValue(turn) === AUTO
+                                    ? turn.picked
+                                      ? `Auto — ${turn.picked}`
+                                      : "Auto — no race"
+                                    : turnValue(turn)}
+                              </span>
+                              <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 opacity-50" />
+                            </button>
                             <span className="hidden w-48 shrink-0 truncate text-xs text-muted-foreground sm:block">
                               {race
                                 ? [race.racetrack, race.terrain,
@@ -862,6 +883,24 @@ function RacePlanView() {
           )}
         </div>
       </div>
+
+      {pickerTurn && plan && (() => {
+        const turn = plan.turns.find((t) => t.key === pickerTurn);
+        if (!turn) return null;
+        return (
+          <RacePicker
+            turn={turn}
+            value={turnValue(turn)}
+            auto={AUTO}
+            none={NONE}
+            onPick={(value) => {
+              setTurn(turn.key, value);
+              setPickerTurn(null);
+            }}
+            onClose={() => setPickerTurn(null)}
+          />
+        );
+      })()}
     </div>
   );
 }
