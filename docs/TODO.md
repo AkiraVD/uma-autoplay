@@ -426,8 +426,15 @@ Still to do:
   is the total across both stats and `display_amount` the per-stat figure,
   which is what reconciles 10/20/30 with +5/+10/+15. The repo ships no LICENSE
   file, but **the author gave permission to use it** (2026-09-20, asked
-  directly). Credit them for anything taken, the way the README already credits
-  both upstream projects. Nothing models any of
+  directly). It is not original data either: every row carries
+  `source_url: gametora.com/umamusume/nicknames`, so that is who the credit is
+  owed to. **Take the price from it, never the condition.** Its 36 rows are
+  gametora's English and are degraded against the game's own text - `Kanto
+  Conqueror` omits Kawasaki and Funabashi, `Tohoku Top Dog` omits Morioka, and
+  `Umatastic` writes "Uma Musume Stakes" where every race name reads
+  "Umamusume", so a literal match finds nothing. It also omits the four
+  scenario milestones entirely, which is why their prices are still unknown.
+  Conditions come from category 131, which patches keep current. Nothing models any of
   this, and they are the scenario's real stat
   engine. Several are schedulable by race *name* - `Junior Jewel` wants 3
   "Junior Stakes" wins, `Umatastic` 3 "Umamusume Stakes", `Globe-Trotter` 3
