@@ -1170,9 +1170,75 @@ Offsets from the `Save Here` anchor's top edge (y 410 on row 1): name bar
 | `Copy` | (757,925) |
 | `Close` / `Edit My Agendas` | (419,997) / (686,997) |
 
-Empty, it prints `No scheduled races` at ~(553,521). **The populated row layout
-is still unmeasured** - every saved agenda was empty on 2026-09-20, so the
-pitch, the per-turn header band and the detail-line offsets are unknown.
+Empty, it prints `No scheduled races` at ~(553,521). Measured populated on
+2026-09-20 against a 32-race agenda ("Test Agend").
+
+**Rows are not found by template here, and that is deliberate.** Three anchors
+were cut and all three failed `sep`, so do not retry them:
+
+- the pink fans icon (20x20) - margin +0.248, suggested threshold 0.88, which
+  is *above* the production 0.85;
+- the turn band's right-hand "//" end-cap (36x28) - margin **+0.002**. That
+  motif is the game's shared green section-header decoration: it scores 0.998
+  on My Agendas and 0.990 on Home;
+- a wider icon crop (44x40) - **11 self-matches in a frame holding 4 cards**,
+  because most of the crop is flat grey card background.
+
+Nothing in a row is both per-row and stable: the grade chip changes colour with
+the grade, the aptitude pills change text, and the "Can compete with N fans or
+more." overlay vanishes once the trainee has the fans. So the screen is
+identified by template and the rows are then found geometrically, the way
+`core/shop.py` separates "am I here" from "what is on the shelf".
+
+| Element | Position |
+|---|---|
+| screen anchor | `assets/trackblazer/agenda_details_btn.png`, 242x64 at (566,966) |
+| `sep` | worst positive 1.000, best negative 0.405, **margin +0.595** |
+| turn bands | full-width green, x 285..820, h 12..30, >=300 green px/row |
+| band mids (4 visible) | 227, 388, 550, 712, 873 |
+| **row pitch** | **161.5 px** (measured 161/162/162/161) |
+| dialog panel | x 257..848 |
+| scrollbar | groove x 838..842; thumb 89px of 683 = 0.130 |
+| **travel_ratio** | **0.915** |
+
+Offsets from a turn band's mid: detail line **+46** (`Niigata Turf 1600m (Mile)
+Left / Outer`), lock-overlay text +82, fans line **+108** (`+3,100 fans`), fans
+icon +111. The overlay sits *between* the two text lines, so both stay
+readable - it hides neither.
+
+The thumb ratio implies ~31 rows against the badge's `Scheduled 32`, which is a
+useful cross-check that the list was fully counted.
+
+**The aliasing trap applies here too, and worse.** Rows are 161.5px apart and
+look alike, so a drag shift is only meaningful modulo the pitch: three
+calibration drags read +98, -64 and +106, which unwrap to 63.5, 64 and 55.5px
+of travel. Keep a calibration drag under half a pitch, or measure the scrollbar
+thumb, which cannot alias - it moved 7-8px on every drag and its arithmetic
+gives ~61px independently.
+
+Numbers on this screen are warm brown, **RGB(121, 64, 22)**, not near-black: a
+`R < 110` mask matches nothing. `Scheduled N` glyphs sit at x 386..406 in both
+the row and the header. Grade tallies: row pills at x 586..636, y 409/436/463
+(pitch 27); header pills at x 672..722, y 160/190/220 (pitch 30).
+
+#### Reading the schedule without opening anything (2026-09-20)
+
+The `Scheduled Races` grid itself says which turns race. A filled slot carries a
+pink **"Scheduled"** badge; an empty one shows a green `+`. Badge presence is
+the signal and needs no OCR, which matters because the tile art renders the
+race name as stylised text over a thumbnail - a poor OCR target.
+
+| Element | Position |
+|---|---|
+| column centres | 1137, 1283, 1434, 1576 (pitch ~146) |
+| row centres | 655, 780, 903 (pitch ~124) |
+| badge | ~97x21, centred under the tile |
+
+Detect the badge by position within the tile rather than by blob size: one
+badge measured 116x45 because it merged with the magenta `Hanshin Juvenile
+Fillies` tile art. Do not bother detecting the green `+` - absence of a badge
+already means the slot is empty, and a naive green-blob pass also catches the
+`My Agendas` button at y~982.
 
 What the populated dialog gives, per the user's capture, is a turn header
 (`Junior Year Late Jul`) over a card carrying grade, track, terrain, distance
