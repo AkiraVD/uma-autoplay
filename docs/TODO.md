@@ -396,8 +396,50 @@ Still to do:
   top of the Megaphone's global bonus. For *buying* this changes little - the
   pair is worth the sum of its parts - but a use-logic that spends them on
   separate turns throws the combination away.
-- **Epithets.** The stat awards are documented from seriru's guide (+30/+20/+10
-  tiers) but nothing models them; they are the scenario's real stat engine.
+- **Epithets.** The game ships them, so stop working from guides alone: names
+  in `master.mdb` `text_data` category 130, conditions in category 131, joined
+  by index; `nickname.scenario_id = 4` selects the **40 Trackblazer-only** ones
+  and `nickname.rank` holds 1/2/3. The award is **+5/+10/+15 to 2 random
+  stats**, which is 10/20/30 points in total: the +30/+20/+10 this note first
+  carried was never wrong, it quoted the *total across both stats*, and the two
+  figures are one fact in two units. Three pay a skill hint instead - Legendary
+  (Homestretch Haste), Mile a Minute (Mile Straightaways), Dirt G1 Dominator
+  (Top Pick). `rank` is **not** the bonus: all six `rank 1` are +5, but `rank
+  3` carries `Heroine` and `Eat My Dust` at +10 beside its +15s, and `rank 2`
+  spans the whole range. The prices:
+  - **+5** - Pro Racer, Hokkaido Hotshot, Tohoku Top Dog, Kanto Conqueror,
+    West Japan Whiz, Kokura Constable, Dirty Work, Junior Jewel, Globe-Trotter,
+    Dirt Dancer, Umatastic, Turf Tussler, Kicking Up Dust.
+  - **+10** - Spring Champion, Fall Champion, Shield Bearer, Stunning,
+    Standard and Non-Standard Distance Leader, Playing Dirty, Dirt G1 Star,
+    Dirt G1 Achiever, Heroine, Lady, Eat My Dust, Sprint Go-Getter, Dirt
+    Sprinter.
+  - **+15** - Incredible, Phenomenal, Breakneck Miler, Goddess, Dirt G1
+    Powerhouse, Sprint Speedster.
+
+  The four scenario milestones - `Moneymaker`, `Leading the Charge`, `Product
+  Power`, `Climax King` - are priced by no source found; read them in game.
+  Never price these by scraping game8: three fetches of one page produced three
+  different groupings. Cross-checked against daftuyda's Trackblazer scheduler,
+  which ships `epithets.json` but **carries no licence** - read it, never
+  vendor it. Nothing models any of
+  this, and they are the scenario's real stat
+  engine. Several are schedulable by race *name* - `Junior Jewel` wants 3
+  "Junior Stakes" wins, `Umatastic` 3 "Umamusume Stakes", `Globe-Trotter` 3
+  with a country in the name, and five more want graded wins at a named group
+  of racecourses - so an agenda can target them deliberately.
+- **`GRADES` drops OP and Pre-OP, and `Pro Racer` needs them.**
+  `server/master_data.py:44` maps only `{100: G1, 200: G2, 300: G3}`, so the
+  `grade not in GRADES` line in `_races_from_mdb()` discards 343 of the 777
+  career-programme rows: **400 = OP** (118 - Manyo Stakes, Pollux Stakes,
+  January Stakes), **700 = Pre-OP** (26 - Aster Sho, Rindo Sho), **800 =
+  Maiden** (172), **900 = Debut** (27). Admitting 400 alone adds 164 rows -
+  Junior 15 -> 30, Classic 118 -> 184, Senior 127 -> 210 - and Junior
+  *doubles*, which is the year the agenda has fewest options in and where
+  `Junior Jewel` lives. Maiden and Debut are correctly outside "OP level or
+  higher". `race_permission = 5` (246 rows) is **correctly** dropped: it is the
+  scenario finals - URA Finale Qualifier/Semifinal/Finals, Twinkle Star Climax
+  Race 1 - which `race_day()` drives rather than the schedule.
 - **Nine mode gates** still branch inline on `GRAND_CONCERT_SEEN`/`UNITY_SEEN`
   rather than going through `core/scenarios.py`. Moving `state.py:608` needs
   the `scenarios` -> `state` import inverted first.

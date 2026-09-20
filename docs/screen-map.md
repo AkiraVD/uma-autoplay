@@ -1118,6 +1118,104 @@ Measured on a live Trackblazer career, Maruzensky, Junior Year Pre-Debut.
   greyed after the debut race, when the real shop had already opened
   elsewhere, so the "!" is not stock waiting to be spent.
 
+#### The Agenda tab and My Agendas (2026-09-20)
+
+The Agenda tab (right rail, ~(1838,700)) opens `Scheduled Races`: year tabs
+Junior/Classic/Senior at y~153 (centres 1157 / 1356 / 1553) over a 4-column
+grid of turn slots, with `Reset` (1110,982) and `My Agendas` (1568,982) at the
+foot. At Junior Pre-Debut, Early Apr..Late Jun are greyed and every later turn
+carries a green `+`. A schedule is **authored by hand** - the bot cannot create
+one - then saved into a named slot, and the game truncates that name at 10
+characters (`Mile+Sprin`).
+
+`My Agendas` lists the saved slots (~8 seen: `TB-TMG`, `TB-TME`, `Mile+Sprin`,
+`Dirt - All`, `Mile-Med`, `Haru`, `Agenda 7`), each a scrolling row.
+
+| Element | Position |
+|---|---|
+| dialog header | y ~53 |
+| `Currently Scheduled Races` pill + (i) | y ~281 - **not a row** |
+| list rows, green name bar | 386, 568, 751, 933 |
+| row pitch | **183 px** |
+| `Save Here` / `Load List` centre x | ~754 |
+| row (i) button | x ~421 |
+| `My Agendas` section header | y 315..334 |
+| list bbox (L,T,R,B) | **(285, 340, 820, 945)** - 3 rows visible |
+| scrollbar groove | x 826..846 |
+
+Offsets from the `Save Here` anchor's top edge (y 410 on row 1): name bar
+-24, `Save Here` +18, `Load List` +73, `Scheduled N` pill and its (i) +97.
+
+- **Anchor**: `assets/trackblazer/agenda_save_here.png` (118x37, cut at
+  (696,410)). `sep` gives worst positive 1.000, best negative 0.485, margin
+  +0.515; the Agenda tab *without* the dialog scores 0.481, so it does not
+  leak. Prefer it over the `Scheduled` pill, which also matches the header
+  section at y~267 and would be read as a fourth row.
+- **travel_ratio 0.911**, from two 90px drags that each moved the list 82px.
+- **Empty rows are pixel-identical**, so any before/after shift aliases on the
+  183px pitch: a real -93 reads as +90. Keep a calibration drag under half a
+  pitch, or measure against the scrollbar thumb, which cannot alias. A band
+  match across rows returns 1.000 on the *wrong* row and is worthless here.
+- Dragging inside the list re-seats what sits under the press point; re-pick it
+  from a fresh frame each pass or a release lands on a row's (i).
+
+#### Agenda Details, reached by a row's (i) (2026-09-20)
+
+| Element | Position |
+|---|---|
+| header | y ~52 |
+| agenda name + edit pencil | name ~(553,141), pencil (694,141) |
+| content area top | y ~207 |
+| `Scheduled N` badge | x 275..362, y ~866 |
+| `Copy` | (757,925) |
+| `Close` / `Edit My Agendas` | (419,997) / (686,997) |
+
+Empty, it prints `No scheduled races` at ~(553,521). **The populated row layout
+is still unmeasured** - every saved agenda was empty on 2026-09-20, so the
+pitch, the per-turn header band and the detail-line offsets are unknown.
+
+What the populated dialog gives, per the user's capture, is a turn header
+(`Junior Year Late Jul`) over a card carrying grade, track, terrain, distance
+and `+N fans` - all clean UI text, unlike the stylised race name on the
+thumbnail. That is enough to identify the race exactly: `(year, date,
+racetrack, terrain, meters, grade, fans_gained)` is unique across all 212
+master.mdb races (0 collisions; dropping grade+fans leaves 9). A parser on that
+tuple resolved 5/5 rows from the capture and 212/212 on a round-trip.
+
+The catch looked downstream: `race_select` (core/execute.py:723) clicks a race
+only via `assets/races/<name>.png`, and 169 of those 212 races have no picture,
+which would leave most of a schedule unclickable. It does not bite, because a
+scheduled race announces itself - **the game raises a notification window on
+race day** (user, 2026-09-20). The bot accepts that window instead of hunting
+the race list, so the missing pictures stop mattering and the agenda becomes
+the way into races the bot could never otherwise click.
+
+Two consequences. The window is **not yet captured** - it needs a populated
+agenda and a turn that reaches a scheduled race day - so no template exists for
+it. And it must be handled *ahead* of the generic Cancel/Close handlers, the
+way Grand Concert's Schedule Notification is: a race-day popup that falls
+through to the generic dismissers would be cancelled, and the bot would train
+through its own scheduled race while looking like the agenda never loaded.
+That failure would be silent, so it is worth a log line either way.
+
+The threat is precise. The generic `matches["cancel"]` at core/execute.py:1360
+clicks Cancel and passes no `text=`, so it logs **nothing** - the same handler
+that dismissed the Race Playback dialog and had the bot pressing Race every
+~17s for ten minutes (2026-09-15). Two more generics click a green race button
+outright, `race_preview_btn.png` (:1352) and `race_lineup_btn.png` (:1354), and
+the comment at :1336 records that an overlay does **not** reliably suppress a
+match underneath it. Copy the `gc_to_lessons` pattern (:1072-1083): cut the
+template from the popup's own accept button so the match doubles as the click
+target, register the key near the other race keys (:47-72) - `race_notice` is
+free, `race_day` and `race_btn` are not - and put the branch between :1035 and
+:1110, well above the generics.
+
+Still unknown, and visible in the same frame as the window: whether a scheduled
+race makes `check_turn()` report `Race Day` (core/state.py:946) or an ordinary
+turn number. If `Race Day`, the existing branch at :1507 may already drive the
+race and the popup is only a confirmation; if a number, the popup is the only
+way in, and nothing on that path consults `state.RACE_SCHEDULE`.
+
 ### Inside a career: after the debut race (2026-09-17, Junior Early Sep)
 
 The debut race is what changes the lobby. Measured with the bot stopped.
