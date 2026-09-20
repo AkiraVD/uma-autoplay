@@ -1252,13 +1252,23 @@ The catch looked downstream: `race_select` (core/execute.py:723) clicks a race
 only via `assets/races/<name>.png`, and 169 of those 212 races have no picture,
 which would leave most of a schedule unclickable.
 
-**Measured on a live career, 2026-09-20, Junior Late Aug.** There is no
-notification *window* on the lobby - this note used to say there was, on a
-reasonable reading of how the feature was described, and direct observation
-contradicts it. A scheduled race announces itself as a pink **"Scheduled Race"**
-ribbon on the Races button, and the lobby is otherwise ordinary: the facility
-row is intact and every other control is where it always is. A window may exist
-at some other moment; none appears here.
+**Measured on a live career, 2026-09-20. Both a badge and a window exist, at
+different moments** - this note twice said otherwise and both versions were
+wrong, each generalised from a single frame.
+
+- **On a turn-change lobby** (observed at Junior Late Aug) there is no popup.
+  The race announces itself only as a pink **"Scheduled Race"** ribbon on the
+  Races button; the facility row is intact and every other control is normal.
+- **On entering a career** whose agenda has a race this turn (observed at
+  Junior Late Dec, after a Session Error forced a relaunch) the game raises
+  **"Scheduled Race Available - You have a scheduled race. Proceed to the Races
+  screen?"** carrying the race card, with `Close` and `Race` at the usual
+  (419,704) / (686,704). Template `assets/trackblazer/scheduled_race_available.png`,
+  `sep` margin +0.453 (best negative 0.547, the consecutive-races warning,
+  which shares the green header).
+
+The lesson is the generalisation, not the fact: one lobby frame cannot show
+that a window never appears, only that it did not appear then.
 
 | Element | Position |
 |---|---|

@@ -320,6 +320,11 @@ RACE_PLAYBACK_OK_MOUSE_POS = (686, 703)
 # (686,702) - the same geometry as the Race Playback OK a line above, one pixel
 # apart, so these confirmations share a layout. Cancel sits at (419,702).
 CONSECUTIVE_RACES_OK_MOUSE_POS = (686, 702)
+# "You have a scheduled race. Proceed to the Races screen?", raised on entering
+# a career whose agenda has a race this turn. Same dialog geometry again: Race
+# at (686,704), Close at (419,704). The template for it is the message text, so
+# it cannot be clicked at its own centre - that would press the dialog body.
+SCHEDULED_RACE_NOTICE_RACE_MOUSE_POS = (686, 704)
 # The Lessons button carries a pink "!" when something on the board is
 # learnable, and a "Scheduled" tag or a note badge otherwise. The same "!"
 # artwork appears elsewhere in the lobby (0.93 on a Unity lobby), so it is only

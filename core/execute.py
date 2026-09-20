@@ -59,6 +59,15 @@ templates = {
   # times over 2h22m on 2026-09-20. Cut left of the count so the 2-race wording
   # matches the same asset. sep: best negative 0.426.
   "consecutive_races": "assets/trackblazer/consecutive_races_warning.png",
+  # "You have a scheduled race. Proceed to the Races screen?" - raised on
+  # entering a career whose agenda has a race this turn. This note previously
+  # claimed no such window existed, on the strength of one turn-change lobby
+  # that showed only the Races badge; both are real, and they appear at
+  # different moments. It pairs Race with a Close that cancel_btn matches, so
+  # like every other dialog in this chain it needs its own branch above the
+  # generic handler. sep: best negative 0.547 (the consecutive-races warning,
+  # which shares the green header). Measured 2026-09-20.
+  "scheduled_race_notice": "assets/trackblazer/scheduled_race_available.png",
   "race_preview": "assets/buttons/race_preview_btn.png",
   # And the screen the preview leads to: the fullscreen runner lineup, whose
   # "Race!" is a different button again (the preview's scores 0.33 on it).
@@ -1391,6 +1400,24 @@ def career_lobby():
     # the bot takes that cost only where the agenda asked for the race; any
     # other route falls through to the generic cancel and skips it, which is
     # the safe direction to be wrong in.
+    # "You have a scheduled race. Proceed to the Races screen?" - raised on
+    # entering a career mid-agenda. Above the generic cancel for the usual
+    # reason: its Close matches cancel_btn, so the handler below would dismiss
+    # it silently and land back on a lobby still carrying the Races badge.
+    # Taking it also marks the turn, so the consecutive-races warning that
+    # follows knows this race was scheduled.
+    if matches["scheduled_race_notice"]:
+      _scheduled_race_turn[0] = turn
+      # The template is the dialog's message text, so it must NOT be clicked at
+      # its own centre - that presses the dialog body and nothing happens, the
+      # same dead-click that looped the badge branch 302 times. Race sits at a
+      # fixed point on this dialog.
+      x, y = constants.SCHEDULED_RACE_NOTICE_RACE_MOUSE_POS
+      click(boxes=(x, y, 1, 1),
+            text="Scheduled race notice: proceeding to the Races screen.")
+      sleep(1.5)
+      continue
+
     if matches["consecutive_races"]:
       if _scheduled_race_turn[0] == turn:
         x, y = constants.CONSECUTIVE_RACES_OK_MOUSE_POS
