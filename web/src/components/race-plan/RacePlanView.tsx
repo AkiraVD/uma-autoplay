@@ -564,7 +564,9 @@ function RacePlanView() {
 
           {/* Actions sit outside the scrolling settings card so Rebuild is always
               reachable, and the stale hint is next to the button that clears it. */}
-          <div className={`${CARD} flex flex-col gap-2`}>
+          <div
+            className={`${CARD} flex flex-col gap-2 lg:sticky lg:bottom-0 lg:z-10 lg:shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.6)]`}
+          >
             <Button
               onClick={() => build(settings)}
               disabled={busy}
@@ -808,7 +810,7 @@ function RacePlanView() {
                             <span className="w-20 shrink-0 text-xs text-muted-foreground">
                               {turn.date}
                             </span>
-                            <span className="w-9 shrink-0 text-xs font-medium">
+                            <span className="w-14 shrink-0 whitespace-nowrap text-xs font-medium">
                               {race?.grade ?? ""}
                             </span>
                             <button
@@ -881,7 +883,7 @@ function RacePlanView() {
                               )}
                               {race && !race.has_image && (
                                 <span
-                                  className="rounded border border-border px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground"
+                                  className="text-[10px] lowercase text-muted-foreground/60"
                                   title="No picture asset, so the bot cannot click this race. Fine to enter in the game's Agenda by hand."
                                 >
                                   agenda
