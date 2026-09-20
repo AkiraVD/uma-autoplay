@@ -42,6 +42,12 @@ POINTS_BY_GRADE = {"G1": 100, "G2": 80, "G3": 60, "OP": 40, "Pre-OP": 20}
 # That over-paid 3rd and 4th-5th by half - a G1 third place is 40 points, not
 # 60 - so any "is this race worth a turn" decision built on it was skewed
 # toward racing.
+#
+# Confirmed on screen 2026-09-20, and all three at once: the after-race results
+# for the G3 Niigata Junior Stakes paid 1st 60 pts, 2nd 36 and 3rd 24 - exactly
+# 60 x 1.0 / 0.6 / 0.4. The award popup read "Junior Year Result Pts 70/60 MAX
+# (+60 pts)" for the win. So the curve below is measured, not inferred, and the
+# guides' 0.6/0.3 for 3rd and 4th-5th is definitively wrong.
 PLACEMENT_KEPT = {1: 1.0, 2: 0.6, 3: 0.4, 4: 0.2, 5: 0.2}
 PLACEMENT_KEPT_TAIL = 0.1
 

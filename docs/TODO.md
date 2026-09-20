@@ -440,6 +440,14 @@ Still to do:
   "Junior Stakes" wins, `Umatastic` 3 "Umamusume Stakes", `Globe-Trotter` 3
   with a country in the name, and five more want graded wins at a named group
   of racecourses - so an agenda can target them deliberately.
+- **Post-race Victory events are scored blind.** `core/event_effects.py` has no
+  rule for either line such an event offers - "Stat gains based on race grade"
+  and "Chance to gain a random skill" - so on 2026-09-20 every branch scored 0
+  and the pick fell through to energy cost alone (`#1=-40, #2=-20`, took #2).
+  The cheaper branch may well be right, but it is not being chosen on the
+  reward, and nothing in the log says so unless DEBUG is read. A rule has to
+  match loosely: the same run OCR'd one line as "Stat Gsinc Kaced On rafo
+  Grade". These fire after every race, so this is not a rare path.
 - **`GRADES` drops OP and Pre-OP, and `Pro Racer` needs them.**
   `server/master_data.py:44` maps only `{100: G1, 200: G2, 300: G3}`, so the
   `grade not in GRADES` line in `_races_from_mdb()` discards 343 of the 777
