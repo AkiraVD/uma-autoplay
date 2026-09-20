@@ -48,6 +48,11 @@ POINTS_BY_GRADE = {"G1": 100, "G2": 80, "G3": 60, "OP": 40, "Pre-OP": 20}
 # 60 x 1.0 / 0.6 / 0.4. The award popup read "Junior Year Result Pts 70/60 MAX
 # (+60 pts)" for the win. So the curve below is measured, not inferred, and the
 # guides' 0.6/0.3 for 3rd and 4th-5th is definitively wrong.
+#
+# The G1 row is confirmed too, same day: winning the G1 Hopeful Stakes paid
+# "(+100 pts)", taking the badge to 510/60 MAX. So both POINTS_BY_GRADE rows
+# that a Junior year can reach are now measured against the game rather than
+# taken from single_mode_free_win_point alone.
 PLACEMENT_KEPT = {1: 1.0, 2: 0.6, 3: 0.4, 4: 0.2, 5: 0.2}
 PLACEMENT_KEPT_TAIL = 0.1
 
