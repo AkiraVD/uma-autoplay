@@ -818,7 +818,7 @@ function RacePlanView() {
                               title={turn.options.length === 0
                                 ? "No race runs on this turn"
                                 : "Choose the race for this turn"}
-                              className={`flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md border bg-background px-2 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                              className={`flex h-8 min-w-[12rem] flex-1 items-center gap-2 rounded-md border bg-background px-2 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                                 overridden
                                   ? "border-primary"
                                   : "border-border/40 hover:border-primary/60"
@@ -832,18 +832,34 @@ function RacePlanView() {
                                   className="h-5 w-9 shrink-0 rounded-sm object-contain"
                                 />
                               )}
-                              <span className="truncate">
-                                {turnValue(turn) === NONE
-                                  ? "No race"
-                                  : turnValue(turn) === AUTO
-                                    ? turn.picked
-                                      ? `Auto — ${turn.picked}`
-                                      : "Auto — no race"
-                                    : turnValue(turn)}
-                              </span>
+                              {/* The race name leads. It used to read
+                                  "Auto — <name>", which cost 7 characters of a
+                                  space the name was already losing, so at the
+                                  lg breakpoint the label truncated to nothing
+                                  and the button looked empty. The border and
+                                  the tag carry "is this mine or the solver's"
+                                  instead. */}
+                              {turnValue(turn) === NONE ? (
+                                <span className="truncate text-muted-foreground">No race</span>
+                              ) : turnValue(turn) === AUTO ? (
+                                turn.picked ? (
+                                  <>
+                                    <span className="truncate">{turn.picked}</span>
+                                    <span className="shrink-0 rounded border border-border/60 px-1 text-[10px] uppercase text-muted-foreground">
+                                      auto
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="truncate text-muted-foreground">
+                                    Nothing scheduled
+                                  </span>
+                                )
+                              ) : (
+                                <span className="truncate font-medium">{turnValue(turn)}</span>
+                              )}
                               <ChevronDown className="ml-auto h-3.5 w-3.5 shrink-0 opacity-50" />
                             </button>
-                            <span className="hidden w-48 shrink-0 truncate text-xs text-muted-foreground sm:block">
+                            <span className="hidden w-44 shrink-0 truncate text-xs text-muted-foreground xl:block">
                               {race
                                 ? [race.racetrack, race.terrain,
                                    race.distance ? `${race.distance.meters}m` : null]
@@ -851,7 +867,7 @@ function RacePlanView() {
                                 : ""}
                             </span>
                             <span
-                              className="hidden w-24 shrink-0 text-xs tabular-nums text-muted-foreground md:block"
+                              className="hidden w-24 shrink-0 text-xs tabular-nums text-muted-foreground lg:block"
                               title="Stats and skill points this race pays, at the deck race bonus set in the sidebar"
                             >
                               {race ? `+${race.stats} · ${race.sp} SP` : ""}
