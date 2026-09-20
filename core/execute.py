@@ -69,6 +69,19 @@ templates = {
   # which shares the green header). Measured 2026-09-20.
   "scheduled_race_notice": "assets/trackblazer/scheduled_race_available.png",
   "race_preview": "assets/buttons/race_preview_btn.png",
+  # "Race Details ... Enter race?" - the confirmation the race list raises on
+  # the Race button, and the last screen before a race actually starts.
+  # race_day() and race_select() drive it blind, by pressing race_btn.png twice
+  # in a row, so it never needed a handler until a bot was started while the
+  # race list was already up: race_preview_btn scores 0.848 on this dialog's
+  # narrower Race button, just under the 0.85 multi_match threshold, so the
+  # frame fell through to the generic cancel - which passes no text and logs
+  # nothing - and the list opened it again. Silent, and forever (2026-09-21,
+  # the Japanese Derby of a Grand Concert career).
+  # The template is the dialog's "Enter race?" line, so it must not be clicked
+  # at its own centre; the Race button is found separately. 1.000 on two
+  # captures four days apart against a best negative of 0.631 over 23 frames.
+  "race_confirm": "assets/ui/enter_race_confirm.png",
   # And the screen the preview leads to: the fullscreen runner lineup, whose
   # "Race!" is a different button again (the preview's scores 0.33 on it).
   # Note this screen is fullscreen 1920x1080, not the portrait panel the rest
@@ -1379,6 +1392,18 @@ def career_lobby():
       x, y = constants.RACE_PLAYBACK_OK_MOUSE_POS
       click(boxes=(x, y, 1, 1), text="Race Playback dialog: OK.")
       sleep(2)
+      continue
+    if matches["race_confirm"]:
+      # race_btn.png lands on this dialog's Race at 0.923 on both captures, so
+      # look for it rather than trusting the position; the constant is the
+      # backstop for a frame caught mid-animation.
+      if not click(img="assets/buttons/race_btn.png", confidence=0.9, minSearch=get_secs(2),
+                   region=constants.GAME_SCREEN_REGION,
+                   text="Race Details dialog: entering the race."):
+        x, y = constants.RACE_CONFIRM_RACE_MOUSE_POS
+        click(boxes=(x, y, 1, 1),
+              text="Race Details dialog: entering the race (by position).")
+      sleep(1.5)
       continue
     if click(boxes=matches["race_preview"], text="Race preview; starting the race."):
       continue

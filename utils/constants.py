@@ -325,6 +325,12 @@ CONSECUTIVE_RACES_OK_MOUSE_POS = (686, 702)
 # at (686,704), Close at (419,704). The template for it is the message text, so
 # it cannot be clicked at its own centre - that would press the dialog body.
 SCHEDULED_RACE_NOTICE_RACE_MOUSE_POS = (686, 704)
+# "Race Details ... Enter race?", the confirmation between picking a race and
+# running it. Taller than the three dialogs above - it carries the race's
+# banner - so Race sits lower, at (686,775), with Cancel at (419,775). Measured
+# on two captures four days apart, a Grand Concert goal race and a Trackblazer
+# Twinkle Star Climax, which put the button on the same pixel.
+RACE_CONFIRM_RACE_MOUSE_POS = (686, 775)
 # The Lessons button carries a pink "!" when something on the board is
 # learnable, and a "Scheduled" tag or a note badge otherwise. The same "!"
 # artwork appears elsewhere in the lobby (0.93 on a Unity lobby), so it is only
