@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CalendarRange, Loader2, AlertTriangle, Check, Link2, RotateCcw } from "lucide-react";
+import { CalendarRange, Loader2, AlertTriangle, Check, Link2, RotateCcw, Save, Trash2 } from "lucide-react";
 import { URL } from "@/constants";
 
 // A Trackblazer schedule chosen to earn epithets. Modelled on daftuyda's
@@ -121,19 +121,42 @@ function readLink(): Settings | null {
   }
 }
 
-type Props = {
-  onUseSchedule?: (rows: { name: string; year: string; date: string }[]) => void;
+type SavedList = {
+  name: string;
+  title: string;
+  races: number;
+  runnable: number;
+  epithets: number;
+  saved_at: number;
+  unreadable: boolean;
 };
 
-function RacePlanView({ onUseSchedule }: Props) {
+const when = (epoch: number) => {
+  if (!epoch) return "";
+  return new Date(epoch * 1000).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+// No props: this tab is self-contained. It never reads or writes config.json -
+// a plan is saved as a named race list, and the Races section loads one from
+// there. That way a half-built plan cannot disturb the config the bot is
+// running, and the two can be edited from different devices at once.
+function RacePlanView() {
   const [settings, setSettings] = useState<Settings>(() => readLink() ?? DEFAULTS);
   const [plan, setPlan] = useState<PlanResult | null>(null);
   const [catalogue, setCatalogue] = useState<EpithetRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [applied, setApplied] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showTargets, setShowTargets] = useState(false);
+  const [saved, setSaved] = useState<SavedList[]>([]);
+  const [listName, setListName] = useState("");
+  const [savedMsg, setSavedMsg] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<string | null>(null);
 
   const set = <K extends keyof Settings>(key: K, value: Settings[K]) =>
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -146,7 +169,7 @@ function RacePlanView({ onUseSchedule }: Props) {
   const build = useCallback(async (current: Settings) => {
     setBusy(true);
     setError(null);
-    setApplied(false);
+    setSavedMsg(null);
     try {
       // Aptitudes use the same shape as state.APTITUDES: anything not listed is
       // left out, and the planner treats an absent map as "run anything".
@@ -178,6 +201,15 @@ function RacePlanView({ onUseSchedule }: Props) {
     }
   }, []);
 
+  const refreshSaved = useCallback(async () => {
+    try {
+      const res = await fetch(`${URL}/race_lists`);
+      setSaved(res.ok ? await res.json() : []);
+    } catch {
+      setSaved([]);
+    }
+  }, []);
+
   // One plan on arrival, so the page opens showing what it does rather than an
   // empty shell. The ref keeps a settings change from firing a second build
   // before the first has landed.
@@ -186,11 +218,12 @@ function RacePlanView({ onUseSchedule }: Props) {
     if (started.current) return;
     started.current = true;
     build(settings);
+    refreshSaved();
     fetch(`${URL}/data/epithets`)
       .then((r) => r.json())
       .then((d) => setCatalogue(d.epithets ?? []))
       .catch(() => setCatalogue([]));
-  }, [build, settings]);
+  }, [build, refreshSaved, settings]);
 
   // A turn override is the user overruling the solver, so it rebuilds at once.
   const setTurn = (turnKey: string, value: string) => {
@@ -225,11 +258,66 @@ function RacePlanView({ onUseSchedule }: Props) {
 
   const runnable = plan ? plan.schedule.filter((r) => r.has_image) : [];
   const overrides = Object.keys(settings.locks).length + settings.skip.length;
+  const target = listName.trim();
+  const overwrites = saved.some((s) => s.name === target);
 
-  const useSchedule = () => {
-    if (!onUseSchedule || !plan) return;
-    onUseSchedule(runnable.map(({ name, year, date }) => ({ name, year, date })));
-    setApplied(true);
+  // The whole schedule is saved, agenda-only races included, because the list
+  // is also what gets typed into the game by hand. The Races section filters to
+  // the runnable ones when it loads, since those are all the bot can click.
+  const saveList = async () => {
+    if (!plan || !target) return;
+    setError(null);
+    try {
+      const res = await fetch(`${URL}/race_lists/${encodeURIComponent(target)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: target,
+          races: plan.schedule,
+          settings,
+          epithets: plan.epithets.map((e) => e.name),
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json()).detail ?? `server said ${res.status}`);
+      const out = await res.json();
+      setSavedMsg(`Saved "${out.name}" — ${out.races} races`);
+      setListName("");
+      refreshSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  // Loading restores the settings that produced the plan, then rebuilds, so a
+  // saved list reopens as a working plan rather than a frozen table.
+  const loadList = async (name: string) => {
+    setError(null);
+    try {
+      const res = await fetch(`${URL}/race_lists/${encodeURIComponent(name)}`);
+      if (!res.ok) throw new Error((await res.json()).detail ?? `server said ${res.status}`);
+      const data = await res.json();
+      const next = { ...DEFAULTS, ...(data.settings ?? {}) };
+      setSettings(next);
+      setListName(name);
+      setSavedMsg(`Loaded "${data.title || name}"`);
+      build(next);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const deleteList = async (name: string) => {
+    setError(null);
+    try {
+      const res = await fetch(`${URL}/race_lists/${encodeURIComponent(name)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error((await res.json()).detail ?? `server said ${res.status}`);
+      setSavedMsg(`Deleted "${name}"`);
+      refreshSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
   };
 
   const turnValue = (turn: Turn) =>
@@ -399,16 +487,6 @@ function RacePlanView({ onUseSchedule }: Props) {
             {copied ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
             {copied ? "Link copied" : "Copy link"}
           </button>
-          {plan && onUseSchedule && (
-            <button
-              type="button"
-              onClick={useSchedule}
-              className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm"
-            >
-              {applied ? <Check className="h-4 w-4" /> : null}
-              {applied ? "Copied to Race Schedule" : `Use ${runnable.length} runnable races`}
-            </button>
-          )}
         </div>
 
         {error && (
@@ -416,6 +494,117 @@ function RacePlanView({ onUseSchedule }: Props) {
             <AlertTriangle className="h-4 w-4" /> {error}
           </p>
         )}
+      </div>
+
+      <div className={CARD}>
+        <h3 className="text-lg font-semibold">Saved race lists</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Kept in <code>uma_race_lists/</code> beside the bot, so the same lists show up on every
+          device. The Races section of the Configuration tab loads one into the bot's schedule —
+          nothing here changes the config by itself.
+        </p>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <input
+            aria-label="Name for this race list"
+            placeholder="name for this race list"
+            value={listName}
+            onChange={(e) => setListName(e.target.value)}
+            className="h-9 min-w-52 flex-1 rounded-md border border-border bg-background px-3 text-sm"
+          />
+          <button
+            type="button"
+            onClick={saveList}
+            disabled={!plan || !target || busy}
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+          >
+            <Save className="h-4 w-4" />
+            {overwrites ? "Overwrite" : "Save"} {plan ? `${plan.schedule.length} races` : ""}
+          </button>
+        </div>
+        {target && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Saves as <code>uma_race_lists/{target}.json</code>
+            {overwrites && " — replacing the list already there."}
+            {plan && runnable.length < plan.schedule.length && (
+              <> · {plan.schedule.length - runnable.length} of these are agenda-only, so the
+              Races section will load {runnable.length}.</>
+            )}
+          </p>
+        )}
+        {savedMsg && (
+          <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+            <Check className="h-4 w-4" /> {savedMsg}
+          </p>
+        )}
+
+        <div className="mt-4 rounded-lg border border-border">
+          {saved.length === 0 ? (
+            <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+              Nothing saved yet.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {saved.map((s) => (
+                <li key={s.name} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">
+                      {s.title}
+                      {s.unreadable && (
+                        <span className="ml-2 text-xs font-normal text-destructive">unreadable</span>
+                      )}
+                    </div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      {s.races} races · {s.runnable} runnable · {s.epithets} epithets
+                      <span className="ml-2 opacity-70">{when(s.saved_at)}</span>
+                    </div>
+                  </div>
+                  {confirming === s.name ? (
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-muted-foreground">Delete?</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          deleteList(s.name);
+                          setConfirming(null);
+                        }}
+                        className="rounded-md border border-destructive px-2 py-1 text-destructive"
+                      >
+                        Yes
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirming(null)}
+                        className="rounded-md px-2 py-1 text-muted-foreground"
+                      >
+                        No
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={s.unreadable || busy}
+                        onClick={() => loadList(s.name)}
+                        className="rounded-md border border-border px-3 py-1 text-xs disabled:opacity-40"
+                      >
+                        Load
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Delete ${s.title}`}
+                        onClick={() => setConfirming(s.name)}
+                        className="rounded-md p-1 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       {plan && (

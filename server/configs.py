@@ -24,7 +24,7 @@ CONFIGS_DIR = ROOT / "uma_configs"
 UNSAFE = re.compile(r"[^A-Za-z0-9._ -]+")
 MAX_STEM = 80
 
-def _stem(name: str) -> str:
+def safe_stem(name: str) -> str:
   cleaned = UNSAFE.sub("-", (name or "").strip())
   if cleaned.lower().endswith(".json"):
     cleaned = cleaned[:-5]
@@ -36,7 +36,7 @@ def path_for(name: str):
 
   Returns None rather than raising so callers answer 400 instead of 500.
   """
-  stem = _stem(name)
+  stem = safe_stem(name)
   if not stem:
     return None
   path = (CONFIGS_DIR / f"{stem}.json").resolve()

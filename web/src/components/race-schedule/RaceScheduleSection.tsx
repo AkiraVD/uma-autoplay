@@ -2,6 +2,7 @@ import { ChevronsRight } from "lucide-react";
 import PrioritizeG1 from "./PrioritizeG1";
 import CancelConsecutive from "./CancelConsecutive";
 import RaceSchedule from "./RaceSchedule";
+import LoadRaceList from "./LoadRaceList";
 import { Input } from "../ui/input";
 import type { Config, UpdateConfigType } from "@/types";
 
@@ -42,6 +43,8 @@ export default function RaceScheduleSection({ config, updateConfig }: Props) {
           }
           clearRaceSchedule={() => updateConfig("race_schedule", [])}
         />
+        {/* Built in the Race Plan tab, which never writes the config itself. */}
+        <LoadRaceList onLoad={(rows) => updateConfig("race_schedule", rows)} />
         <CancelConsecutive
           cancelConsecutive={cancel_consecutive_race}
           setCancelConsecutive={(val) =>

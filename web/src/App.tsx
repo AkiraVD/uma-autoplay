@@ -101,9 +101,10 @@ function App() {
         {view === "logs" ? (
           <LogView />
         ) : view === "plan" ? (
-          // Only the runnable races come back - the planner marks the rest
-          // "agenda only", since race_select cannot click a race with no picture.
-          <RacePlanView onUseSchedule={(rows) => updateConfig("race_schedule", rows)} />
+          // Self-contained: everything is entered in that tab, and a plan leaves
+          // it as a saved race list. The Races section loads one; the planner
+          // never writes the config itself.
+          <RacePlanView />
         ) : view === "tools" ? (
           <ToolsView />
         ) : (

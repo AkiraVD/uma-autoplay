@@ -7,7 +7,7 @@ import sys
 import time
 
 from server.utils import load_config, save_config
-from server import configs, master_data, images, race_plan, tools
+from server import configs, master_data, images, race_lists, race_plan, tools
 import core.state as state
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools"))
@@ -68,6 +68,50 @@ def delete_saved_config(name: str):
   if not path.exists():
     raise HTTPException(status_code=404, detail=f"CFG-E02 no saved config called '{name}'.")
   configs.delete(path)
+  return {"status": "success", "name": path.stem}
+
+# Saved race lists, all in uma_race_lists/ beside config.json; see
+# server/race_lists.py. Same placement rule as the preset routes above: these
+# have to stay over the "/{path:path}" fallback or a GET is answered with the
+# page instead of the list.
+
+@app.get("/race_lists")
+def list_saved_race_lists():
+  return race_lists.listing()
+
+@app.get("/race_lists/{name}")
+def read_saved_race_list(name: str):
+  path = race_lists.path_for(name)
+  if path is None:
+    raise HTTPException(status_code=400, detail="RLIST-E01 that name can't be used as a filename.")
+  if not path.exists():
+    raise HTTPException(status_code=404, detail=f"RLIST-E02 no saved race list called '{name}'.")
+  try:
+    return race_lists.read(path)
+  except Exception as e:
+    raise HTTPException(status_code=422, detail=f"RLIST-E03 '{name}' isn't readable JSON ({e}).")
+
+@app.post("/race_lists/{name}")
+def write_saved_race_list(name: str, body: dict = Body(...)):
+  path = race_lists.path_for(name)
+  if path is None:
+    raise HTTPException(status_code=400, detail="RLIST-E01 that name can't be used as a filename.")
+  data = race_lists.normalise(body)
+  if data is None:
+    raise HTTPException(status_code=400, detail="RLIST-E04 a race list has to be an object.")
+  if not data["races"]:
+    raise HTTPException(status_code=400, detail="RLIST-E05 that list holds no race with a name, year and date.")
+  race_lists.write(path, data)
+  return {"status": "success", "name": path.stem, "races": len(data["races"])}
+
+@app.delete("/race_lists/{name}")
+def delete_saved_race_list(name: str):
+  path = race_lists.path_for(name)
+  if path is None:
+    raise HTTPException(status_code=400, detail="RLIST-E01 that name can't be used as a filename.")
+  if not path.exists():
+    raise HTTPException(status_code=404, detail=f"RLIST-E02 no saved race list called '{name}'.")
+  race_lists.delete(path)
   return {"status": "success", "name": path.stem}
 
 @app.get("/data/races")
