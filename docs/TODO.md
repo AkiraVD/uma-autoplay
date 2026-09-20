@@ -420,9 +420,14 @@ Still to do:
   The four scenario milestones - `Moneymaker`, `Leading the Charge`, `Product
   Power`, `Climax King` - are priced by no source found; read them in game.
   Never price these by scraping game8: three fetches of one page produced three
-  different groupings. Cross-checked against daftuyda's Trackblazer scheduler,
-  which ships `epithets.json` but **carries no licence** - read it, never
-  vendor it. Nothing models any of
+  different groupings. Cross-checked against daftuyda's Trackblazer scheduler
+  (`daftuyda/umamusume_trackblazer_scheduler`, originally by SkyeNat21), whose
+  `epithets.json` carries the per-epithet value master.mdb does not: `amount`
+  is the total across both stats and `display_amount` the per-stat figure,
+  which is what reconciles 10/20/30 with +5/+10/+15. The repo ships no LICENSE
+  file, but **the author gave permission to use it** (2026-09-20, asked
+  directly). Credit them for anything taken, the way the README already credits
+  both upstream projects. Nothing models any of
   this, and they are the scenario's real stat
   engine. Several are schedulable by race *name* - `Junior Jewel` wants 3
   "Junior Stakes" wins, `Umatastic` 3 "Umamusume Stakes", `Globe-Trotter` 3
