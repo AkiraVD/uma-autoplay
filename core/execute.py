@@ -1,7 +1,7 @@
 import pyautogui
 import utils.control as control
 from utils.tools import sleep, get_secs, drag_scroll, click_and_hold
-from PIL import ImageGrab
+from PIL import ImageGrab, ImageStat
 
 pyautogui.useImageNotFoundException(False)
 # The corner fail-safe aborts the whole run with FailSafeException if the mouse
@@ -729,6 +729,13 @@ def select_event():
   # option, which ends the event (2026-09-15, scored #2 kept, stats confirmed).
   return True
 
+def game_panel_blank(screen):
+  """True when the game's own panel is one flat colour - a client that has
+  stopped drawing. See the note on BLANK_PANEL_STD."""
+  l, t, w, h = constants.GAME_SCREEN_REGION
+  panel = screen.crop((l, t, l + w, t + h)).convert("L")
+  return ImageStat.Stat(panel).stddev[0] < BLANK_PANEL_STD
+
 def race_day():
   if state.stop_event.is_set():
     return
@@ -1017,6 +1024,23 @@ PREFERRED_POSITION_SET = False
 # and left the game on a screen career_lobby has no branch for; backing out
 # never found a button, so it alternated dialogue taps until a person noticed.
 LOBBY_LOST_LIMIT = 240
+# The game client can stop drawing while the career carries on server-side. On
+# 2026-09-21, ~7.5h into one client's uptime, the portrait panel went flat white
+# the moment the Japanese Derby started and never came back: Xorg :1 was healthy
+# (no errors in its log, screenshots still updating), the window was up, and the
+# race itself ran - the Continue Career dialog after a restart showed the goal
+# still in progress and the results screen had Maruzensky 2nd. Nothing on a
+# dead panel matches any template, so the loop fell into the blind-tap branch
+# and stayed there for twelve minutes until a person looked.
+#
+# It is trivial to see: the panel is a single flat fill. Measured on the dead
+# frames, greyscale std over GAME_SCREEN_REGION was 0.8 against 51.8 on the
+# live frame one click later, so 3.0 has enormous margin. A real screen always
+# carries text or art; the only flat frames the game draws are transition
+# flashes, well under a second, which is why this needs a run of checks rather
+# than one.
+BLANK_PANEL_STD = 3.0
+BLANK_PANEL_LIMIT = 18
 # Alarm Clocks spent on retries this career (see the Retry handler below).
 RACE_RETRIES = 0
 # A lobby has been seen since the bot started, so a home screen now means the
@@ -1030,6 +1054,7 @@ def career_lobby():
   SEEN_LOBBY = False
   RESUMING_CAREER = False
   not_in_lobby = 0
+  blank_panel = 0
   # Set once the back-out probes have found no button to press, so the dialogue
   # tap can run every cycle rather than every fifth. Cleared whenever a button
   # is found or the lobby comes back, so each new unknown screen is probed
@@ -1469,6 +1494,20 @@ def career_lobby():
       # work on a screen the loop cannot read at all, and there every tap is
       # blind. Stopping makes the wedge visible and leaves the game where a
       # person can see what it is, which is strictly better than tapping on.
+      # Before any tapping: a dead client cannot be tapped back to life, and
+      # every blind tap on one is a click the game will replay if it ever does
+      # redraw. Counted rather than tripped on one frame, because a transition
+      # flash is also flat.
+      if game_panel_blank(screen):
+        blank_panel += 1
+        if blank_panel >= BLANK_PANEL_LIMIT:
+          error(f"The game panel has been one flat colour for {blank_panel}"
+                " checks: the client has stopped drawing. Stopping. The career"
+                " is saved - restart the game and resume it from the home"
+                " screen.")
+          return
+      else:
+        blank_panel = 0
       if not_in_lobby >= LOBBY_LOST_LIMIT:
         error(f"Not in the career lobby for {not_in_lobby} checks and backing"
               " out has not recovered it. Stopping rather than going on"

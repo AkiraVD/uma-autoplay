@@ -78,6 +78,25 @@ Worth deriving properly if the behaviour ever looks wrong:
 
 ## Smaller open items
 
+- **The game client stops drawing after long uptime.** 2026-09-21, ~7.5h into
+  one client's run, the portrait panel went flat white the instant the Japanese
+  Derby started and never redrew - the side panel froze on a stale Career
+  Profile frame at the same moment. Not an X fault: `Xorg.1.log` was clean, the
+  display answered with backlog 0, screenshots kept updating, and the window was
+  still there. Not a lost career either - the race ran server-side, and after a
+  `close`/`launch` the Continue Career dialog showed the goal still in progress
+  and the results screen had Maruzensky 2nd in the Derby. Only a client restart
+  clears it.
+  `game_panel_blank()` now stops the bot after `BLANK_PANEL_LIMIT` flat frames
+  rather than blind-tapping a dead window (it did so for twelve minutes before
+  anyone looked). **What is still open is the recovery**: the bot cannot restart
+  the game and press Continue Career by itself, so this still ends a night's
+  run. Everything it needs is measured - `uma-launch`'s title tap,
+  `CAREER_BUTTON_MOUSE_POS`, and the `continue_career` branch already in the
+  loop - so the missing piece is a restart path that runs *before* the loop
+  gives up, not new screen work. Whether uptime is really the trigger is a
+  guess from one occurrence; log the client's uptime when it next happens.
+
 - **Nothing starts a career.** `CAREER_BUTTON_MOUSE_POS` is clicked in exactly
   one place (`core/execute.py:1232`) and only when `RESUMING_CAREER` is set by
   the date-changed reload. At the home screen after a finished career the
