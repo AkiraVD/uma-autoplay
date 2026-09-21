@@ -369,8 +369,79 @@ the bot repeats whatever opened it. Two in one career on a fresh install:
   this dialog; a gliding `control.moveTo(..., duration=0.225)` then `click()`
   did, so reproduce race-preview presses the way `click()` makes them.
 
+**"Race Details ... Enter race?" (2026-09-21)** - the confirmation the race
+list raises on its Race button, and the last screen before a race starts. The
+same trap, found the hard way: the bot pressed Race on the list, the dialog
+opened, nothing matched it, and the generic Cancel closed it again. One
+`Race preview; starting the race.` in the log and then silence, because the
+cancel passes no text. The bot was stopped by hand ~30s in, so the observed
+loop is short; what was found 17 minutes later was the career parked back on
+the race list, which is the state the cycle returns to and would have held
+indefinitely.
+
+The cause is two thousandths. `race_preview_btn.png` was cut from the race
+*preview* screen, whose Race button is wider than this dialog's, so it scores
+**0.848** here against `multi_match_templates`' **0.85** threshold - while
+matching **0.850** on the race list one click earlier, which is why the list
+half worked and the dialog half did not. `cancel_btn.png` scores **1.000**.
+
+Measured on the live frame, and on a Trackblazer Twinkle Star Climax capture
+from four days earlier that puts every element on the same pixel:
+
+| Element | Position |
+|---|---|
+| "Race Details" header | (553, 277) |
+| "Enter race?" | (553, 711) |
+| Cancel / Race | (419, 775) / (686, 775) |
+
+Note this dialog is **taller** than the Race Playback / consecutive-races /
+scheduled-race family, which share a layout with their buttons at y~703. Its
+banner pushes the buttons to y 775, so it cannot reuse their constants.
+
+Handled by the `race_confirm` branch, keyed on the "Enter race?" line
+(`assets/ui/enter_race_confirm.png`, 1.000 on both positives against a best
+negative of 0.631 over 23 frames). The template is message text, so it must not
+be clicked at its own centre; the branch finds the Race button with
+`race_btn.png` (0.923 on both) and falls back to
+`RACE_CONFIRM_RACE_MOUSE_POS`. `race_day()` and `race_select()` never needed
+this - they drive the dialog blind by pressing `race_btn.png` twice - so it
+only bites when the loop arrives here through the generic handlers, which is
+what a bot started on the race list does.
+
 A run of one identical log line with no turn change is the signature: look for
 an unlogged Cancel before touching the handler that logged.
+
+---
+
+# The client can stop drawing while the career carries on (2026-09-21)
+
+Seen ~7.5h into one client's uptime: the portrait game panel went flat white
+the instant the Japanese Derby started and never redrew, and the side panel
+froze on a stale frame at the same moment. Nothing on it matched any template,
+so the loop fell into the blind-tap branch and stayed there for twelve minutes.
+
+**It is not X, and not the career.** `Xorg.1.log` was clean, the display
+answered with backlog 0, screenshots kept updating, and the window was still in
+the X tree. The race ran server-side: after a `close`/`launch` the Continue
+Career dialog showed the goal still in progress with stats matching the
+pre-race reading, and Resume landed on the results screen with the trainee 2nd.
+Only a client restart clears it.
+
+**Detect it by variance, not by any template.** Greyscale standard deviation
+over `GAME_SCREEN_REGION`:
+
+| Frame | std |
+|---|---|
+| dead panel (two captures, 20 min apart) | **0.00** |
+| race list, home, title, race results | **44 - 66** |
+
+`game_panel_blank()` in `core/execute.py` trips below **3.0**, counted over
+`BLANK_PANEL_LIMIT` frames rather than one, because the game does draw
+sub-second flat frames during transitions. It stops the bot with a message
+naming the restart, rather than tapping a window that cannot answer.
+
+Whether uptime is really the trigger is a guess from one occurrence - log the
+client's uptime if it happens again.
 
 ---
 
@@ -1024,6 +1095,23 @@ Two things this run did **not** establish:
 - **The `login_bonus` branch has still never fired** (0 occurrences in any log).
   That screen appears after a reload or the daily reset, not after every
   career, so it remains covered by fixtures only.
+
+**Confirmed twice more on 2026-09-21**, both Grand Concert, both ending on the
+nav bar's **Home** tile with Scout untouched:
+
+| | career A | career B |
+|---|---|---|
+| `Career complete.` | 03:32:31 | 09:15:37 |
+| `The game is on its own screens` | 03:36:22 | 09:19:09 |
+| post-complete walk | 3m51s | 3m32s |
+| skill points spent at the buzzer | 2516 / 2547 | 2229 / 2238 |
+
+Career B's purchases included `Front Runner Straightaways` and
+`Front Runner Savvy`, which is the config's `skill_run_style` reaching the
+optimiser rather than a coincidence.
+
+The first caveat above still stands: the message does not name which of the
+three templates matched.
 
 ## Trackblazer: research and the screens outside a career (2026-09-17)
 

@@ -107,6 +107,14 @@ Worth deriving properly if the behaviour ever looks wrong:
   anything inside a career, is what stops a night of unattended runs:
   2026-09-19 the bot finished its career at 17:55 and stopped three times at
   the home screen within ten minutes.
+  **The measured positions were re-walked by hand on 2026-09-21** (Grand
+  Concert, Maruzensky, borrowed Light Hello) and every one in the
+  `screen-map.md` table still landed: Scenario Select Next (552,909), Trainee
+  Next (551,908), Legacy Next (552,911), the Friends deck slot (731,573), the
+  borrow list's second row (545,397), Start Career! (585,910) and the Final
+  Confirmation's own Start Career! (686,997). The TP path held too - the `+`
+  at (570,47), Toughness 30's Use at (763,269), OK at (687,775) - and a career
+  still costs 30 TP. So what is missing is the driving, not the measuring.
 - ~~**The nav bar goes blind on the Scout screen.**~~ Fixed 2026-09-19. It was
   the one screen the blind tap `DIALOG_ADVANCE_ALT_MOUSE_POS` (756,980) lands
   on: `game_nav` read 0.451 and `team_rank` 0.363 there, against 0.976 and
@@ -510,6 +518,14 @@ Still to do:
   Continue Career) is a *different* dialog and does not cover this one. It
   appeared after the game sat on dialogs for ~2.5h, so it is reachable whenever
   the bot wedges - which is exactly when nobody is watching.
+  **Seen again 2026-09-21, from a different trigger:** the game sat at the
+  *home screen* for ~3h between careers, and the very first press after that
+  (CAREER) raised it. So it is not only a wedge symptom - any idle gap long
+  enough will do it, including the gap between one career finishing and a
+  person starting the next. That makes it the thing standing between the bot
+  and an unattended night, alongside the career-start gap above. Recovery by
+  hand is one press of `Title Screen` (553,704) then the ordinary title tap at
+  (960,940); `uma-launch` covers the rest.
 - **Post-race Victory events are scored blind.** `core/event_effects.py` has no
   rule for either line such an event offers - "Stat gains based on race grade"
   and "Chance to gain a random skill" - so on 2026-09-20 every branch scored 0
