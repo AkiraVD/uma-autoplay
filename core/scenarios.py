@@ -53,21 +53,18 @@ GRAND_CONCERT = {
   "career_complete_skills_pos": constants.GC_CAREER_COMPLETE_SKILLS_MOUSE_POS,
 }
 
-# Trackblazer ends in the Twinkle Star Climax instead, a different screen with
-# a different button. Measured 2026-09-17 by driving all three rounds by hand;
-# assets/trackblazer/ts_climax_race_btn.png separates 0.923 worst-positive
-# against 0.411 best-negative over five lobby frames, so unlike URA's the
-# template match is reliable and the position is only a backstop.
-TRACKBLAZER = {
-  **URA,
-  "key": "trackblazer",
-  "name": "Trackblazer",
-  "race_day_asset": "assets/trackblazer/ts_climax_race_btn.png",
-  "race_day_pos": constants.TB_CLIMAX_RACE_MOUSE_POS,
-  "turn_digits_region": constants.TB_TURN_DIGITS_REGION,
-}
-
-BY_KEY = {m["key"]: m for m in (URA, UNITY, GRAND_CONCERT, TRACKBLAZER)}
+# Trackblazer had a table here too - it ends in the Twinkle Star Climax rather
+# than the URA Finale, so it needed its own race-day asset, button position and
+# turn-digits crop. It was parked on 2026-09-21 and the table moved with the
+# rest of its screen code to core/parked/trackblazer_mode.py, which keeps the
+# measured values rather than losing them to git history. Nothing here reads it.
+#
+# The failure this module exists to prevent applies to *removing* a mode as
+# much as adding one: a Trackblazer career started now has no case of its own
+# and will silently inherit URA's, exactly as Trackblazer itself once did. That
+# is why state.saw_scenario() warns loudly when it sees a parked mode's screen
+# instead of quietly carrying on.
+BY_KEY = {m["key"]: m for m in (URA, UNITY, GRAND_CONCERT)}
 
 
 def current():
@@ -77,8 +74,6 @@ def current():
   mode from what it has seen on screen. The flags are read at call time, never
   captured, for the reason core/state.py's docstring gives.
   """
-  if state.TRACKBLAZER_SEEN:
-    return TRACKBLAZER
   if state.GRAND_CONCERT_SEEN:
     return GRAND_CONCERT
   if state.UNITY_SEEN:

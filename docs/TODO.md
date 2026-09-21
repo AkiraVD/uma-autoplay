@@ -291,7 +291,46 @@ Worth deriving properly if the behaviour ever looks wrong:
 - **Skill costs on screen are not read by the planner.** It takes them from the
   database, which assumes the OCR'd name resolved to the right skill.
 
-## Trackblazer
+## Trackblazer - PARKED 2026-09-21
+
+**The bot no longer drives this mode.** It is gone from the Game mode dropdown,
+from `state.SCENARIOS` and from `core/scenarios.py`; a config still holding
+`"scenario": "trackblazer"` falls back to Auto-detect with a warning
+(`state.resolve_scenario`), and if the Climax Store button turns up on screen
+anyway `state.saw_scenario` says so once and plays the career as URA rather
+than pretending to know the mode.
+
+Parked for the Climax Store. It is a scrolling shelf with per-item costs, stock
+counts and a coin balance that every turn of the mode has to read, sitting in
+the facility row that a race day replaces - and two of the bot's worst loops
+came from that corner: the agenda-race badge looping 302 times over 2h22m on
+2026-09-20, and the bot shopping on its own scheduled-race turn and then
+reporting "Training button is not found" because it was standing in the shop.
+The mode worked - all three Climax rounds ran unattended on 2026-09-18 holding
+`RANK 1` - so this is a cost decision, not a broken-feature one.
+
+**Nothing was deleted.** `core/parked/` has the scenario table, the two
+`career_lobby()` branches and the shop driver, with `README.md` giving the
+five-step unparking recipe. `tests/test_parked.py` asserts the bot imports none
+of it, and `tests/test_shop_choice.py` / `tests/test_shop_read.py` still run
+against the parked code so it cannot rot. The measured positions never left
+`utils/constants.py` and the layouts never left `screen-map.md`.
+
+**What stayed live, deliberately:**
+
+- `core/trackblazer.py` and `core/epithets.py` - data and arithmetic, and
+  `server/race_plan.py` is built on them, so the config page's **Race Plan**
+  tab still works. Its totals are still denominated in Trackblazer Result Pts;
+  that is a scoring choice, not a live mode.
+- The cross-mode dialog handlers the Trackblazer work produced, which guard
+  traps any mode can hit: the consecutive-races warning, the scheduled-race
+  notice, and the "Enter race?" confirmation. Their assets still sit under
+  `assets/trackblazer/` - that path is now the only Trackblazer left in them.
+
+Everything below this line is the state of the mode **when it was parked**,
+kept for whoever unparks it.
+
+---
 
 A full career was played on 2026-09-17, so most of this section's screens are
 now measured; `screen-map.md` has the geometry. What exists:
@@ -344,7 +383,7 @@ Still to do:
   contained `G1` or `GI`, across 52 turns where the check was consulted. Turning
   the setting on changes nothing here - a Trackblazer arm has to match on points
   rather than on grade wording.
-- **Reading the shop, and buying.** `core/shop.py` now reads the shelf and
+- **Reading the shop, and buying.** `core/parked/shop.py` now reads the shelf and
   drives the purchase, scrolling through `core/menu_scan.py`'s `SHOP_BUY`
   profile, and `tests/test_shop_read.py` checks it against three captured
   frames. A row is anchored on its per-row **"Cost" label**, deliberately not

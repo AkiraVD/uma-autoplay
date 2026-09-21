@@ -84,6 +84,9 @@ SKILL_BUY = calibration(
   rewind_settle=1.4,
 )
 
+# PARKED with Trackblazer (2026-09-21): only core/parked/shop.py reads this
+# profile, and nothing the bot runs imports that. Left here rather than moved
+# so the calibration sits beside the others it was measured against.
 # Trackblazer's Climax Store shelf. The anchor is the per-row "Cost" label,
 # deliberately NOT the row checkbox: ticking a row turns its checkbox green, so
 # a checkbox template goes blind on exactly the row that was just selected -

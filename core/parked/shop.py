@@ -27,7 +27,7 @@ import re
 from PIL import Image
 
 import core.menu_scan as menu_scan
-import core.shop_choice as shop_choice
+import core.parked.shop_choice as shop_choice
 import core.state as state
 import core.trackblazer as trackblazer
 import utils.constants as constants

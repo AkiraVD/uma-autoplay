@@ -15,9 +15,8 @@ import time
 from rapidfuzz import fuzz
 import core.state as state
 import core.scenarios as scenarios
-import core.shop as shop
 from core.state import check_support_card, check_unity_icons, check_failure, check_turn, check_mood, check_current_year, check_criteria, check_skill_pts, check_energy_level, check_energy_reserved, get_race_type, check_status_effects, check_aptitudes, check_credit, check_outing_available, check_recreation_panel, read_log_lines
-from core.logic import do_something, decide_race_for_goal, training_value, should_recreate, has_extreme_burst, set_goal_context, stat_headroom
+from core.logic import do_something, decide_race_for_goal, training_value, should_recreate, has_extreme_burst, set_goal_context
 
 from utils.log import info, warning, error, debug
 import utils.constants as constants
@@ -44,20 +43,16 @@ templates = {
   # template. Cut from the live frame; scores 1.000/0.999/0.996 on three
   # captures from three sessions against a best negative of 0.351 over nine
   # other screens, so 0.8 has enormous margin.
-  # The pink "Scheduled Race" ribbon on the lobby's Races button, which is how a
-  # Trackblazer agenda race announces itself. There is no notification popup:
-  # check_turn() reports an ordinary number on that turn (measured live at
-  # Junior Late Aug, "Turn: 9"), so the race-day branch never fires for it and
-  # without this key the turn looks like any other. sep: best negative 0.482.
-  "scheduled_race": "assets/trackblazer/scheduled_race_badge.png",
-  # (the branch that uses this keeps its once-per-turn state in
-  #  _scheduled_race_turn, declared below the templates dict)
   # "This will put you at N consecutive races." - raised when the race list is
   # opened on a third race in a row. It pairs OK with a Cancel that cancel_btn
   # matches, so without a branch of its own the generic handler at :1360
   # dismisses it silently and whatever opened it simply opens it again: 302
   # times over 2h22m on 2026-09-20. Cut left of the count so the 2-race wording
   # matches the same asset. sep: best negative 0.426.
+  # Kept when Trackblazer was parked (2026-09-21), and the asset path is the
+  # only Trackblazer left in it: the warning is raised by the *game*, in any
+  # mode, whenever the race list is opened on a third race in a row. What it
+  # guards is generic - a dialog whose Cancel the handler below takes silently.
   "consecutive_races": "assets/trackblazer/consecutive_races_warning.png",
   # "You have a scheduled race. Proceed to the Races screen?" - raised on
   # entering a career whose agenda has a race this turn. This note previously
@@ -67,6 +62,9 @@ templates = {
   # like every other dialog in this chain it needs its own branch above the
   # generic handler. sep: best negative 0.547 (the consecutive-races warning,
   # which shares the green header). Measured 2026-09-20.
+  # Kept for the same reason as consecutive_races above: parked mode, generic
+  # trap. Its Close matches cancel_btn, so without a branch of its own the
+  # generic handler dismisses it while logging nothing.
   "scheduled_race_notice": "assets/trackblazer/scheduled_race_available.png",
   "race_preview": "assets/buttons/race_preview_btn.png",
   # "Race Details ... Enter race?" - the confirmation the race list raises on
@@ -182,13 +180,6 @@ templates = {
   # scores 0.693 on the worst negative where story reaches 0.844, against a
   # 0.85 threshold. See docs/screen-map.md.
   "game_nav_alt": "assets/ui/game_nav_race.png",
-  # Trackblazer's Climax Store button, in the facility grid between Recreation
-  # and Races. Cut from the word and its frame rather than the badges: the
-  # button carries an "ON SALE!" ribbon, a coin balance and a pink "N turn(s)"
-  # tag that all change. It is a presence check, not decoration - the button
-  # only exists after the debut race, and a race day replaces the whole
-  # facility row, so clicking its position unguarded is a blind click.
-  "tb_shop": "assets/trackblazer/shop_btn.png",
   # The login bonus, which both the daily reset and the end of a career land
   # on. Nothing in this dict matched it, so it was the one screen in the
   # post-career walk that fell through to the blind taps. Its banner is
@@ -750,8 +741,8 @@ def race_day():
                  text=f"{mode['name']} race day."):
       # URA's button is heavily animated, so its template match is marginal and
       # this fallback is what usually runs. It does not move, so click where it
-      # lives. Trackblazer's template is reliable (0.923 vs 0.411), so for that
-      # mode this is only a backstop.
+      # lives. Every mode left in core/scenarios.py ends in the URA Finale and
+      # shares that button, so this position is the one that carries the finale.
       x, y = mode["race_day_pos"]
       click(boxes=(x, y, 1, 1), text=f"{mode['name']} race day (by position).")
 
@@ -1373,10 +1364,6 @@ def career_lobby():
       # fixed mode is set afresh.
       state.apply_scenario(new_career=True)
       lessons.reset()
-      # And a shelf nothing has read yet. The ledger holds a turn number, so
-      # without this a second career in the same process that reached the same
-      # turn as the last visit would silently skip its first shop.
-      shop.reset()
       RACE_RETRIES = 0
       sleep(4)
       continue
@@ -1645,73 +1632,6 @@ def career_lobby():
         continue
       race_day()
       continue
-
-    # Trackblazer's Climax Store. The Shop button belongs to no other mode, so
-    # seeing it is how Trackblazer announces itself - the same way the Lessons
-    # button announces Grand Concert above.
-    if not state.TRACKBLAZER_SEEN and matches["tb_shop"]:
-      state.saw_scenario("trackblazer", "Shop button in the lobby")
-    # Deliberately BELOW the race-day branch. A race day replaces the whole
-    # facility row, so the button is not there and its position belongs to
-    # something else entirely; `tb_shop` is a presence check for the same
-    # reason, since the button only appears after the debut race.
-    #
-    # Buying costs no turn, so this settles before the turn is planned, the way
-    # the Lessons visit does. The headroom is the previous turn's reading -
-    # set_stat_headroom runs inside do_something, which has not happened yet -
-    # and stat_headroom() documents why that is close enough.
-    #
-    # The visit is noted before it is attempted, not after: a shop that fails
-    # to open should cost this turn one try, not retry on every pass of the
-    # loop until the turn changes.
-    # A scheduled agenda race, and it must be settled BEFORE the shop. The turn
-    # is an ordinary numbered one and the facility row is intact, so `tb_shop`
-    # matches and the shop hook below would otherwise take the turn first: on
-    # the live run of 2026-09-20 the bot went shopping on its own scheduled race
-    # turn, then decided to race and logged "Training button is not found",
-    # because it was standing in the shop.
-    #
-    # This only presses Races. It deliberately does NOT call do_race(), which
-    # routes into race_select(False, None) - that clicks an aptitude-match
-    # badge, and on a scheduled turn the losing card carries one too (measured:
-    # match_track.png scores 1.000 on *both* cards), so it can deselect the
-    # scheduled race and enter the wrong one. The agenda has already chosen; the
-    # list opens with the race selected and a "Scheduled" badge on its card, and
-    # the generic race handlers press Race from there.
-    # Once per turn, never on every pass. Without this guard the branch looped
-    # 302 times across 2h22m on a single turn (2026-09-20), because the lobby it
-    # returns to is unchanged and the badge still matches. The shop hook carries
-    # the same guard, and its comment describes this exact failure.
-    #
-    # The loop was NOT a missed click, though an earlier version of this comment
-    # said so. Opening the race list on a third consecutive race raises a "This
-    # will put you at 3 consecutive races." Warning, whose Cancel the generic
-    # handler at :1360 takes - logging nothing - returning to the same lobby
-    # forever. That is exactly the trap docs/screen-map.md:357 describes. The
-    # real fix is a branch for that Warning above the generic cancel; this guard
-    # only bounds the damage to one attempt per turn.
-    if matches["scheduled_race"] and _scheduled_race_turn[0] != turn:
-      _scheduled_race_turn[0] = turn
-      # Aim below the match's centre: the template spans the "Scheduled Race"
-      # ribbon and the Races button under it, and the button label sits nearer
-      # y 978 than the centre's y 951. This was not what fixed the loop.
-      # click(boxes=) centres the box, so it cannot be used here.
-      x, y, w, h = matches["scheduled_race"][0]
-      debug("Scheduled race this turn; opening the race list.")
-      control.moveTo(x + w // 2, y + h - 45, duration=0.225)
-      control.click(clicks=1, interval=0.15)
-      sleep(2)
-      if not match_template("assets/buttons/race_btn.png", threshold=0.85):
-        warning("TB-SCHEDULED: the race list did not open. Leaving this turn to "
-                "the normal race logic rather than trying again.")
-      continue
-
-    if matches["tb_shop"] and shop.should_visit(turn):
-      shop.note_visit(turn)
-      if shop.open_shop(matches["tb_shop"][0]):
-        shop.visit(stat_headroom())
-        shop.leave()
-        continue
 
     # Mood check
     if year_parts[0] == "Junior":

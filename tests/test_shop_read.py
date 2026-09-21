@@ -1,7 +1,8 @@
 """Reading Trackblazer's Climax Store shelf, against captured frames.
 
 Run with `python tests/test_shop_read.py` from the repo root. Imports the real
-core/shop.py, which builds the easyocr Reader, so it starts slowly.
+core/parked/shop.py, which builds the easyocr Reader, so it starts slowly.
+PARKED with the mode on 2026-09-21; still run so the parked code cannot rot.
 
 Fixtures in tests/fixtures/trackblazer/shop/ are full 1920x1080 frames taken on
 2026-09-19:
@@ -29,8 +30,8 @@ sys.path.insert(0, ROOT)
 os.chdir(ROOT)
 os.environ.setdefault("UMA_LOG_DIR", os.path.join("tests", "logs"))
 
-import core.shop as shop              # noqa: E402
-import core.shop_choice as shop_choice  # noqa: E402
+import core.parked.shop as shop              # noqa: E402
+import core.parked.shop_choice as shop_choice  # noqa: E402
 import core.trackblazer as trackblazer  # noqa: E402
 
 FIXTURES = os.path.join("tests", "fixtures", "trackblazer", "shop")

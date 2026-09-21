@@ -252,13 +252,16 @@ def set_stat_headroom(current_stats, game_caps=None):
 def stat_headroom():
   """The per-stat room left, as a copy, for callers outside this module.
 
-  `core/shop_choice.py` needs it so an item for a capped stat scores zero -
-  a Speed Scroll is worth nothing once Speed has no room. Handed out as a copy
-  because the caller has no business editing the scorer's view.
+  **No live caller as of 2026-09-21.** Its one user was the Trackblazer shop -
+  an item for a capped stat has to score zero, because a Speed Scroll is worth
+  nothing once Speed has no room - and that went to `core/parked/`. Kept rather
+  than deleted because it is the seam the parked shop is re-wired to, and
+  because the staleness rule below is the non-obvious part worth preserving.
+  Handed out as a copy: a caller has no business editing the scorer's view.
 
   **It is up to one turn stale.** `set_stat_headroom` runs inside
   `do_something()`, so anything consulting this earlier in the turn - the shop
-  visit does - sees the previous turn's reading, and an empty dict on the first
+  visit did - sees the previous turn's reading, and an empty dict on the first
   turn of a career. That is deliberate rather than worth re-reading the stats
   for: caps move by tens of points a turn at most, and `value_of` already
   treats a missing stat as unknown-so-score-in-full rather than as no room.

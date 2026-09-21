@@ -1,4 +1,7 @@
-"""What to buy off the Trackblazer shop shelf: core/shop_choice.py.
+"""What to buy off the Trackblazer shop shelf: core/parked/shop_choice.py.
+
+PARKED with the mode on 2026-09-21 and still run, so the code core/parked/
+keeps cannot rot between now and whenever someone unparks it.
 
 Run with `python tests/test_shop_choice.py` from the repo root. Pure logic - it
 reads `data/trackblazer_shop.json` through core/trackblazer.py and nothing else,
@@ -16,7 +19,7 @@ sys.path.insert(0, ROOT)
 os.chdir(ROOT)
 os.environ.setdefault("UMA_LOG_DIR", os.path.join("tests", "logs"))
 
-import core.shop_choice as C          # noqa: E402
+import core.parked.shop_choice as C          # noqa: E402
 import core.trackblazer as TB         # noqa: E402
 
 failures = []

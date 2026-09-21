@@ -1188,7 +1188,8 @@ Nothing in a row is both per-row and stable: the grade chip changes colour with
 the grade, the aptitude pills change text, and the "Can compete with N fans or
 more." overlay vanishes once the trainee has the fans. So the screen is
 identified by template and the rows are then found geometrically, the way
-`core/shop.py` separates "am I here" from "what is on the shelf".
+`core/parked/shop.py` (parked 2026-09-21) separates "am I here" from "what is
+on the shelf".
 
 | Element | Position |
 |---|---|
@@ -1552,7 +1553,7 @@ The game says as much itself, in the Log entry the use writes: *"Use Motivating
 Megaphone. All stats gained from training will be increased by 40% for 3
 turns."*
 
-This settles `TRAINING_BONUS_IS_PERCENT` in `core/shop_choice.py`, which was
+This settles `TRAINING_BONUS_IS_PERCENT` in `core/parked/shop_choice.py`, which was
 carrying a sevenfold valuation swing.
 
 #### Item effects live in master.mdb, keyed by code (2026-09-19)

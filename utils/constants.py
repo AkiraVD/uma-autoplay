@@ -181,7 +181,8 @@ GC_FINALE_RACE_MOUSE_POS = (545, 925)
 TB_CLIMAX_RACE_MOUSE_POS = (537, 908)
 
 # Trackblazer's Climax Store. The shelf is a scrolling list walked through
-# core/menu_scan.py (profile SHOP_BUY) and read by core/shop.py. Measured
+# core/menu_scan.py (profile SHOP_BUY) and read by core/parked/shop.py, which
+# is parked with the Trackblazer mode - these are kept measured. Measured
 # 2026-09-19 on live frames; the row pitch is 121px (names at 429/550/671/792).
 SHOP_BUTTON_MOUSE_POS = (622, 952)          # the lobby's facility-grid button
 SHOP_LIST_BBOX = (275, 395, 845, 815)

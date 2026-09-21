@@ -8,8 +8,14 @@ The point of the module under test is that a mode with no case of its own is
 loud rather than silent. Trackblazer had no case anywhere, inherited URA's
 race-day button position, and spent three laps clicking into the Shop without
 starting a Climax race. So the tests worth having are the ones that would have
-caught that: every mode resolves to itself, Trackblazer's position and asset
-differ from URA's, and asking for a field nobody defines raises.
+caught that: every mode resolves to itself, and asking for a field nobody
+defines raises.
+
+Trackblazer was parked on 2026-09-21 and is no longer a mode, but the two
+assertions that pinned its measurements are kept below against the parked
+table in core/parked/trackblazer_mode.py. They are what makes unparking a
+re-wiring job: the day someone puts that table back, the numbers it has to
+carry are still under test.
 """
 import os
 import sys
@@ -25,10 +31,10 @@ os.environ.setdefault("UMA_LOG_DIR", os.path.join("tests", "logs"))
 stub = types.ModuleType("core.state")
 stub.UNITY_SEEN = False
 stub.GRAND_CONCERT_SEEN = False
-stub.TRACKBLAZER_SEEN = False
 sys.modules["core.state"] = stub
 
 import core.scenarios as sc   # noqa: E402
+import core.parked.trackblazer_mode as parked_tb   # noqa: E402
 
 failures = []
 
@@ -37,17 +43,15 @@ def ok(label, condition, detail=""):
   if not condition:
     failures.append(label)
 
-def seen(unity=False, grand_concert=False, trackblazer=False):
+def seen(unity=False, grand_concert=False):
   """Set the mode flags the way state.apply_scenario does."""
   stub.UNITY_SEEN = unity
   stub.GRAND_CONCERT_SEEN = grand_concert
-  stub.TRACKBLAZER_SEEN = trackblazer
 
 def test_each_mode_resolves_to_itself():
   for key, flags in (("ura", {}),
                      ("unity", {"unity": True}),
-                     ("grand_concert", {"grand_concert": True}),
-                     ("trackblazer", {"trackblazer": True})):
+                     ("grand_concert", {"grand_concert": True})):
     seen(**flags)
     got = sc.current()["key"]
     ok(f"{key} resolves to itself", got == key, got)
@@ -57,17 +61,18 @@ def test_no_flags_is_ura():
   seen()
   ok("no flags set means URA", sc.current()["key"] == "ura")
 
-def test_trackblazer_has_its_own_race_day():
-  """The case whose absence caused the wedge."""
-  seen(trackblazer=True)
-  tb_pos, tb_asset = sc.get("race_day_pos"), sc.get("race_day_asset")
+def test_parked_trackblazer_kept_its_own_race_day():
+  """The case whose absence caused the wedge, now held in the parked table."""
+  tb_pos = parked_tb.SCENARIO_TABLE["race_day_pos"]
+  tb_asset = parked_tb.SCENARIO_TABLE["race_day_asset"]
   seen()
   ura_pos, ura_asset = sc.get("race_day_pos"), sc.get("race_day_asset")
   ok("its position is not URA's", tb_pos != ura_pos, f"{tb_pos} vs {ura_pos}")
   ok("and sits on the TS Climax Race! button", tb_pos == (537, 908), tb_pos)
   ok("its asset is not URA's", tb_asset != ura_asset, tb_asset)
+  ok("and that asset is still on disk", os.path.isfile(tb_asset), tb_asset)
 
-def test_trackblazer_reads_its_own_turn_box():
+def test_parked_trackblazer_kept_its_own_turn_box():
   """Its calendar box sets taller digits lower, so URA's crop guillotines them.
 
   URA's region ends at y 106 and a Trackblazer glyph runs y 84..131, so the
@@ -76,8 +81,7 @@ def test_trackblazer_reads_its_own_turn_box():
   constant, which silently breaks the URA and Grand Concert boxes that are
   correct on it.
   """
-  seen(trackblazer=True)
-  tb = sc.get("turn_digits_region")
+  tb = parked_tb.SCENARIO_TABLE["turn_digits_region"]
   seen()
   ura = sc.get("turn_digits_region")
   ok("Trackblazer's turn box is not URA's", tb != ura, f"{tb} vs {ura}")
@@ -112,7 +116,7 @@ def test_every_mode_names_an_asset_that_exists():
 
 def test_a_missing_field_raises():
   """The whole point: no silent inheritance of a case nobody wrote."""
-  seen(trackblazer=True)
+  seen(grand_concert=True)
   try:
     sc.get("shop_button_pos")
     ok("a missing field raises", False, "returned instead of raising")
@@ -123,14 +127,14 @@ def test_flags_are_read_at_call_time():
   """core/state.py's rule: read state.FOO, never capture it."""
   seen()
   before = sc.current()["key"]
-  seen(trackblazer=True)
+  seen(grand_concert=True)
   after = sc.current()["key"]
-  ok("current() follows a flag change", before == "ura" and after == "trackblazer",
+  ok("current() follows a flag change", before == "ura" and after == "grand_concert",
      f"{before} -> {after}")
 
 for test in [test_each_mode_resolves_to_itself, test_no_flags_is_ura,
-             test_trackblazer_has_its_own_race_day,
-             test_trackblazer_reads_its_own_turn_box,
+             test_parked_trackblazer_kept_its_own_race_day,
+             test_parked_trackblazer_kept_its_own_turn_box,
              test_grand_concert_shifts_for_its_extra_button,
              test_unity_inherits_the_ura_race_day,
              test_every_mode_names_an_asset_that_exists,

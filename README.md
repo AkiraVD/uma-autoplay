@@ -37,7 +37,7 @@ Use responsibly and at your own discretion.
 | **Unity Cup** | Everything in URA Finale, plus Spirit gauges and Spirit bursts in training scores. An Extreme burst is taken even above the failure threshold, since it has no failure chance. |
 | **Grand Concert** | Everything in URA Finale, plus the Lessons board, the song plan (18 songs for the gold "I Wanna Win With You"), the lyrics event, Performance points in training scores, and Light Hello's recreation chain. |
 
-Pick the mode under **Game mode** on the web page (Trainee & strategy). **Auto-detect**, the default, recognises the mode from what it sees on screen: Spirit gauges for Unity Cup, the Lessons button for Grand Concert. Choosing a mode makes the bot use it from the first turn and skip looking for the others; it logs a warning if the screen shows a different mode. Trackblazer is not supported yet.
+Pick the mode under **Game mode** on the web page (Trainee & strategy). **Auto-detect**, the default, recognises the mode from what it sees on screen: Spirit gauges for Unity Cup, the Lessons button for Grand Concert. Choosing a mode makes the bot use it from the first turn and skip looking for the others; it logs a warning if the screen shows a different mode. Trackblazer is **not supported**: it was parked on 2026-09-21 because its Climax Store cost more screen-reading than the mode was worth, and the code that played it is kept in `core/parked/` (see its README). The Race Plan tab, which is built on Trackblazer's scoring tables, still works.
 
 ## Getting Started
 
