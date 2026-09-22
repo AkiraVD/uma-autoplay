@@ -1261,7 +1261,35 @@ Three things this settles, each of them a guess until now:
   and 6s around the two Start Career! presses. The slowest step was the borrow
   itself at 14s, which is the OCR pass over the list, not a wait.
 
-The `restore_tp` branch is still unexercised - the run had TP 100/100.
+#### And again from the loop, unattended (2026-09-23 01:12:07-01:12:55)
+
+The career that first run started played itself out and `career_lobby()` called
+the walk on its own from the home screen. **48 seconds**, home to a new career:
+
+```
+01:09:43  Keeping the sparks (Rerolled: blue 3*, 6 white).
+01:12:07  Starting a career: last config, borrowing 'Light Hello'.
+01:12:10  Opening Career from the home screen.
+01:12:31  Start Career! face brightness 0.499  -> disabled
+01:12:45  Borrowing 'Light Hello' from the row reading 'Light Hello'.
+01:12:49  Start Career! face brightness 0.797  -> enabled
+01:12:55  Final Confirmation: Spend 30 TP to begin training? T P 55 25
+01:13:04  Career started.
+```
+
+The two brightness readings are **identical to the first run's**, to the
+thousandth, on a different deck and a day apart - so that guard is reading a
+fixed property of the button, not something that happened to be true once.
+
+The ordering that makes this safe is worth stating: the Career Complete screen
+and the spark screens carry **no navigation bar**, so the home-screen branch
+cannot fire on them. Checked against the fixtures - `career_complete.png`
+matches `to_home` alone, the spark frames match `sparks` alone, and only
+`game_home.png` carries `team_rank`/`game_nav`. The bot therefore always walks
+Career Complete -> skills -> sparks -> To Home before the walk can begin.
+
+The `restore_tp` branch is still unexercised: TP was 100/100 on the first start
+and 55 on the second, both over the 30 a career costs.
 
 ### Verified end-to-end (2026-09-17, career 13)
 

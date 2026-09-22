@@ -128,10 +128,18 @@ Worth deriving properly if the behaviour ever looks wrong:
   - The Final Confirmation's TP line read `Spend 30 TP to begin training? T P
     100 70`, so the cost is in the log.
 
-  Still open: it has only ever run with TP in hand (100/100), so the
-  `restore_tp` branch remains unexercised, and it has only started a career on
-  a home screen it reached by itself - not one reached after a career the bot
-  finished, which is the case the whole feature exists for.
+  **The loop closed unattended 2026-09-23 at 01:12.** The career the walk
+  started ran to its end by itself - 15 skills bought for 2332 of 2345 points,
+  a spark reroll that took blue 1*/1 white to blue 3*/6 white and kept the
+  rerolled set - and then `career_lobby()`'s home-screen branch called
+  `career_start` on its own at 01:12:07, with a second career running 48
+  seconds later at 01:12:55. Career end to next career, nobody watching. The
+  brightness readings were **identical** to the first run's, 0.499 empty and
+  0.797 filled, on a different deck and a different day.
+
+  Still open: `restore_tp` remains unexercised. TP was 100/100 on the first
+  start and had regenerated to 55 by the second (`T P 55 25`), both comfortably
+  over the 30 a career costs, so the short-of-TP prompt has never appeared.
 - **Nothing reads which card is already in the Friends slot.** If the slot is
   filled and `Start Career!` is live, the walk presses it without checking
   *which* card is there. Harmless when the slot is empty every career, which is
