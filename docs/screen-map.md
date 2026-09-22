@@ -411,6 +411,76 @@ what a bot started on the race list does.
 A run of one identical log line with no turn change is the signature: look for
 an unlogged Cancel before touching the handler that logged.
 
+## The one-button shell, and `Session Error` (2026-09-22)
+
+The dialogs above all pair Cancel with an accept button. The game has a second
+shell with **one** button, and it is the harder case: with no Cancel the generic
+dismisser has nothing to take, so such a dialog does not loop - it **stalls**,
+and the repeating-log-line signature just above will not catch it.
+
+Geometry, measured off a captured Spark Selection notice and matching the
+two-button family row for row:
+
+| Element | Position |
+|---|---|
+| green header band | y 321-371, x 263-842 |
+| body text | centred ~(553, 520) |
+| the single button | 236 px wide, centred on **(553, 704)** |
+
+That centre is the tell. A two-button dialog centres its pair on **419** and
+**686** and leaves the middle white; a one-button dialog puts its pill there
+instead. `core/execute.py::one_button_dialog` reads those three pixels, and it
+is rare, which is what makes it cheap enough to run every pass: **4 of 1692**
+captured `shots/` frames pass it and **2 of 90** fixture frames, and all six
+read back as the same Spark Selection notice.
+Every button on this row - Race Playback's OK, the consecutive-races OK, the
+scheduled-race Race - sits within two pixels of y 703, so the probe row is
+shared; `tests/test_session_error.py` pins that.
+
+**`Session Error`** - "Returning to Title screen due to inactivity.", with a
+single `Title Screen` button at (553,704) - is drawn in that shell. Nothing in
+`templates` matched it at even **0.80** when it was measured on 2026-09-20, and
+the blind-tap recovery cannot advance it: `DIALOG_ADVANCE_MOUSE_POS` (553,400)
+lands on empty dialog body. Seen twice, from two different triggers:
+
+- 2026-09-20, after the game sat on dialogs for ~2.5h - a wedge symptom.
+- 2026-09-21, after the game sat at the **home screen** for ~3h between careers,
+  where the very first press (CAREER) raised it. So any idle gap long enough
+  will do, including the gap between one career finishing and a person starting
+  the next.
+
+This is **not** CLAUDE.md's daily reset: that is a "Date Changed" dialog and it
+resumes through Continue Career. Different dialog, different path.
+
+**A capture did exist**, misfiled under `shots/gl/c6_deck.png`, and finding it
+overturned two things this section first said. It is not rare: the template
+matches **9 of 1998** captured frames, from several different days, so the "seen
+twice" this was written from was only what had been noticed. And its single
+button is **white**, not green - which killed the first implementation outright,
+a pixel gate that looked for a green pill at (553,704) and therefore never fired
+on the one dialog it was written for. The frame is now
+`tests/fixtures/out_of_career/session_error.png`.
+
+Handled by template, like every other dialog here: `assets/ui/session_error.png`
+is the message line (x 357-748, y 512-533), so it must not be clicked at its own
+centre. Nine positives at **1.000** against a best negative of **0.577** over
+1998 frames, margin **+0.423**.
+
+The walk back in is the manual recovery, which is two presses: `Title Screen`
+at (553,704), then the ordinary title tap at (960,940). Nothing after that is
+new - setting `RESUMING_CAREER` hands the reload to the screens the date-changed
+path already walks (login bonus, then Home, where Career is tapped rather than
+Home being read as a finished career). The title tap is outside
+`GAME_SCREEN_REGION`, so it presses nothing if the first press missed and the
+dialog is still up; the branch is bounded at `SESSION_ERROR_LIMIT` = 3 attempts,
+because an unbounded press-and-retry on one dialog is this bot's oldest failure
+shape.
+
+The lesson worth keeping is the search, not the dialog: `shots/*.png` is not all
+the captures. `shots/gl/` holds another 366 under names from whatever the day's
+investigation was about, and the frame that settled this one is called
+`c6_deck.png`. **Search both, and search by pixels rather than by filename.**
+
 ---
 
 # The client can stop drawing while the career carries on (2026-09-21)
@@ -1069,6 +1139,129 @@ nothing.
 
 This bites whenever a saved deck is reused for a trainee it was not built for,
 which is the normal case when switching trainee between careers.
+
+### Starting a career by itself (2026-09-22)
+
+`core/career_start.py` drives the walk above. What it adds to the measurements
+already in this section is how each screen is *recognised*, because the
+positions were never the problem - they were re-walked by hand on 2026-09-21 and
+every one still landed. Nothing drove them.
+
+**Every screen names itself.** The four setup screens carry one grey pill at the
+top left whose wording is the only thing that differs, and that is enough: cut
+to the same 240x32 crop at (160,132)-(400,164), each scores 1.000 on its own
+frame against a worst cross of **0.712** (legacy's template on a trainee frame),
+so 0.85 sits inside the gap with +0.138 to spare. The dialogs are cut from their
+own green headers.
+
+Measured over 357 captured frames (every 1920x1080 frame in `tests/fixtures/`
+and `shots/gl/`). Every positive scores 1.000:
+
+| Template | Positives | Best negative | Margin | Under 0.85 |
+|---|---|---|---|---|
+| `assets/career/scenario_select.png` | 6 | 0.669 (`session_error`) | +0.331 | 0.181 |
+| `assets/career/trainee_select.png` | 3 | 0.696 (`legacy_select`) | +0.304 | 0.154 |
+| `assets/career/legacy_select.png` | 2 | 0.712 (`trainee_select`) | +0.288 | 0.138 |
+| `assets/career/support_formation.png` | 8 | 0.600 (`vet_align`) | +0.400 | 0.250 |
+| `assets/career/borrow_card.png` | 4 | 0.555 (`110_card_detail`) | +0.445 | 0.295 |
+| `assets/career/final_confirmation.png` | 5 | 0.779 (spark keep-rerolled confirm) | +0.221 | **0.071** |
+| `assets/career/veteran_max.png` | 2 | 0.601 (`veteran_10755`) | +0.399 | 0.249 |
+
+The two tightest negatives are each other's neighbours in the same family -
+`trainee_select` against `legacy_select` and back - which is the cost of keying
+four screens on one pill. It is still 0.138 of headroom, and the alternative
+(keying on a button) would key on things that move.
+
+`final_confirmation` is the tight one and was tighter still. Cut first at
+(440,36)-(665,70) it scored **0.804** on the spark screen's own keep-rerolled
+confirm - 46 thousandths under the threshold, the same margin that made
+`race_preview_btn` fail silently on the Enter-race dialog at 0.848. The cause is
+the same too: 17px of plain green band either side of the text, and plain green
+is what every green-headed dialog in this game has. Re-cut tight to the glyphs
+at (453,40)-(651,65) it reads 0.779, which is 71 thousandths of headroom rather
+than 46. **Cut headers to the lettering, not to the band** - and note the
+runner-up is another *confirm dialog*, so this one is worth re-measuring if the
+spark screens ever change.
+
+**The home screen is not a setup screen**, and it carries the same navigation
+bar they do, so `game_nav` cannot tell them apart - the header pill is what
+does. The walk only presses CAREER once every setup header has been ruled out.
+
+#### The borrow list is read, never counted
+
+The rows are found by OCR over (270,180,570,600) and matched on the card name,
+not taken from the measured row pitch. Two reasons, both load-bearing:
+
+- A **Remove** button tops the list only while a card is already borrowed, so
+  every row below it sits ~147px lower in one case than the other. A fixed row
+  would take the wrong card in exactly the situation - a borrow already made -
+  where taking the wrong one costs the most.
+- **Several lenders offer the same card.** Three of the four rows on the
+  captured list are `[From the Ground Up] Light Hello`. Ties go to the topmost,
+  which is reading order, and with the list sorted `Last Login Desc` that is
+  also the most recently active lender.
+
+Measured on `tests/fixtures/career_walk/borrow_card.png`: 34 text boxes, the
+wanted name at **1.000** confidence, its row at (431,417).
+
+**`partial_ratio` needs a length guard, and this is the trap.** It scores the
+best *substring*, so a one-glyph box - the list reads several, an `S` off a
+rarity badge, an `I` off a card frame - scores **100** against any name
+containing that letter. Asking for a card the list does not hold would then
+borrow the rarity badge of whatever row sorted first. Requiring the row text to
+be no shorter than the name (minus two, for a dropped glyph) fixes it: with the
+guard, `Kitasan Black` best-matches `Scenario Link` at 45 and `Tazuna Hayakawa`
+at 33, both far under the bar of 85.
+
+#### Two guards, and what they cannot tell apart
+
+- **`Start Career!` disabled** is read by brightness, per the 2026-09-19
+  measurement further up: HSV value over (470,885)-(670,935), which reads 0.800
+  on the enabled capture against the 0.512 measured on a disabled one, with the
+  threshold at 0.65. An empty Friends slot and a same-character support card
+  both disable it and look identical, so the walk fills the slot first and only
+  then blames the deck - after `BORROW_ATTEMPTS` the message names the orange
+  `Trainee` banner to look for.
+- **`Veteran Umamusume Max`** - "You cannot add any more Veteran Umamusume.
+  260/260. Please transfer a Veteran Umamusume before starting a Career
+  playthrough.", Close / To Veteran Umamusume list. A hard stop: clearing it
+  means transferring a veteran out, which is not something to do unattended.
+  Header at (417-688, 339-354).
+
+#### Proven live, first try (2026-09-22 22:39:33-22:40:30)
+
+A Grand Concert career on Maruzensky, started from the home screen in **57
+seconds** with every step landing on its first attempt:
+
+```
+22:39:35  Opening Career from the home screen.
+22:39:42  Keeping the scenario as it was; Next.
+22:39:47  Keeping the trainee as it was; Next.
+22:39:52  Keeping the legacy as it was; Next.
+22:39:57  Start Career! face brightness 0.499  -> disabled
+22:39:57  Opening the Friends slot to borrow.
+22:40:11  Borrowing 'Light Hello' from the row reading 'Light Hello'.
+22:40:15  Start Career! face brightness 0.797  -> enabled
+22:40:15  Start Career! (Support Formation).
+22:40:21  Final Confirmation: Spend 30 TP to begin training? T P 100 70
+22:40:21  Start Career! (Final Confirmation).
+22:40:30  Career started.
+```
+
+Three things this settles, each of them a guess until now:
+
+- **The brightness guard, in both directions.** 0.499 empty and 0.797 filled,
+  against 0.512 and 0.822 predicted above, with the 0.65 threshold sitting
+  between them by 0.15 either way. The walk saw the disabled button, opened the
+  slot, and watched it go live - the whole borrow branch turning on one pixel
+  measurement taken three days earlier on a different career.
+- **Tapping a borrow row takes the card outright**, with no confirmation
+  dialog, so `BORROW_ATTEMPTS` never came near firing.
+- **The settles are enough**: 2.5s between Next presses, 4s after CAREER, 3s
+  and 6s around the two Start Career! presses. The slowest step was the borrow
+  itself at 14s, which is the OCR pass over the list, not a wait.
+
+The `restore_tp` branch is still unexercised - the run had TP 100/100.
 
 ### Verified end-to-end (2026-09-17, career 13)
 

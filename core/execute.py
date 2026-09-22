@@ -30,6 +30,7 @@ import core.training_cost as training_cost
 import core.trainee as trainee
 import core.lessons as lessons
 import core.sparks as sparks
+import core.career_start as career_start
 
 templates = {
   "event": "assets/icons/event_choice_1.png",
@@ -192,6 +193,13 @@ templates = {
   # the home screen, with the career still there behind "Continue Career".
   "date_changed": "assets/ui/date_changed.png",
   "continue_career": "assets/ui/continue_career.png",
+  # "Session Error - Returning to Title screen due to inactivity.", raised after
+  # the game has sat idle for hours. Its single "Title Screen" button leaves the
+  # generic dismisser nothing to take, so before this the loop fell through to
+  # blind taps that land on empty dialog body - a stall, not a loop, so the one
+  # repeating log line that gives a wedge away was absent too. Cut from the
+  # message line, so it must not be clicked at its own centre.
+  "session_error": "assets/ui/session_error.png",
   # Grand Concert. The concert screen replaces the lobby after each half-year's
   # last turn and has no Tazuna hint and no Back, so the lobby recovery used to
   # be all that saw it - and its alternate blind tap, DIALOG_ADVANCE_ALT, lands
@@ -1032,6 +1040,13 @@ LOBBY_LOST_LIMIT = 240
 # than one.
 BLANK_PANEL_STD = 3.0
 BLANK_PANEL_LIMIT = 18
+# Attempts at walking back in from a Session Error before giving up. The branch
+# ends in `continue` without touching not_in_lobby, so nothing else bounds it -
+# and an unbounded press-and-retry on one dialog is this bot's oldest failure
+# shape (302 clicks over 2h22m on the agenda-race badge). Three is enough for a
+# slow reload to finish and few enough that a dialog the press cannot clear is
+# handed straight back to a person.
+SESSION_ERROR_LIMIT = 3
 # Alarm Clocks spent on retries this career (see the Retry handler below).
 RACE_RETRIES = 0
 # A lobby has been seen since the bot started, so a home screen now means the
@@ -1046,6 +1061,7 @@ def career_lobby():
   RESUMING_CAREER = False
   not_in_lobby = 0
   blank_panel = 0
+  session_errors = 0
   # Set once the back-out probes have found no button to press, so the dialogue
   # tap can run every cycle rather than every fifth. Cleared whenever a button
   # is found or the lobby comes back, so each new unknown screen is probed
@@ -1254,6 +1270,44 @@ def career_lobby():
       sleep(3)
       continue
 
+    # "Session Error - Returning to Title screen due to inactivity." Raised by
+    # any long idle gap: after the game sat on dialogs for ~2.5h (2026-09-20),
+    # and after it sat at the home screen for ~3h between careers, where the
+    # very first press raised it (2026-09-21). That second one is the gap
+    # between one career finishing and the next starting.
+    #
+    # It goes above the whole out-of-career block, and above the home-screen
+    # stop in particular, because the dialog can be raised *at* the home screen
+    # with the nav bar still drawn behind it. Read there as a finished career,
+    # it would stop the bot on a career that is perfectly alive.
+    if matches["session_error"]:
+      session_errors += 1
+      if session_errors > SESSION_ERROR_LIMIT:
+        error(f"The Session Error dialog is still up after {SESSION_ERROR_LIMIT}"
+              " attempts to walk back in. Stopping rather than pressing at it."
+              " The career is saved - restart the game and resume it.")
+        return
+      warning("Session Error: the game went back to its title screen after an"
+              " idle spell. Pressing Title Screen and walking back in.")
+      x, y = constants.SESSION_ERROR_BUTTON_MOUSE_POS
+      click(boxes=(x, y, 1, 1), text="Returning to the title screen.")
+      # The reload is the longest wait in this loop, so give F1 somewhere to
+      # land in the middle of it rather than holding the thread for 22s.
+      sleep(10)
+      if state.stop_event.is_set():
+        return
+      # The one fixed tap of the startup walk. If the press above missed and the
+      # dialog is still up, this lands outside GAME_SCREEN_REGION and presses
+      # nothing, and the branch runs again next pass.
+      tx, ty = constants.TITLE_SCREEN_TAP_MOUSE_POS
+      click(boxes=(tx, ty, 1, 1), text="Tapping the title screen to start.")
+      # From here the reload lands on exactly the screens the date-changed path
+      # already walks - the login bonus, then Home - and RESUMING_CAREER is what
+      # taps Career there instead of reading Home as a finished career.
+      RESUMING_CAREER = SEEN_LOBBY
+      sleep(12)
+      continue
+
     # The career is over and the game has dropped back to its own screens.
     #
     # There is nothing here for a career loop to do, and staying costs real
@@ -1308,8 +1362,24 @@ def career_lobby():
         control.click(constants.CAREER_BUTTON_MOUSE_POS)
         sleep(4)
         continue
+      # The career is over. Before this the loop simply stopped here, and that
+      # is what ended a night's run: on 2026-09-19 it finished at 17:55 and
+      # stopped at the home screen three times inside ten minutes. With
+      # career_start on, walk the setup screens and begin the next one.
+      if state.CAREER_START_ENABLED:
+        if career_start.start():
+          SEEN_LOBBY = False
+          RESUMING_CAREER = False
+          state.apply_scenario(new_career=True)
+          # The intro story is career_lobby's to drive from here, the same as
+          # a career a person started by hand.
+          sleep(4)
+          continue
+        error("Could not start the next career; stopping. The reason is above.")
+        return
       info("The game is on its own screens, so the career is over."
-           " Stopping the bot rather than tapping at a screen it cannot drive.")
+           " Stopping the bot rather than tapping at a screen it cannot drive."
+           " Set career_start.enabled to have it start the next one.")
       return
 
     # "Career Complete - To Home / Edit Team": the last click of a career.
@@ -1539,6 +1609,7 @@ def career_lobby():
 
     not_in_lobby = 0
     dialogue_tap = False
+    session_errors = 0
     # Past here the lobby is on screen, so a later home screen means the game
     # left the career on its own (the daily reset), not that the career ended.
     SEEN_LOBBY = True

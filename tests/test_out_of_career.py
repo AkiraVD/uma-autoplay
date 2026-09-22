@@ -94,20 +94,35 @@ def test_stopping_is_a_return_not_a_click():
   """A finished career must stop the loop, not try to navigate.
 
   Anything else is guessing at menus the bot has no model of, on a screen with
-  Purchase Carats and To Title Screen on it. The one exception is the daily
-  reset, which reloads the game to this same screen with the career still in
-  progress: there the bot taps Career to resume, and only when a lobby has
-  already been seen this run.
+  Purchase Carats and To Title Screen on it. There are now three ways out, and
+  the order between them is what this pins: the daily reset and the Session
+  Error walk-back both leave a career in progress behind this screen and resume
+  it through Career, and only then may career_start walk a *new* one.
   """
   source = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
   branch = source.index('if matches["team_rank"]')
-  body = source[branch:branch + 800]
+  # To the next branch, not a fixed slice. This used to take 800 characters,
+  # which stopped covering the branch the moment career_start was added to it
+  # and failed on a missing "return" that had simply moved out of the window.
+  body = source[branch:source.index('if click(boxes=matches["to_home"]', branch)]
   ok("the branch returns", "return" in body)
   resume = body.index("if RESUMING_CAREER")
   ok("the resume path is gated on RESUMING_CAREER", resume < body.index("return"))
-  ok("and it taps the Career button, nothing else", "CAREER_BUTTON_MOUSE_POS" in body[resume:body.index("return")])
-  ok("RESUMING_CAREER is only set by the date-changed reload",
-     source.count("RESUMING_CAREER = SEEN_LOBBY") == 1)
+  ok("and it taps the Career button, nothing else",
+     "CAREER_BUTTON_MOUSE_POS" in body[resume:body.index("return")])
+  # A career still in progress is resumed before a new one is ever started,
+  # or an interrupted career would be abandoned and paid for twice.
+  ok("resuming is checked before starting a new career",
+     resume < body.index("CAREER_START_ENABLED"))
+  ok("and starting a new one is still behind its setting",
+     "state.CAREER_START_ENABLED" in body)
+  # Set by the two reloads that leave the career in progress, and by nothing
+  # else: the daily reset and the Session Error walk-back. Both land on this
+  # same home screen, and without it either one reads a live career as finished
+  # and stops the run.
+  ok("RESUMING_CAREER is only set by a reload that keeps the career",
+     source.count("RESUMING_CAREER = SEEN_LOBBY") == 2,
+     f"{source.count('RESUMING_CAREER = SEEN_LOBBY')} sites")
   ok("and cleared as soon as a lobby is seen again",
      "SEEN_LOBBY = True\n    RESUMING_CAREER = False" in source)
 

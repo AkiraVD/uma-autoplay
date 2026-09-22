@@ -34,6 +34,13 @@ export const GrandConcertSchema = z.object({
   always_buy_gold_skill: z.boolean(),
 });
 
+// Starting the next career by itself, once one finishes. Optional so presets
+// saved before it existed still parse.
+export const CareerStartSchema = z.object({
+  enabled: z.boolean(),
+  borrow_card: z.string(),
+});
+
 export const ConfigSchema = z.object({
   config_name: z.string(),
   trainee: z.string(),
@@ -54,6 +61,7 @@ export const ConfigSchema = z.object({
   cancel_consecutive_race: z.boolean(),
   max_race_retries: z.number(),
   reroll_sparks: z.boolean(),
+  career_start: CareerStartSchema.optional(),
   position_selection_enabled: z.boolean(),
   enable_positions_by_race: z.boolean(),
   preferred_position: z.string(),

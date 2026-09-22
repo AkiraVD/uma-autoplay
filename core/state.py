@@ -80,6 +80,8 @@ GRAND_CONCERT_SEEN = False
 MAX_RACE_RETRIES = 1
 REROLL_SPARKS = True
 TP_BOTTLE_FLOOR = 50
+CAREER_START_ENABLED = False
+CAREER_START_BORROW_CARD = ""
 
 def load_config():
   with open("config.json", "r", encoding="utf-8") as file:
@@ -112,6 +114,14 @@ def reload_config():
   # TP bottles the bot will not spend below when a spark reroll needs TP.
   global TP_BOTTLE_FLOOR
   TP_BOTTLE_FLOOR = config.get("tp_bottle_floor", 50)
+  # Starting the next career by itself, from the game's own home screen. Off by
+  # default: it spends 30 TP, and the borrowed card it needs has to be named
+  # once before it can fill the Friends slot. The same tp_bottle_floor above
+  # governs whether a bottle may be spent to afford the career.
+  global CAREER_START_ENABLED, CAREER_START_BORROW_CARD
+  career_start = config.get("career_start", {}) or {}
+  CAREER_START_ENABLED = career_start.get("enabled", False)
+  CAREER_START_BORROW_CARD = career_start.get("borrow_card", "")
   STAT_CAPS = config["stat_caps"]
   IS_AUTO_BUY_SKILL = config["skill"]["is_auto_buy_skill"]
   SKILL_PTS_CHECK = config["skill"]["skill_pts_check"]

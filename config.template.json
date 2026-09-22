@@ -29,6 +29,10 @@
   "max_race_retries": 1,
   "reroll_sparks": true,
   "tp_bottle_floor": 50,
+  "career_start": {
+    "enabled": false,
+    "borrow_card": ""
+  },
   "position_selection_enabled": false,
   "enable_positions_by_race": false,
   "preferred_position": "front",

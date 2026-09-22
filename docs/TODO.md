@@ -31,6 +31,15 @@ rarity, and the server's pickers. Two uses are still open:
 ## Untested paths, each waiting on a screen that has not appeared
 
 - **`unity_begin_showdown`'s settle delay** against a live Team Zenith screen.
+- **The `Session Error` walk-back**, against a live dialog. Handled since
+  2026-09-22: the dialog is recognised by template
+  (`assets/ui/session_error.png`, 9 positives at 1.000 against a best negative
+  of 0.577 over 1998 frames) and the branch presses `Title Screen` (553,704),
+  taps the title at (960,940) and hands the reload to `RESUMING_CAREER`, which
+  is the date-changed path's own proven walk. What is unproven is only the two
+  waits - 10s for the reload and 12s after the title tap - which are the
+  uma-launch skill's settle figures rather than anything measured here.
+  Recognition needs no further work; timing might.
 
 Cleared, kept briefly as a record of what the evidence was:
 
@@ -97,24 +106,37 @@ Worth deriving properly if the behaviour ever looks wrong:
   gives up, not new screen work. Whether uptime is really the trigger is a
   guess from one occurrence; log the client's uptime when it next happens.
 
-- **Nothing starts a career.** `CAREER_BUTTON_MOUSE_POS` is clicked in exactly
-  one place (`core/execute.py:1232`) and only when `RESUMING_CAREER` is set by
-  the date-changed reload. At the home screen after a finished career the
-  `team_rank or game_nav or game_nav_alt` branch fires and the loop returns,
-  so the run simply ends. Scenario Select -> Trainee -> Legacy -> Support
-  Formation -> Final Confirmation are all measured in `screen-map.md`, but
-  nothing drives them, so every new career is started by hand. This, not
-  anything inside a career, is what stops a night of unattended runs:
-  2026-09-19 the bot finished its career at 17:55 and stopped three times at
-  the home screen within ten minutes.
-  **The measured positions were re-walked by hand on 2026-09-21** (Grand
-  Concert, Maruzensky, borrowed Light Hello) and every one in the
-  `screen-map.md` table still landed: Scenario Select Next (552,909), Trainee
-  Next (551,908), Legacy Next (552,911), the Friends deck slot (731,573), the
-  borrow list's second row (545,397), Start Career! (585,910) and the Final
-  Confirmation's own Start Career! (686,997). The TP path held too - the `+`
-  at (570,47), Toughness 30's Use at (763,269), OK at (687,775) - and a career
-  still costs 30 TP. So what is missing is the driving, not the measuring.
+- ~~**Nothing starts a career.**~~ **Driven and proven live 2026-09-22.**
+  `core/career_start.py` walked Home -> Scenario -> Trainee -> Legacy -> Support
+  Formation -> Final Confirmation and started a Grand Concert career on
+  Maruzensky in **57 seconds**, first try, every step first attempt
+  (22:39:33-22:40:30). Behind `career_start.enabled`, off by default, because it
+  spends 30 TP. This is what used to end a night: 2026-09-19 the bot finished at
+  17:55 and stopped at the home screen three times within ten minutes.
+
+  What the run settled, all of it previously guessed:
+  - **The brightness guard is right, and its two states are now both measured
+    live.** `Start Career!` read **0.499** with the Friends slot empty and
+    **0.797** once the borrow was taken, against the 0.512/0.822 predicted from
+    `screen-map.md` and a threshold of 0.65 sitting dead centre. The walk saw
+    the disabled button, opened the slot, and saw it go live - which is the
+    whole borrow branch working from one pixel measurement.
+  - **Tapping a borrow row takes the card outright.** No confirmation dialog,
+    so the `BORROW_ATTEMPTS` bound never came near firing.
+  - **The settles are enough.** 2.5s between Next presses, 4s after CAREER,
+    3s and 6s around the two Start Career! presses.
+  - The Final Confirmation's TP line read `Spend 30 TP to begin training? T P
+    100 70`, so the cost is in the log.
+
+  Still open: it has only ever run with TP in hand (100/100), so the
+  `restore_tp` branch remains unexercised, and it has only started a career on
+  a home screen it reached by itself - not one reached after a career the bot
+  finished, which is the case the whole feature exists for.
+- **Nothing reads which card is already in the Friends slot.** If the slot is
+  filled and `Start Career!` is live, the walk presses it without checking
+  *which* card is there. Harmless when the slot is empty every career, which is
+  the normal case, but it means a half-finished borrow from a previous attempt
+  is accepted as-is.
 - ~~**The nav bar goes blind on the Scout screen.**~~ Fixed 2026-09-19. It was
   the one screen the blind tap `DIALOG_ADVANCE_ALT_MOUSE_POS` (756,980) lands
   on: `game_nav` read 0.451 and `team_rank` 0.363 there, against 0.976 and
@@ -506,26 +528,6 @@ Still to do:
   "Junior Stakes" wins, `Umatastic` 3 "Umamusume Stakes", `Globe-Trotter` 3
   with a country in the name, and five more want graded wins at a named group
   of racecourses - so an agenda can target them deliberately.
-- **`Session Error` has no branch, and it stalls rather than loops.** "Returning
-  to Title screen due to inactivity." with a single `Title Screen` button at
-  (553,704) - no Cancel, so the generic dismissers cannot touch it, and nothing
-  in `templates` matched it at even 0.80 when measured on 2026-09-20. The loop
-  therefore falls through to the blind-tap recovery, whose
-  `DIALOG_ADVANCE_MOUSE_POS` (553,400) lands on empty dialog body and never
-  advances it: an unbounded stall, not a repeating loop, so the "one identical
-  log line repeating" signature in screen-map.md will not catch it either.
-  CLAUDE.md's daily-reset path (a "Date Changed" dialog resumed through
-  Continue Career) is a *different* dialog and does not cover this one. It
-  appeared after the game sat on dialogs for ~2.5h, so it is reachable whenever
-  the bot wedges - which is exactly when nobody is watching.
-  **Seen again 2026-09-21, from a different trigger:** the game sat at the
-  *home screen* for ~3h between careers, and the very first press after that
-  (CAREER) raised it. So it is not only a wedge symptom - any idle gap long
-  enough will do it, including the gap between one career finishing and a
-  person starting the next. That makes it the thing standing between the bot
-  and an unattended night, alongside the career-start gap above. Recovery by
-  hand is one press of `Title Screen` (553,704) then the ordinary title tap at
-  (960,940); `uma-launch` covers the rest.
 - **Post-race Victory events are scored blind.** `core/event_effects.py` has no
   rule for either line such an event offers - "Stat gains based on race grade"
   and "Chance to gain a random skill" - so on 2026-09-20 every branch scored 0

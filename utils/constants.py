@@ -303,6 +303,44 @@ SPARK_PAGE_LABEL_REGION = (400, 108, 310, 44)
 SPARK_PAGE_NEXT_MOUSE_POS = (806, 128)
 # "Recover TP": each row's Use button sits at this x, the row's own y.
 TP_RESTORE_USE_X = 763
+# The TP bottle's row on the Recover TP list, matched by template because the
+# list re-orders as items are spent. Shared with core/sparks.py, which has been
+# pressing it live since 2026-09-18.
+TP_TOUGHNESS_ROW_ASSET = "assets/ui/toughness_row.png"
+
+# --- Starting a career (core/career_start.py) -------------------------------
+# All measured by hand at 1920x1080 on 2026-09-18 and re-walked on 2026-09-21,
+# when every one of them still landed. See docs/screen-map.md, "The setup
+# screens, walked by hand". They are only ever used once the screen they belong
+# to has been recognised by its own header template.
+SCENARIO_SELECT_NEXT_MOUSE_POS = (552, 909)
+TRAINEE_SELECT_NEXT_MOUSE_POS = (551, 908)
+LEGACY_SELECT_NEXT_MOUSE_POS = (552, 911)
+# Slot six of the deck - the borrowed card, the one thing a new career forgets.
+SUPPORT_FRIENDS_SLOT_MOUSE_POS = (731, 573)
+SUPPORT_FORMATION_START_MOUSE_POS = (585, 910)
+FINAL_CONFIRM_START_MOUSE_POS = (686, 997)
+# The Borrow Card list's own Close, and the area its rows are read from. The
+# rows are read rather than counted: a Remove button tops the list only while a
+# card is already borrowed, which shifts every row below it by ~147px.
+BORROW_CLOSE_MOUSE_POS = (552, 997)
+BORROW_LIST_REGION = (270, 180, 570, 600)
+# How close an OCR'd row has to read to the wanted card's name. rapidfuzz
+# partial_ratio, so a row reading "[From the Ground Up] Light Hello" matches
+# "Light Hello" at 100; 85 leaves room for a mangled glyph without letting a
+# different card through.
+BORROW_NAME_MIN_RATIO = 85
+# Support Formation's Start Career! face, for telling enabled from disabled.
+# Brightness is the discriminator: measured 2026-09-19, a disabled button read
+# HSV value 0.512 against 0.822 for an enabled one, where their saturations
+# differed by 0.05. This crop reads 0.800 on the enabled capture, so 0.65 sits
+# between the two with room either side. The disabled figure comes from that
+# measurement, not from a frame in the tree - there is no disabled capture.
+START_CAREER_BUTTON_BBOX = (470, 885, 670, 935)
+START_CAREER_ENABLED_VALUE = 0.65
+# "Spend 30 TP to begin training?" over "TP 100 > 70", at the foot of the Final
+# Confirmation dialog. Logged, so what a career cost is in the log.
+FINAL_CONFIRM_TP_REGION = (400, 880, 310, 70)
 SPARK_PAGE_PREV_MOUSE_POS = (298, 128)
 # The concert screen's larger Lessons button, left of the Concert button.
 CONCERT_LESSONS_MOUSE_POS = (425, 912)
@@ -332,6 +370,16 @@ SCHEDULED_RACE_NOTICE_RACE_MOUSE_POS = (686, 704)
 # on two captures four days apart, a Grand Concert goal race and a Trackblazer
 # Twinkle Star Climax, which put the button on the same pixel.
 RACE_CONFIRM_RACE_MOUSE_POS = (686, 775)
+# "Session Error - Returning to Title screen due to inactivity.", raised after
+# the game has sat idle for hours. It is the game's *one-button* shell: a single
+# button 238x64, measured at x 434-671 / y 672-735, where the three dialogs
+# above put a pair at 419 and 686. Its face is white, not green - which is why
+# a "find the green pill" test does not see it.
+SESSION_ERROR_BUTTON_MOUSE_POS = (553, 704)
+# "TAP TO START" on the title screen the dialog drops the game back to. The one
+# fixed point in the whole startup walk (see the uma-launch skill), and outside
+# GAME_SCREEN_REGION, so tapping it when the game is still loading is harmless.
+TITLE_SCREEN_TAP_MOUSE_POS = (960, 940)
 # The Lessons button carries a pink "!" when something on the board is
 # learnable, and a "Scheduled" tag or a note badge otherwise. The same "!"
 # artwork appears elsewhere in the lobby (0.93 on a Unity lobby), so it is only
