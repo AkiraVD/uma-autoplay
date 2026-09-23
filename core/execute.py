@@ -1441,6 +1441,13 @@ def career_lobby():
 
     # "Continue Career - Resume": after a reload the career is still there.
     if matches["continue_career"]:
+      # Its stats are the only ones a resumed career ever shows: logic.py caches
+      # them per lobby turn, and a career picked up at its Post-Career never has
+      # a lobby turn. Without this the end-of-career message says "not read".
+      resumed_stats = state.read_continue_career_stats(screen)
+      if resumed_stats:
+        state.LAST_STATS = resumed_stats
+        debug(f"Stats off the Continue Career dialog: {resumed_stats}")
       click(img="assets/buttons/resume_btn.png", minSearch=get_secs(5),
             region=constants.GAME_SCREEN_REGION, text="Resuming the career.")
       RESUMING_CAREER = False
@@ -1486,7 +1493,14 @@ def career_lobby():
                " reset, the configured limit. Stopping at the home screen."
                " Reset the count on the config page to run more.")
           return
-        if career_start.start():
+        outcome = career_start.start()
+        if outcome == career_start.RESUMED:
+          # It raised Continue Career and left it up: the branch above presses
+          # Resume on the next pass. Checked before the truthiness test below,
+          # because RESUMED is a string and would otherwise read as "started".
+          sleep(1)
+          continue
+        if outcome:
           limit = (f" of {state.CAREER_START_MAX}" if state.CAREER_START_MAX
                    else "")
           info(f"Career {state.CAREERS_STARTED}{limit} started by the bot.")

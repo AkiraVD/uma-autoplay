@@ -65,7 +65,22 @@ TEMPLATES = {
   # The TP prompt's green button, shared with the spark reroll's own short-of-TP
   # dialog - the same asset core/sparks.py has been pressing since 2026-09-18.
   "restore_tp": "assets/buttons/restore_btn.png",
+  # "Continue Career - Resume": pressing CAREER on a career that is still going
+  # raises this instead of Scenario Select. Watched for, never pressed - see
+  # RESUMED below.
+  "continue_career": "assets/ui/continue_career.png",
 }
+
+# start()'s third outcome, beside True and False: there was already a career in
+# progress, so there is nothing to start. Not a failure - `career_lobby` has a
+# `continue_career` branch that presses Resume, and the walk leaves the dialog
+# on screen for it rather than pressing Resume itself. One resume path, in the
+# place that already owned it.
+#
+# Measured 2026-09-23 on a Post-Career state: without this the walk pressed
+# CAREER, failed to recognise the dialog it had just raised, waited out all 40
+# steps and stopped the bot on a career that only needed Resume.
+RESUMED = "resumed"
 
 # Polls before giving up on the walk. At roughly two seconds a pass plus the
 # settles below, this is a couple of minutes - long enough for every screen to
@@ -313,11 +328,13 @@ def _number(left, top, width, height):
     value_range=(0, 9999))
 
 def start():
-  """Walk the setup screens and start a career. True once one has begun.
+  """Walk the setup screens and start a career.
 
-  False means a person is needed, and the log says why: the walk ran out of
-  polls, the Veteran roster is full, the card could not be borrowed, or
-  `Start Career!` stayed disabled for a reason a borrow does not fix.
+  True once one has begun. RESUMED when there was already a career in progress,
+  which is not a failure and not a new career. False means a person is needed,
+  and the log says why: the walk ran out of polls, the Veteran roster is full,
+  the card could not be borrowed, or `Start Career!` stayed disabled for a
+  reason a borrow does not fix.
   """
   wanted = remembered_card()
   if not wanted:
@@ -335,6 +352,11 @@ def start():
       return False
     screen = ImageGrab.grab()
     matches = multi_match_templates(TEMPLATES, screen=screen)
+
+    if matches["continue_career"]:
+      info("A career is already in progress; leaving it to the resume path"
+           " rather than starting a new one.")
+      return RESUMED
 
     if matches["veteran_max"]:
       error("The Veteran Umamusume roster is full (260/260), so the game will"

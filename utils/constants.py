@@ -308,6 +308,13 @@ TP_RESTORE_USE_X = 763
 # pressing it live since 2026-09-18.
 TP_TOUGHNESS_ROW_ASSET = "assets/ui/toughness_row.png"
 
+# The five stat values on the Continue Career dialog, which is the only place
+# a career the bot did not play from the lobby shows its numbers. Measured
+# 2026-09-23: the cells repeat on a 94px pitch, grade badge then digits, and
+# all five read exactly with extract_number.
+CONTINUE_CAREER_STAT_FIRST = (398, 661, 56, 36)
+CONTINUE_CAREER_STAT_PITCH = 94
+
 # --- Starting a career (core/career_start.py) -------------------------------
 # All measured by hand at 1920x1080 on 2026-09-18 and re-walked on 2026-09-21,
 # when every one of them still landed. See docs/screen-map.md, "The setup

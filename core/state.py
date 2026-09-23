@@ -142,6 +142,29 @@ def migrate_bot_settings():
     return False
   return True
 
+def read_continue_career_stats(screen):
+  """The five stats off the Continue Career dialog, or None.
+
+  The end-of-career notification reports `LAST_STATS`, which core/logic.py
+  caches once per lobby turn - so a career the bot *resumed* rather than played
+  reports "not read", which is what happened on 2026-09-23 when it picked up a
+  Post-Career. This dialog is on screen every time the bot resumes, and it is
+  the one place those numbers still exist.
+  """
+  from core.ocr import extract_number
+  from utils.screenshot import enhance_for_reading
+  left, top, width, height = constants.CONTINUE_CAREER_STAT_FIRST
+  stats = {}
+  for i, key in enumerate(("spd", "sta", "pwr", "guts", "wit")):
+    x = left + constants.CONTINUE_CAREER_STAT_PITCH * i
+    value = extract_number(
+      enhance_for_reading(screen.crop((x, top, x + width, top + height))),
+      value_range=(1, 2000))
+    if value and value > 0:
+      stats[key] = value
+  # All five or none: a partial row would read as a career that lost stats.
+  return stats if len(stats) == 5 else None
+
 def load_bot():
   """Read bot.json into the globals.
 

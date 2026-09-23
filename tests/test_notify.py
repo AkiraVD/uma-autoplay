@@ -287,6 +287,40 @@ def test_an_oversized_frame_is_refused_not_sent():
   finally:
     os.unlink(big)
 
+def test_a_resumed_career_still_reports_its_stats():
+  """"Stats: not read" is what a resumed career used to send.
+
+  core/logic.py caches the stats once per lobby turn, and a career the bot
+  picks up at its Post-Career never has a lobby turn - which is exactly what
+  happened on 2026-09-23. The Continue Career dialog is on screen every time
+  the bot resumes and is the one place those numbers still exist.
+  """
+  from PIL import Image
+  import core.state as st
+  import core.execute as E
+  frame = os.path.join("tests", "fixtures", "out_of_career",
+                       "continue_career_postcareer.png")
+  if not os.path.exists(frame):
+    print("skip  no continue-career fixture")
+    return
+  stats = st.read_continue_career_stats(Image.open(frame).convert("RGB"))
+  ok("all five stats read off the dialog", stats is not None, str(stats))
+  if stats:
+    ok("and they are the numbers on it",
+       stats == {"spd": 1601, "sta": 500, "pwr": 1075, "guts": 554, "wit": 719},
+       str(stats))
+    ok("so the message has something to say",
+       E._stat_line(stats) != "not read", E._stat_line(stats))
+  # A lobby is not this dialog: a partial read must not pass as a stat row.
+  lobby = os.path.join("tests", "fixtures", "out_of_career", "in_career.png")
+  if os.path.exists(lobby):
+    ok("and a screen that is not the dialog reads as nothing",
+       st.read_continue_career_stats(Image.open(lobby).convert("RGB")) is None)
+  source = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
+  branch = source[source.index('if matches["continue_career"]'):]
+  ok("the resume branch reads them before pressing Resume",
+     branch.index("read_continue_career_stats") < branch.index("resume_btn"))
+
 def test_the_listener_starts_and_survives():
   ok("listen() returns a running daemon thread",
      notify.listen().is_alive() and notify.listen().daemon)
@@ -371,6 +405,7 @@ if __name__ == "__main__":
   test_the_commands_themselves()
   test_an_oversized_frame_is_refused_not_sent()
   test_a_picture_that_will_not_send_does_not_eat_the_report()
+  test_a_resumed_career_still_reports_its_stats()
   test_the_listener_starts_and_survives()
   test_the_settings_live_in_their_own_file()
   test_the_page_talks_to_that_file()
