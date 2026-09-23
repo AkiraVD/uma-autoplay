@@ -12,6 +12,7 @@ import {
 import { slugify, type SavedConfig } from "../../hooks/useConfigStore";
 import { capitalise, DISTANCES, RUN_STYLES } from "@/utils/aptitudes";
 import { SCENARIOS, scenarioLabel, type Scenario } from "@/utils/scenarios";
+import { joinTitle, partsFrom } from "@/utils/configTitle";
 
 type Props = {
   // Load offers the list; Save files this config into it. One dialog, because
@@ -193,27 +194,29 @@ export default function ConfigStore({
                   } ${saving && target === s.name ? "bg-accent/60" : ""}`}
                 >
                   <div className="min-w-0 flex-1">
+                    {/* Built from the preset's own trainee, mode, style and
+                        distances - the four things the filters work on - rather
+                        than from the name stored inside it. A preset saved
+                        before titles were derived holds whatever was typed that
+                        day, and printing both said the same thing twice. */}
                     <div className="truncate text-sm font-medium">
-                      {s.config_name}
+                      {joinTitle(
+                        partsFrom({
+                          trainee: s.trainee,
+                          scenario: s.scenario,
+                          runStyle: s.run_style,
+                          distance: s.distance,
+                        })
+                      ) || s.config_name}
                       {s.unreadable && (
                         <span className="ml-2 text-xs font-normal text-destructive">
                           unreadable
                         </span>
                       )}
                     </div>
+                    {/* The file it is, which is what Save writes over. */}
                     <div className="truncate text-xs text-muted-foreground">
-                      {/* The same four things the filters work on, so a row
-                          shows why it is in the list. */}
-                      {[
-                        s.trainee,
-                        scenarioLabel(s.scenario as Scenario),
-                        [s.run_style ?? "", ...(s.distance ?? [])]
-                          .filter(Boolean)
-                          .map(capitalise)
-                          .join("/"),
-                      ]
-                        .filter(Boolean)
-                        .join(" · ") || s.name}
+                      {s.name}.json
                       <span className="ml-2 opacity-70">{when(s.saved_at)}</span>
                     </div>
                   </div>

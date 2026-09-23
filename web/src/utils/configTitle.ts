@@ -1,6 +1,6 @@
 import type { Config } from "@/types";
 import { capitalise, DISTANCES } from "./aptitudes";
-import { scenarioLabel } from "./scenarios";
+import { scenarioLabel, type Scenario } from "./scenarios";
 
 /**
  * The name the config goes by, built from the config itself.
@@ -17,33 +17,49 @@ import { scenarioLabel } from "./scenarios";
  *   [CODE: ICING] Mihono Bourbon - Grand Concert - Front/Long
  */
 
-// Sorted shortest first, as the buttons are laid out: without this the title
-// would read back the order the distances happened to be clicked in.
+/** The four fields a title is made of, from wherever they are held. */
+type Source = {
+  trainee?: string;
+  scenario?: string;
+  runStyle?: string;
+  distance?: string[];
+};
 
 /** The parts, so the toolbar can set them apart without re-splitting a string. */
-export const titleParts = (config: Config) => {
+export const partsFrom = ({ trainee, scenario, runStyle, distance }: Source) => ({
   // The trainee's name as master.mdb gives it, epithet and all (core/trainee.py
   // matches on category 4): two cards of the same character train differently,
   // so the epithet is part of what the config is.
-  const trainee = (config.trainee || "").trim();
+  trainee: (trainee || "").trim(),
   // Auto-detect names no scenario - the screen decides it - so there is nothing
-  // to put in the title until the mode is actually chosen.
-  const scenario = config.scenario && config.scenario !== "auto"
-    ? scenarioLabel(config.scenario)
-    : "";
-  // Distances is a set: an Uma with two aptitudes races both.
-  const distances = [...config.skill.skill_distance].sort(
-    (a, b) => DISTANCES.indexOf(a) - DISTANCES.indexOf(b)
-  );
-  const runs = [config.skill.skill_run_style, ...distances]
+  // to put in the title until the mode is actually chosen. A key the picker no
+  // longer offers (a preset saved under Trackblazer, parked 2026-09-21) is shown
+  // as it was written rather than dropped, since the file really does say it.
+  scenario:
+    !scenario || scenario === "auto"
+      ? ""
+      : scenarioLabel(scenario as Scenario) || capitalise(scenario),
+  // Distances is a set: an Uma with two aptitudes races both. Sorted shortest
+  // first, as the buttons are laid out - otherwise the title reads back the
+  // order they happened to be clicked in.
+  runs: [
+    runStyle ?? "",
+    ...[...(distance ?? [])].sort((a, b) => DISTANCES.indexOf(a) - DISTANCES.indexOf(b)),
+  ]
     .filter(Boolean)
     .map(capitalise)
-    .join("/");
-  return { trainee, scenario, runs };
-};
+    .join("/"),
+});
 
-export const configTitle = (config: Config) => {
-  const { trainee, scenario, runs } = titleParts(config);
-  const named = [trainee, scenario, runs].filter(Boolean).join(" - ");
-  return named || "No trainee";
-};
+export const joinTitle = (parts: ReturnType<typeof partsFrom>) =>
+  [parts.trainee, parts.scenario, parts.runs].filter(Boolean).join(" - ");
+
+export const titleParts = (config: Config) =>
+  partsFrom({
+    trainee: config.trainee,
+    scenario: config.scenario,
+    runStyle: config.skill.skill_run_style,
+    distance: config.skill.skill_distance,
+  });
+
+export const configTitle = (config: Config) => joinTitle(titleParts(config)) || "No trainee";
