@@ -113,7 +113,7 @@ function App() {
         ) : view === "tools" ? (
           <ToolsView />
         ) : view === "telegram" ? (
-          <TelegramView config={config} updateConfig={updateConfig} />
+          <TelegramView />
         ) : (
         <>
         <div className="mx-2 flex flex-wrap items-center gap-2 rounded-xl border border-border/20 bg-card p-3 shadow-lg">

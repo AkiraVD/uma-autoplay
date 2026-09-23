@@ -35,11 +35,6 @@
     "max_consecutive": 0
   },
   "restart_on_freeze": false,
-  "telegram": {
-    "enabled": false,
-    "token": "",
-    "chat_id": ""
-  },
   "position_selection_enabled": false,
   "enable_positions_by_race": false,
   "preferred_position": "front",

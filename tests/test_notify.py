@@ -207,15 +207,60 @@ def test_the_test_button_cannot_disturb_anything():
   ok("and passes them as arguments instead",
      "token=" in endpoint and "chat_id=" in endpoint)
 
-def test_the_config_and_the_page():
+def test_the_settings_live_in_their_own_file():
+  """Not in the config, and that is the point.
+
+  Config presets under uma_configs/ are saved, swapped and shared, and the
+  token is a secret. These settings also belong to the machine rather than to
+  a trainee, so loading a different preset must not change who gets messaged.
+  """
+  import tempfile
   template = json.load(open("config.template.json", encoding="utf-8"))
-  ok("telegram is in the config schema", "telegram" in template)
-  ok("and is off by default", template["telegram"]["enabled"] is False)
-  ok("with no token in the template", template["telegram"]["token"] == "")
+  ok("telegram is NOT in the config schema", "telegram" not in template)
   for key in ("TELEGRAM_ENABLED", "TELEGRAM_TOKEN", "TELEGRAM_CHAT_ID"):
-    ok(f"state reads {key}", hasattr(state, key))
+    ok(f"state carries {key}", hasattr(state, key))
+
+  rules = [ln.strip() for ln in open(".gitignore", encoding="utf-8")]
+  ok("telegram.json is gitignored", "telegram.json" in rules)
+
+  original = state.TELEGRAM_FILE
+  cwd = os.getcwd()
+  try:
+    with tempfile.TemporaryDirectory() as d:
+      os.chdir(d)
+      state.TELEGRAM_FILE = "telegram.json"
+      ok("a missing file loads as empty and off",
+         state.load_telegram() == {"enabled": False, "token": "", "chat_id": ""})
+      out = state.save_telegram({"enabled": True, "token": " t ", "chat_id": 42})
+      ok("saving writes it back", out == {"enabled": True, "token": "t", "chat_id": "42"},
+         str(out))
+      ok("and applies it at once, with no restart",
+         state.TELEGRAM_TOKEN == "t" and state.TELEGRAM_ENABLED is True)
+      ok("the file is what was written",
+         json.load(open("telegram.json", encoding="utf-8"))["chat_id"] == "42")
+      # Reloading the config must not wipe settings that are not in it.
+      ok("a fresh load reads the file back",
+         state.load_telegram()["token"] == "t")
+      open("telegram.json", "w").write("{ not json")
+      ok("a corrupt file is survivable",
+         state.load_telegram() == {"enabled": False, "token": "", "chat_id": ""})
+  finally:
+    os.chdir(cwd)
+    state.TELEGRAM_FILE = original
+    state.load_telegram()
+
+def test_the_page_talks_to_that_file():
   server = open(os.path.join("server", "main.py"), encoding="utf-8").read()
-  ok("the page can test the settings", "/telegram/test" in server)
+  ok("the page can read the settings", '@app.get("/telegram")' in server)
+  ok("and save them", '@app.post("/telegram")' in server)
+  ok("and test them", "/telegram/test" in server)
+  view = os.path.join("web", "src", "components", "telegram", "TelegramView.tsx")
+  page = open(view, encoding="utf-8").read()
+  ok("the tab fetches its own settings", "`${URL}/telegram`" in page)
+  # It must not be wired to the config, or Apply would be needed after all.
+  ok("and is not fed the config", "updateConfig" not in page and "saveConfig" not in page)
+  types = open(os.path.join("web", "src", "types", "index.ts"), encoding="utf-8").read()
+  ok("the config schema no longer carries telegram", "telegram" not in types)
   # Testing must not leave the running bot pointed at whatever was typed.
   # There is nothing to restore any more - the endpoint never assigns - and
   # test_the_test_button_cannot_disturb_anything is what pins that.
@@ -232,7 +277,8 @@ if __name__ == "__main__":
   test_long_messages_are_trimmed()
   test_the_four_events_are_wired()
   test_the_test_button_cannot_disturb_anything()
-  test_the_config_and_the_page()
+  test_the_settings_live_in_their_own_file()
+  test_the_page_talks_to_that_file()
   print()
   if failures:
     print(f"{len(failures)} failed: " + ", ".join(failures))

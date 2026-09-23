@@ -1,31 +1,74 @@
-import { useState } from "react";
-import { Send, MessageCircle } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Send, MessageCircle, Save } from "lucide-react";
 import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
 import { Input } from "../ui/input";
 import { URL } from "@/constants";
-import type { Config, UpdateConfigType } from "@/types";
 
-type Props = {
-  config: Config;
-  updateConfig: UpdateConfigType;
-};
+type Settings = { enabled: boolean; token: string; chat_id: string };
 
-const FALLBACK = { enabled: false, token: "", chat_id: "" };
+const EMPTY: Settings = { enabled: false, token: "", chat_id: "" };
 const CARD = "bg-card p-6 rounded-xl shadow-lg border border-border/20";
 
-// Telegram, for following a run nobody is watching. Its own tab because the
-// token is a secret and does not belong beside the training weights, and
-// because the setup is a one-off that wants room to explain itself.
-export default function TelegramView({ config, updateConfig }: Props) {
-  const telegram = { ...FALLBACK, ...(config.telegram ?? {}) };
-  const set = (patch: Partial<typeof FALLBACK>) =>
-    updateConfig("telegram", { ...telegram, ...patch });
-
+// Telegram, for following a run nobody is watching.
+//
+// These settings are *not* part of the config. They live in telegram.json and
+// this tab reads and writes that file on its own, for two reasons: the token is
+// a secret and config presets under uma_configs/ are meant to be saved, swapped
+// and shared, and these belong to the machine rather than to a trainee - so
+// loading a different preset should not change who gets messaged. Saving here
+// applies to the running bot at once, with no Apply and no restart.
+export default function TelegramView() {
+  const [settings, setSettings] = useState<Settings>(EMPTY);
+  const [loaded, setLoaded] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ ok: boolean; reason?: string } | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch(`${URL}/telegram`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setSettings({ ...EMPTY, ...(await res.json()) });
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "could not reach the server");
+    } finally {
+      setLoaded(true);
+    }
+  }, []);
+  useEffect(() => { void load(); }, [load]);
+
+  const set = (patch: Partial<Settings>) => {
+    setSettings((s) => ({ ...s, ...patch }));
+    setDirty(true);
+    setSaved(false);
+  };
+
+  const save = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`${URL}/telegram`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setSettings({ ...EMPTY, ...(await res.json()) });
+      setDirty(false);
+      setSaved(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "could not save");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   // The test posts what is typed rather than what is saved, so it works before
-  // Apply - which is exactly when the details are most likely to be wrong.
+  // saving - which is exactly when the details are most likely to be wrong.
   const test = async () => {
     setBusy(true);
     setResult(null);
@@ -33,7 +76,7 @@ export default function TelegramView({ config, updateConfig }: Props) {
       const res = await fetch(`${URL}/telegram/test`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: telegram.token, chat_id: telegram.chat_id }),
+        body: JSON.stringify({ token: settings.token, chat_id: settings.chat_id }),
       });
       setResult(res.ok ? await res.json() : { ok: false, reason: `HTTP ${res.status}` });
     } catch (e) {
@@ -50,11 +93,14 @@ export default function TelegramView({ config, updateConfig }: Props) {
           <MessageCircle className="text-primary" />
           Telegram
         </h2>
+        {!loaded ? (
+          <p className="text-muted-foreground">Loading...</p>
+        ) : (
         <div className="flex flex-col gap-6">
           <div className="w-fit">
             <label htmlFor="telegram-enabled" className="flex gap-2 items-start">
-              <Checkbox id="telegram-enabled" className="mt-1.5" checked={telegram.enabled}
-                onCheckedChange={() => set({ enabled: !telegram.enabled })} />
+              <Checkbox id="telegram-enabled" className="mt-1.5" checked={settings.enabled}
+                onCheckedChange={() => set({ enabled: !settings.enabled })} />
               <span className="text-lg font-medium">Send me messages?</span>
             </label>
             <span className="text-sm text-muted-foreground">
@@ -69,12 +115,11 @@ export default function TelegramView({ config, updateConfig }: Props) {
             <Input id="telegram-token" type="password" autoComplete="off"
               className="w-full max-w-xl mt-1 font-mono"
               placeholder="123456789:AAE..."
-              value={telegram.token}
+              value={settings.token}
               onChange={(e) => set({ token: e.target.value })} />
             <span className="block text-sm text-muted-foreground mt-1">
               From <strong>@BotFather</strong> in Telegram: send it <code>/newbot</code>, pick a name, and it replies
-              with the token. This is a secret &mdash; it is stored in <code>config.json</code> and in any preset you
-              save, both of which stay on this machine.
+              with the token.
             </span>
           </div>
 
@@ -84,7 +129,7 @@ export default function TelegramView({ config, updateConfig }: Props) {
             </label>
             <Input id="telegram-chat" className="w-64 mt-1 font-mono"
               placeholder="123456789"
-              value={telegram.chat_id}
+              value={settings.chat_id}
               onChange={(e) => set({ chat_id: e.target.value })} />
             <span className="block text-sm text-muted-foreground mt-1">
               Your own chat with the bot, not the bot's name. Message your new bot once, then open
@@ -94,21 +139,34 @@ export default function TelegramView({ config, updateConfig }: Props) {
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Button onClick={test} disabled={busy || !telegram.token || !telegram.chat_id}>
-              <Send className="size-4" />
-              {busy ? "Sending..." : "Send a test message"}
+          <div className="flex flex-wrap items-center gap-3">
+            <Button className="font-semibold" onClick={save} disabled={busy || !dirty}>
+              <Save className="size-4" />
+              {busy ? "Saving..." : dirty ? "Save" : "Saved"}
             </Button>
+            <Button variant="outline" onClick={test}
+              disabled={busy || !settings.token || !settings.chat_id}>
+              <Send className="size-4" />
+              Send a test message
+            </Button>
+            {saved && !dirty && (
+              <span className="text-green-600 dark:text-green-400">Saved - the bot is using it now.</span>
+            )}
             {result && (
               <span className={result.ok ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
                 {result.ok ? "Sent - check Telegram." : `Failed: ${result.reason ?? "unknown"}`}
               </span>
             )}
+            {error && <span className="text-red-600 dark:text-red-400">{error}</span>}
           </div>
           <span className="text-sm text-muted-foreground -mt-2">
-            The test uses what is typed above, so it works before Apply. Everything else needs Apply to take effect.
+            Saved to <code>telegram.json</code>, not to the config &mdash; so the <strong>Apply</strong> button on the
+            Configuration tab has nothing to do with these, loading a different preset leaves them alone, and the
+            running bot picks a change up straight away. The file is gitignored; the token is a secret and stays on
+            this machine.
           </span>
         </div>
+        )}
       </div>
 
       <div className={CARD}>

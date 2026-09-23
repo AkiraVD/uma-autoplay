@@ -214,6 +214,28 @@ def log_data():
                      "enabled": state.CAREER_START_ENABLED}
   return data
 
+@app.get("/telegram")
+def telegram_get():
+  """The Telegram settings, from telegram.json rather than the config.
+
+  The token comes back so the page can show and edit it. That is the same
+  exposure config.json already had over this port, and the port is the one the
+  config page itself is served on.
+  """
+  return state.telegram_settings()
+
+@app.post("/telegram")
+def telegram_save(body: dict = Body(...)):
+  """Write telegram.json and apply it to the running bot immediately.
+
+  No Apply, and no restart: these settings are not part of the config, so
+  nothing else has to be saved for them to take effect.
+  """
+  try:
+    return state.save_telegram(body)
+  except OSError as e:
+    raise HTTPException(500, f"Could not write {state.TELEGRAM_FILE}: {e}")
+
 @app.post("/telegram/test")
 def telegram_test(body: dict = Body(default={})):
   """Send one message with the settings in the body, and say what happened.

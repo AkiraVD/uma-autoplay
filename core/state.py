@@ -97,6 +97,44 @@ CAREER_UUID = None
 # not config: career_lobby() resets it and the config page reads it back.
 CAREERS_STARTED = 0
 
+# Telegram lives in its own file, not in config.json. Two reasons: the token is
+# a secret and config presets under uma_configs/ are meant to be saved, swapped
+# and shared, and these settings belong to the machine rather than to a trainee
+# and should survive loading a different preset.
+TELEGRAM_FILE = "telegram.json"
+
+def load_telegram():
+  """Read telegram.json into the globals. A missing file is the normal case."""
+  global TELEGRAM_ENABLED, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
+  data = {}
+  try:
+    with open(TELEGRAM_FILE, "r", encoding="utf-8") as f:
+      data = json.load(f) or {}
+  except FileNotFoundError:
+    pass
+  except (OSError, ValueError) as e:
+    warning(f"Could not read {TELEGRAM_FILE}: {e}")
+  TELEGRAM_ENABLED = bool(data.get("enabled", False))
+  TELEGRAM_TOKEN = (data.get("token") or "").strip()
+  TELEGRAM_CHAT_ID = str(data.get("chat_id") or "").strip()
+  return telegram_settings()
+
+def telegram_settings():
+  return {"enabled": TELEGRAM_ENABLED,
+          "token": TELEGRAM_TOKEN,
+          "chat_id": TELEGRAM_CHAT_ID}
+
+def save_telegram(data):
+  """Write telegram.json and apply it at once, so the running bot picks it up
+  without a restart - the whole point of keeping it out of the config."""
+  record = {"enabled": bool(data.get("enabled", False)),
+            "token": (data.get("token") or "").strip(),
+            "chat_id": str(data.get("chat_id") or "").strip()}
+  with open(TELEGRAM_FILE, "w", encoding="utf-8") as f:
+    json.dump(record, f, indent=2)
+  load_telegram()
+  return telegram_settings()
+
 def load_config():
   with open("config.json", "r", encoding="utf-8") as file:
     return json.load(file)
@@ -146,14 +184,7 @@ def reload_config():
   # client that is only slow would cost whatever was on screen.
   global RESTART_ON_FREEZE
   RESTART_ON_FREEZE = config.get("restart_on_freeze", False)
-  # Telegram, for following a run nobody is watching. The token is the one
-  # secret in this config: never log it, and note that saved presets under
-  # uma_configs/ carry it too (both are gitignored).
-  global TELEGRAM_ENABLED, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
-  telegram = config.get("telegram", {}) or {}
-  TELEGRAM_ENABLED = telegram.get("enabled", False)
-  TELEGRAM_TOKEN = (telegram.get("token") or "").strip()
-  TELEGRAM_CHAT_ID = str(telegram.get("chat_id") or "").strip()
+  load_telegram()
   STAT_CAPS = config["stat_caps"]
   IS_AUTO_BUY_SKILL = config["skill"]["is_auto_buy_skill"]
   SKILL_PTS_CHECK = config["skill"]["skill_pts_check"]

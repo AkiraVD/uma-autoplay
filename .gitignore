@@ -1,6 +1,9 @@
 *venv*
 __pycache__
 config.json
+# Telegram lives in its own file because the token is a secret and because
+# these settings belong to the machine, not to a config preset.
+telegram.json
 debug
 cache
 # Test runs write their logs here. (This used to be *test*, which also hid
