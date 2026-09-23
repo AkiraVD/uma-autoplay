@@ -16,8 +16,13 @@ const CARD = "bg-card p-6 rounded-xl shadow-lg border border-border/20";
 // this tab reads and writes that file on its own, for two reasons: the token is
 // a secret and config presets under uma_configs/ are meant to be saved, swapped
 // and shared, and these belong to the machine rather than to a trainee - so
-// loading a different preset should not change who gets messaged. Saving here
-// applies to the running bot at once, with no Apply and no restart.
+// loading a different preset should not change who gets messaged.
+//
+// What follows from that, none of which the page says because none of it is
+// anything to do: the Apply button on the Configuration tab does not touch
+// these, saving here applies to the running bot at once with no restart, and
+// telegram.json is gitignored so the token stays on this machine. The page
+// shows Save, Saved and what was sent - the rest is this comment's business.
 export default function TelegramView() {
   const [settings, setSettings] = useState<Settings>(EMPTY);
   const [loaded, setLoaded] = useState(false);
@@ -159,12 +164,6 @@ export default function TelegramView() {
             )}
             {error && <span className="text-red-600 dark:text-red-400">{error}</span>}
           </div>
-          <span className="text-sm text-muted-foreground -mt-2">
-            Saved to <code>telegram.json</code>, not to the config &mdash; so the <strong>Apply</strong> button on the
-            Configuration tab has nothing to do with these, loading a different preset leaves them alone, and the
-            running bot picks a change up straight away. The file is gitignored; the token is a secret and stays on
-            this machine.
-          </span>
         </div>
         )}
       </div>
