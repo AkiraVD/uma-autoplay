@@ -32,6 +32,7 @@ import core.trainee as trainee
 import core.lessons as lessons
 import core.sparks as sparks
 import core.career_start as career_start
+import core.recover as recover
 
 templates = {
   "event": "assets/icons/event_choice_1.png",
@@ -1066,6 +1067,13 @@ BLANK_PANEL_LIMIT = 18
 # by 41,709 to 785,636 pixels and were never identical. Ten is for the screen
 # nobody has captured yet, not for the ones that have been.
 FROZEN_PANEL_LIMIT = 10
+# Automatic restarts allowed in one run, when restart_on_freeze is on. A
+# restart costs about two minutes (30s for the close the frozen client ignores,
+# ~30s for the window, two settles), so five is roughly half an hour of trying
+# before a person is needed. Generous because an overnight run has legitimately
+# needed two or three; bounded because a game that launches and freezes at once
+# would otherwise loop on it all night.
+FREEZE_RESTART_LIMIT = 5
 # Attempts at walking back in from a Session Error before giving up. The branch
 # ends in `continue` without touching not_in_lobby, so nothing else bounds it -
 # and an unbounded press-and-retry on one dialog is this bot's oldest failure
@@ -1090,6 +1098,7 @@ def career_lobby():
   session_errors = 0
   frozen_panel = 0
   last_digest = None
+  freeze_restarts = 0
   # Not zero: the count lives in logs/career_start_progress.json so it survives
   # the restart that follows a frozen client, which is what ends most runs.
   # The config page's Reset is what clears it.
@@ -1123,10 +1132,33 @@ def career_lobby():
     if digest == last_digest:
       frozen_panel += 1
       if frozen_panel >= FROZEN_PANEL_LIMIT:
-        error(f"The game panel has been pixel-identical for {frozen_panel}"
-              " checks: the client has stopped drawing. Stopping. The career is"
-              " saved - close and relaunch the game, then Continue Career.")
-        return
+        warning(f"The game panel has been pixel-identical for {frozen_panel}"
+                " checks: the client has stopped drawing.")
+        if not state.RESTART_ON_FREEZE:
+          error("Stopping. The career is saved - close and relaunch the game,"
+                " then Continue Career. Turn on restart_on_freeze to have the"
+                " bot do that itself.")
+          return
+        if freeze_restarts >= FREEZE_RESTART_LIMIT:
+          error(f"Already restarted the game {freeze_restarts} times this run"
+                " and it froze again. Stopping rather than restarting on a"
+                " loop; something is wrong beyond one bad frame.")
+          return
+        freeze_restarts += 1
+        info(f"Restarting the game (attempt {freeze_restarts} of"
+             f" {FREEZE_RESTART_LIMIT}).")
+        if not recover.restart_client():
+          return
+        # The career is still there, behind the home screen's Career button.
+        # This is the same hand-off the daily reset and the Session Error
+        # dialog make, and it is what stops the reload being read as a
+        # finished career - or, with career_start on, as a cue to start a new
+        # one on top of a career that is still in progress.
+        RESUMING_CAREER = SEEN_LOBBY
+        frozen_panel = 0
+        last_digest = None
+        not_in_lobby = 0
+        continue
     else:
       frozen_panel = 0
       last_digest = digest

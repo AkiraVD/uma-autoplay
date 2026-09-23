@@ -104,15 +104,23 @@ Worth deriving properly if the behaviour ever looks wrong:
   a freeze *in* the lobby keeps matching the Tazuna hint, so the not-in-lobby
   recovery where `game_panel_blank` lives would never be reached.
 
-  What is still open is the **recovery**: it stops in 90 seconds now instead of
-  35 minutes, but a person still has to close, relaunch, tap the title and
-  press Continue Career. Every piece of that walk is measured and has been
-  driven by hand three times; what it needs is the entry below, so a resume is
-  not mistaken for a new career.
+  **Recovered automatically since 2026-09-23**, behind `restart_on_freeze`
+  (off by default - it ends the game process). `core/recover.py::restart_client`
+  closes the client, launches it, waits for the window, taps the title screen
+  and hands back to `career_lobby()` with `RESUMING_CAREER` set, so the career
+  resumes through Continue Career rather than being read as a finished one -
+  the same hand-off the daily reset and the Session Error dialog already make.
+  Bounded at `FREEZE_RESTART_LIMIT` = 5 per run: a restart costs about two
+  minutes, and a game that launched and froze at once would otherwise loop on
+  it all night. **Not yet proven against a live freeze** - the pieces are the
+  ones `tools/umatool.py` has used all along, and the hand-off is the one the
+  other two reload paths use, but the whole walk has only been driven by hand.
 
   Uptime is not the trigger - 3h, 6h, 7.5h. All three froze during a **scene
   transition**: a race starting, a support card event, a story event.
-- **A resume after a crash does not survive `career_start`.** With
+- **A resume after a crash does not survive `career_start`** *(only when a
+  person restarts the game; the bot's own restart above sets `RESUMING_CAREER`
+  and is unaffected)*. With
   `career_start.enabled` on, a bot started at the plain home screen while a
   career is in progress calls the walk rather than resuming: `RESUMING_CAREER`
   is False on a fresh start, so the home-screen branch goes straight to

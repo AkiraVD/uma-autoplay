@@ -35,6 +35,7 @@ os.chdir(ROOT)
 os.environ.setdefault("UMA_LOG_DIR", os.path.join("tests", "logs"))
 
 import core.career_start as CS                        # noqa: E402
+import core.execute as E                              # noqa: E402
 import core.state as state                            # noqa: E402
 import utils.constants as constants                   # noqa: E402
 from core.recognizer import multi_match_templates     # noqa: E402
@@ -269,7 +270,6 @@ def test_the_frozen_panel_detector():
   played, consecutive grabs differed by 41,709 to 785,636 pixels and were never
   identical, while a frozen client is byte-identical every time.
   """
-  import core.execute as E
   frames = [os.path.join(FIXTURES, "out_of_career", "in_career.png"),
             os.path.join(FIXTURES, "out_of_career", "game_home.png"),
             os.path.join(WALK, "support_formation.png")]
@@ -294,6 +294,50 @@ def test_the_frozen_panel_detector():
      grab < digest < dispatch)
   ok("and it stops the bot rather than tapping on",
      "pixel-identical" in source)
+
+def test_the_freeze_recovery():
+  """Closing a frozen client and walking it back into the career.
+
+  The detector only ever stopped the bot; with restart_on_freeze on it closes
+  the game, launches it, taps the title and hands back to career_lobby with
+  RESUMING_CAREER set - the same hand-off the daily reset and the Session Error
+  dialog make, and the thing that stops the reload being read as a finished
+  career, or (with career_start on) as a cue to start a new one on top of a
+  career that is still running.
+  """
+  import core.recover as recover
+  template = json.load(open("config.template.json", encoding="utf-8"))
+  ok("restart_on_freeze is in the config schema", "restart_on_freeze" in template)
+  ok("and is off by default - it ends the game process",
+     template["restart_on_freeze"] is False)
+  ok("state reads it", hasattr(state, "RESTART_ON_FREEZE"))
+
+  source = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
+  branch = source[source.index("if frozen_panel >= FROZEN_PANEL_LIMIT:"):]
+  branch = branch[:branch.index("    else:")]
+  ok("the toggle gates it", "state.RESTART_ON_FREEZE" in branch)
+  ok("off, it still stops as it did", 'error("Stopping.' in branch)
+  ok("on, it restarts", "recover.restart_client()" in branch)
+  ok("and hands the reload to the resume path",
+     "RESUMING_CAREER = SEEN_LOBBY" in branch)
+  # Without this the next pass counts the stale frame again and trips instantly.
+  ok("it clears the frozen counters", "frozen_panel = 0" in branch
+     and "last_digest = None" in branch)
+  ok("restarts are bounded", "FREEZE_RESTART_LIMIT" in branch)
+  ok("the bound is sane",
+     isinstance(E.FREEZE_RESTART_LIMIT, int) and 0 < E.FREEZE_RESTART_LIMIT <= 20,
+     str(E.FREEZE_RESTART_LIMIT))
+
+  walk = open(os.path.join("core", "recover.py"), encoding="utf-8").read()
+  ok("it closes before launching",
+     walk.index("window.close(") < walk.index("window.launch_game()"))
+  ok("it waits for the window rather than assuming", "_wait_for_window" in walk)
+  ok("it taps the title screen", "TITLE_SCREEN_TAP_MOUSE_POS" in walk)
+  ok("a close that fails does not become a launch",
+     "Not restarting." in walk)
+  for fn in ("restart_client", "_wait_for_window"):
+    ok(f"{fn} bails when the bot is stopping",
+       "_stopping()" in walk[walk.index(f"def {fn}("):])
 
 def test_the_career_ledger():
   """The count lives in a file, one row per career, each with its own id.
@@ -363,6 +407,7 @@ if __name__ == "__main__":
   test_the_walk_is_bounded_and_off_by_default()
   test_the_consecutive_limit()
   test_the_frozen_panel_detector()
+  test_the_freeze_recovery()
   test_the_career_ledger()
   test_the_count_is_read_back_not_zeroed()
   test_the_log_page_is_told_the_count()

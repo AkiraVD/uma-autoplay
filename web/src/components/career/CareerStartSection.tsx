@@ -20,6 +20,7 @@ const FALLBACK = { enabled: false, borrow_card: "", max_consecutive: 0 };
 export default function CareerStartSection({ config, updateConfig }: Props) {
   // Presets saved before this existed don't carry it.
   const careerStart = { ...FALLBACK, ...(config.career_start ?? {}) };
+  const restartOnFreeze = config.restart_on_freeze ?? false;
   const set = (patch: Partial<typeof FALLBACK>) =>
     updateConfig("career_start", { ...careerStart, ...patch });
 
@@ -113,6 +114,23 @@ export default function CareerStartSection({ config, updateConfig }: Props) {
             Counted in <code>logs/career_start_progress.json</code>, one row per career with its own id, so the count
             survives restarting the bot &mdash; which is what happens every time the game client freezes. Reset it to
             start a fresh run. This is the bot's own count, not a setting: Reset takes effect at once, with no Apply.
+          </span>
+        </div>
+      </div>
+      <div className="h-px bg-border/60 my-6" />
+      <div className="flex flex-col gap-4">
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">Recovery</p>
+        <div className="w-fit">
+          <label htmlFor="restart-on-freeze" className="flex gap-2 items-start">
+            <Checkbox id="restart-on-freeze" className="mt-1.5" checked={restartOnFreeze}
+              onCheckedChange={() => updateConfig("restart_on_freeze", !restartOnFreeze)} />
+            <span className="text-lg font-medium">Restart the game if it freezes?</span>
+          </label>
+          <span className="text-sm text-muted-foreground">
+            The client stops drawing every few hours &mdash; it keeps a full frame on screen and never changes it. The
+            bot spots that after 10 identical frames (~90s), and with this on it closes the game, launches it again,
+            taps past the title screen and resumes the career through Continue Career. Off, it stops and waits for you.
+            It ends the game process, so leave it off if you ever watch over its shoulder.
           </span>
         </div>
       </div>

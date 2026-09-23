@@ -34,6 +34,7 @@
     "borrow_card": "",
     "max_consecutive": 0
   },
+  "restart_on_freeze": false,
   "position_selection_enabled": false,
   "enable_positions_by_race": false,
   "preferred_position": "front",

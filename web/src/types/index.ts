@@ -64,6 +64,7 @@ export const ConfigSchema = z.object({
   max_race_retries: z.number(),
   reroll_sparks: z.boolean(),
   career_start: CareerStartSchema.optional(),
+  restart_on_freeze: z.boolean().optional(),
   position_selection_enabled: z.boolean(),
   enable_positions_by_race: z.boolean(),
   preferred_position: z.string(),

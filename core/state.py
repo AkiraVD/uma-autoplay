@@ -83,6 +83,7 @@ TP_BOTTLE_FLOOR = 50
 CAREER_START_ENABLED = False
 CAREER_START_BORROW_CARD = ""
 CAREER_START_MAX = 0
+RESTART_ON_FREEZE = False
 # Careers career_start has begun since the bot was last started. Live state,
 # not config: career_lobby() resets it and the config page reads it back.
 CAREERS_STARTED = 0
@@ -131,6 +132,11 @@ def reload_config():
   # going a fixed distance and finding the game where it stopped.
   global CAREER_START_MAX
   CAREER_START_MAX = career_start.get("max_consecutive", 0)
+  # Close and relaunch the game when the client stops drawing, then resume the
+  # career. Off by default: it ends the game process, and doing that to a
+  # client that is only slow would cost whatever was on screen.
+  global RESTART_ON_FREEZE
+  RESTART_ON_FREEZE = config.get("restart_on_freeze", False)
   STAT_CAPS = config["stat_caps"]
   IS_AUTO_BUY_SKILL = config["skill"]["is_auto_buy_skill"]
   SKILL_PTS_CHECK = config["skill"]["skill_pts_check"]
