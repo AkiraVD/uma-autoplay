@@ -14,6 +14,10 @@ import { capitalise, DISTANCES, RUN_STYLES } from "@/utils/aptitudes";
 import { SCENARIOS, scenarioLabel, type Scenario } from "@/utils/scenarios";
 
 type Props = {
+  // Load offers the list; Save files this config into it. One dialog, because
+  // both want the same list in front of you - saving over the right preset
+  // needs to see the presets.
+  mode: "load" | "save";
   open: boolean;
   onOpenChange: (open: boolean) => void;
   saved: SavedConfig[];
@@ -46,6 +50,7 @@ const when = (epoch: number) => {
 };
 
 export default function ConfigStore({
+  mode: dialogMode,
   open,
   onOpenChange,
   saved,
@@ -56,6 +61,7 @@ export default function ConfigStore({
   onSave,
   onDelete,
 }: Props) {
+  const saving = dialogMode === "save";
   const [saveAs, setSaveAs] = useState("");
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState("");
@@ -99,10 +105,13 @@ export default function ConfigStore({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Saved configs</DialogTitle>
+          <DialogTitle>{saving ? "Save this config" : "Load a config"}</DialogTitle>
           <DialogDescription>
             Every preset lives in <code>uma_configs/</code> next to the bot, so this
             list is the same whichever device opens this page.
+            {saving
+              ? " Pick one to save over it, or type a new name."
+              : " Loading one applies it straight away."}
           </DialogDescription>
         </DialogHeader>
 
@@ -178,7 +187,10 @@ export default function ConfigStore({
               {visible.map((s) => (
                 <li
                   key={s.name}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2"
+                  onClick={saving ? () => setSaveAs(s.name) : undefined}
+                  className={`flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 ${
+                    saving ? "cursor-pointer hover:bg-accent/40" : ""
+                  } ${saving && target === s.name ? "bg-accent/60" : ""}`}
                 >
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium">
@@ -206,7 +218,10 @@ export default function ConfigStore({
                     </div>
                   </div>
                   {confirming === s.name ? (
-                    <div className="flex items-center gap-2">
+                    <div
+                      className="flex items-center gap-2"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <span className="text-xs text-muted-foreground">Delete?</span>
                       <Button
                         size="sm"
@@ -229,19 +244,24 @@ export default function ConfigStore({
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={busy || s.unreadable}
-                        onClick={() => onLoad(s.name)}
-                      >
-                        Load
-                      </Button>
+                      {!saving && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busy || s.unreadable}
+                          onClick={() => onLoad(s.name)}
+                        >
+                          Load
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="ghost"
                         disabled={busy}
-                        onClick={() => setConfirming(s.name)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirming(s.name);
+                        }}
                       >
                         Delete
                       </Button>
@@ -253,6 +273,7 @@ export default function ConfigStore({
           )}
         </div>
 
+        {saving && (
         <DialogFooter className="!justify-start gap-2 sm:!justify-start">
           <Input
             aria-label="Save as"
@@ -271,7 +292,8 @@ export default function ConfigStore({
             {overwrites ? "Overwrite" : "Save"}
           </Button>
         </DialogFooter>
-        {target && (
+        )}
+        {saving && target && (
           <p className="text-xs text-muted-foreground">
             Saves as <code>uma_configs/{target}.json</code>
             {overwrites && " — replacing the preset already there."}

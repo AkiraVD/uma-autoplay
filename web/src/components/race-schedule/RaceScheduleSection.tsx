@@ -4,6 +4,7 @@ import CancelConsecutive from "./CancelConsecutive";
 import RaceSchedule from "./RaceSchedule";
 import LoadRaceList from "./LoadRaceList";
 import { Input } from "../ui/input";
+import Tooltips from "../_c/Tooltips";
 import type { Config, UpdateConfigType } from "@/types";
 
 type Props = {
@@ -52,12 +53,15 @@ export default function RaceScheduleSection({ config, updateConfig }: Props) {
           }
         />
         <label className="flex flex-col gap-2">
-          <span className="text-lg font-medium shrink-0">Retries on a lost race</span>
+          <span className="flex items-center gap-2 text-lg font-medium">
+            Retries on a lost race
+            <Tooltips>
+              Each retry spends an Alarm Clock. A lost goal race ends the career,
+              so 1 is worth it; 0 never retries.
+            </Tooltips>
+          </span>
           <Input className="w-24" type="number" min={0} max={5} value={maxRetries}
             onChange={(e) => updateConfig("max_race_retries", isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber)} />
-          <span className="text-sm text-muted-foreground">
-            Each retry spends an Alarm Clock. A lost goal race ends the career, so 1 is worth it; 0 never retries.
-          </span>
         </label>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type D
 import { arrayMove, SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
 import Sortable from "../Sortable";
 import { Input } from "../ui/input";
+import Tooltips from "../_c/Tooltips";
 import { GRAND_CONCERT_FALLBACK as FALLBACK } from "./defaults";
 import type { Config, GrandConcert, UpdateConfigType } from "@/types";
 
@@ -36,11 +37,15 @@ function NumberField({ label, hint, value, min, max, step, onChange }: {
   onChange: (value: number) => void;
 }) {
   return (
-    <label className="grid grid-rows-subgrid row-span-3 gap-2">
-      <span className="text-lg font-medium self-end">{label}</span>
+    // Two rows of the shared subgrid now the hint has become a tooltip, so the
+    // inputs still line up across the pair of columns.
+    <label className="grid grid-rows-subgrid row-span-2 gap-2">
+      <span className="flex items-center gap-2 self-end text-lg font-medium">
+        {label}
+        <Tooltips>{hint}</Tooltips>
+      </span>
       <Input className="w-24" type="number" min={min} max={max} step={step ?? 1} value={value}
         onChange={(e) => onChange(isNaN(e.target.valueAsNumber) ? min : e.target.valueAsNumber)} />
-      <span className="text-sm text-muted-foreground">{hint}</span>
     </label>
   );
 }
@@ -71,7 +76,14 @@ export default function GrandConcertSection({ config, updateConfig }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
-              <p className="text-lg font-medium">Song plan (total songs, Make Debut included)</p>
+              <p className="flex items-center gap-2 text-lg font-medium">
+                Song plan (total songs, Make Debut included)
+                <Tooltips>
+                  Songs stop once the total reaches this concert's number, saving
+                  points for the next. 18 before Senior Early December earns the
+                  gold "I Wanna Win With You"; 16 by June opens the lyrics event.
+                </Tooltips>
+              </p>
               <div className="flex flex-wrap gap-4">
                 {plan.map((value, i) => (
                   <label key={i} className="flex flex-col gap-1">
@@ -85,13 +97,14 @@ export default function GrandConcertSection({ config, updateConfig }: Props) {
                   </label>
                 ))}
               </div>
-              <span className="text-sm text-muted-foreground">
-                Songs stop once the total reaches this concert's number, saving points for the next.
-                18 before Senior Early December earns the gold "I Wanna Win With You"; 16 by June opens the lyrics event.
-              </span>
             </div>
             <label className="flex flex-col gap-2">
-              <span className="text-lg font-medium">Lyrics event ("Closer Together")</span>
+              <span className="flex items-center gap-2 text-lg font-medium">
+                Lyrics event ("Closer Together")
+                <Tooltips>
+                  Gold only if that character is the trainee or a support card.
+                </Tooltips>
+              </span>
               <select className="w-fit max-w-full rounded-md border bg-background px-3 py-2"
                 value={grandConcert.lyrics_option}
                 onChange={(e) => set({ lyrics_option: Number(e.target.value) })}>
@@ -99,7 +112,6 @@ export default function GrandConcertSection({ config, updateConfig }: Props) {
                   <option key={i} value={i + 1}>{label}</option>
                 ))}
               </select>
-              <span className="text-sm text-muted-foreground">Gold only if that character is the trainee or a support card.</span>
             </label>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 content-start">

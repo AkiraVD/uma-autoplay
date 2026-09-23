@@ -2,6 +2,7 @@ import { BrainCircuit } from "lucide-react";
 import IsAutoBuy from "./IsAutoBuy";
 import SkillPtsCheck from "./SkillPtsCheck";
 import { Checkbox } from "../ui/checkbox";
+import Tooltips from "../_c/Tooltips";
 import { GRAND_CONCERT_FALLBACK } from "../grand-concert/defaults";
 import type { Config, UpdateConfigType } from "@/types";
 
@@ -36,18 +37,19 @@ export default function SkillSection({ config, updateConfig }: Props) {
             updateConfig("skill", { ...skill, skill_pts_check: val })
           }
         />
-        <div className="w-fit">
+        <div className="flex w-fit items-center gap-2">
           {/* No shrink-0 on the label: it makes the text unwrappable, so w-fit
               resolves to the full line width and the row overflows the card. */}
-          <label htmlFor="always-gold" className="flex gap-2 items-start">
-            <Checkbox id="always-gold" className="mt-1.5" checked={alwaysGold}
+          <label htmlFor="always-gold" className="flex gap-2 items-center">
+            <Checkbox id="always-gold" checked={alwaysGold}
               onCheckedChange={() => updateConfig("grand_concert", { ...grandConcert, always_buy_gold_skill: !alwaysGold })} />
             <span className="text-lg font-medium">Always buy "I Wanna Win With You"</span>
           </label>
-          <span className="text-sm text-muted-foreground">
-            Grand Concert only. Buys the scenario gold skill first at career end, before the optimizer spends the
-            rest. It is expensive (380 points) for a short effect, so the optimizer skips it otherwise.
-          </span>
+          <Tooltips>
+            Grand Concert only. Buys the scenario gold skill first at career end,
+            before the optimizer spends the rest. It is expensive (380 points) for
+            a short effect, so the optimizer skips it otherwise.
+          </Tooltips>
         </div>
       </div>
     </div>

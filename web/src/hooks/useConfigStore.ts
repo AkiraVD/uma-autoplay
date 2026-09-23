@@ -19,6 +19,9 @@ export type SavedConfig = {
 type Props = {
   config: Config;
   setConfig: (config: Config) => void;
+  // useConfig's apply: it writes config.json and records what the server now
+  // holds, so a load doesn't come back as one more unapplied change.
+  apply: (config: Config) => Promise<boolean>;
 };
 
 // Fills keys an older preset lacks (a section added since it was saved) from
@@ -57,7 +60,7 @@ export const slugify = (name: string) =>
     .replace(/^-+|-+$/g, "")
     .slice(0, 80);
 
-export function useConfigStore({ config, setConfig }: Props) {
+export function useConfigStore({ config, setConfig, apply }: Props) {
   const [saved, setSaved] = useState<SavedConfig[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -129,11 +132,9 @@ export function useConfigStore({ config, setConfig }: Props) {
       }
 
       setConfig(merged);
-      await fetch(`${URL}/config`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(merged),
-      });
+      // At once rather than on the edit debounce: a load is one deliberate act,
+      // and waiting would leave the page and the file apart for no reason.
+      await apply(merged);
       setError(null);
       return true;
     } catch (err) {

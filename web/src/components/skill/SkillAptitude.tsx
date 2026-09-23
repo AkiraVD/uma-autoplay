@@ -1,3 +1,4 @@
+import Tooltips from "@/components/_c/Tooltips";
 import { DISTANCES, RUN_STYLES } from "@/utils/aptitudes";
 
 type Props = {
@@ -26,9 +27,9 @@ export default function SkillAptitude({ distance, runStyle, setDistance, setRunS
     // Run Style first: it lines up with Preferred Position beside it on the page.
     <div className="flex flex-col gap-4">
       <label className="flex flex-col gap-2">
-        <span className="text-lg font-medium shrink-0">Skill Run Style</span>
-        <span className="text-sm text-muted-foreground">
-          Only buy style-locked skills for this strategy.
+        <span className="flex items-center gap-2 text-lg font-medium">
+          Skill Run Style
+          <Tooltips>Only buy style-locked skills for this strategy.</Tooltips>
         </span>
         <div className="flex flex-wrap gap-2">
           {RUN_STYLES.map((s) => (
@@ -49,9 +50,12 @@ export default function SkillAptitude({ distance, runStyle, setDistance, setRunS
       </label>
 
       <label className="flex flex-col gap-2">
-        <span className="text-lg font-medium shrink-0">Skill Distances</span>
-        <span className="text-sm text-muted-foreground">
-          Only buy distance-locked skills for these. Pick every distance the trainee races.
+        <span className="flex items-center gap-2 text-lg font-medium">
+          Skill Distances
+          <Tooltips>
+            Only buy distance-locked skills for these. Pick every distance the
+            trainee races.
+          </Tooltips>
         </span>
         <div className="flex flex-wrap gap-2">
           {DISTANCES.map((d) => (

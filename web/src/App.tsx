@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import rawConfig from "../../config.json";
-import { useConfig } from "./hooks/useConfig";
+import { useConfig, type ApplyState } from "./hooks/useConfig";
 import { useConfigStore } from "./hooks/useConfigStore";
 import { configTitle, titleParts } from "./utils/configTitle";
 import ConfigStore from "./components/config-store/ConfigStore";
@@ -38,6 +38,23 @@ const VIEWS: [View, string][] = [
 
 const CHIP = "shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium";
 
+// Small and out of the way while it works, loud only when a write fails - at
+// which point the page and the bot disagree, which is the state the Apply
+// button used to hide.
+function ApplyStatus({ state, error }: { state: ApplyState; error: string | null }) {
+  if (state === "error")
+    return (
+      <span className="text-sm text-destructive" title={error ?? undefined}>
+        Not applied
+      </span>
+    );
+  if (state === "applying")
+    return <span className="text-sm text-muted-foreground">Applying...</span>;
+  if (state === "applied")
+    return <span className="text-sm text-muted-foreground">Applied</span>;
+  return null;
+}
+
 function App() {
   const defaultConfig = rawConfig as Config;
   // "#logs", "#plan", "#tools" and "#telegram" open those views straight away,
@@ -60,17 +77,25 @@ function App() {
     setView(next);
     window.history.replaceState(null, "", next === "config" ? window.location.pathname : `#${next}`);
   };
-  const { config, setConfig, saveConfig } = useConfig(defaultConfig);
+  const { config, setConfig, apply, applyState, applyError } = useConfig(defaultConfig);
   // Presets live in uma_configs/ next to the bot rather than behind the
   // browser's file dialogs, so the same list shows up on every device.
-  const [storeOpen, setStoreOpen] = useState(false);
-  const store = useConfigStore({ config, setConfig });
+  // The dialog is one list seen two ways: "load" offers it, "save" files
+  // this config into it.
+  const [storeMode, setStoreMode] = useState<"load" | "save" | null>(null);
+  const store = useConfigStore({ config, setConfig, apply });
 
   // The title is read off the config rather than typed into it, so it can't
   // describe a trainee the config no longer trains. It is still stored, because
   // the preset list and the bot's own startup line both quote it.
   const config_name = configTitle(config);
   const title = titleParts(config);
+
+  const openStore = (mode: "load" | "save") => {
+    store.setError(null);
+    store.refresh();
+    setStoreMode(mode);
+  };
   useEffect(() => {
     if (config.config_name !== config_name)
       setConfig((prev) => ({ ...prev, config_name }));
@@ -143,36 +168,35 @@ function App() {
             {title.scenario && <span className={`${CHIP} border-primary/30 bg-primary/10 text-primary`}>{title.scenario}</span>}
             {title.runs && <span className={`${CHIP} border-border/60 text-muted-foreground`}>{title.runs}</span>}
           </div>
-          <Button
-            variant="outline"
-            onClick={() => {
-              store.setError(null);
-              store.refresh();
-              setStoreOpen(true);
-            }}
-          >
-            Saved configs
+          {/* Every edit is written by itself, so there is nothing to apply.
+              What is left is the two things a person actually chooses to do. */}
+          <ApplyStatus state={applyState} error={applyError} />
+          <Button variant="outline" onClick={() => openStore("load")}>
+            Load
             {store.saved.length > 0 && (
               <span className="ml-1.5 text-xs text-muted-foreground">
                 {store.saved.length}
               </span>
             )}
           </Button>
-          <Button className="font-semibold" onClick={saveConfig}>
-            Apply
+          <Button className="font-semibold" onClick={() => openStore("save")}>
+            Save
           </Button>
         </div>
         <ConfigStore
-          open={storeOpen}
-          onOpenChange={setStoreOpen}
+          mode={storeMode ?? "load"}
+          open={storeMode !== null}
+          onOpenChange={(next) => setStoreMode(next ? storeMode ?? "load" : null)}
           saved={store.saved}
           busy={store.busy}
           error={store.error}
           configName={config_name}
           onLoad={async (name) => {
-            if (await store.load(name)) setStoreOpen(false);
+            if (await store.load(name)) setStoreMode(null);
           }}
-          onSave={(name) => store.save(name)}
+          onSave={async (name) => {
+            if (await store.save(name)) setStoreMode(null);
+          }}
           onDelete={(name) => store.remove(name)}
         />
         {/* Related settings sit together: who the career trains and how she races,
