@@ -195,9 +195,10 @@ def test_the_walk_is_bounded_and_off_by_default():
      isinstance(CS.BORROW_ATTEMPTS, int) and 0 < CS.BORROW_ATTEMPTS <= 5,
      str(CS.BORROW_ATTEMPTS))
   template = json.load(open("config.template.json", encoding="utf-8"))
-  ok("career_start is in the config schema", "career_start" in template)
+  ok("career_start is NOT in the config schema", "career_start" not in template)
+  ok("it is a bot setting, with a default", "career_start" in state.BOT_DEFAULTS)
   ok("and is off by default - it spends 30 TP",
-     template["career_start"]["enabled"] is False)
+     state.BOT_DEFAULTS["career_start"]["enabled"] is False)
   ok("state reads it", hasattr(state, "CAREER_START_ENABLED"))
 
 def test_the_consecutive_limit():
@@ -208,16 +209,16 @@ def test_the_consecutive_limit():
   started here, not three played - and the Live Log's count has to be read off
   the same number or the two disagree.
   """
-  template = json.load(open("config.template.json", encoding="utf-8"))
-  ok("max_consecutive is in the config schema",
-     "max_consecutive" in template["career_start"])
-  ok("and defaults to no limit", template["career_start"]["max_consecutive"] == 0)
+  ok("max_consecutive is a bot setting",
+     "max_consecutive" in state.BOT_DEFAULTS["career_start"])
+  ok("and defaults to no limit",
+     state.BOT_DEFAULTS["career_start"]["max_consecutive"] == 0)
   ok("state reads it", hasattr(state, "CAREER_START_MAX"))
   ok("and carries the running count", hasattr(state, "CAREERS_STARTED"))
 
   source = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
   branch = source[source.index('if matches["team_rank"] or matches["game_nav"]'):]
-  branch = branch[:branch.index('if click(boxes=matches["to_home"]')]
+  branch = branch[:branch.index('if matches["to_home"]')]
   # The guard has to sit before the walk, or the run overshoots by one career
   # and spends 30 TP doing it.
   guard = branch.index("CAREERS_STARTED >= state.CAREER_START_MAX")
@@ -306,10 +307,10 @@ def test_the_freeze_recovery():
   career that is still running.
   """
   import core.recover as recover
-  template = json.load(open("config.template.json", encoding="utf-8"))
-  ok("restart_on_freeze is in the config schema", "restart_on_freeze" in template)
+  ok("restart_on_freeze is a bot setting",
+     "restart_on_freeze" in state.BOT_DEFAULTS)
   ok("and is off by default - it ends the game process",
-     template["restart_on_freeze"] is False)
+     state.BOT_DEFAULTS["restart_on_freeze"] is False)
   ok("state reads it", hasattr(state, "RESTART_ON_FREEZE"))
 
   source = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
@@ -383,10 +384,71 @@ def test_the_count_is_read_back_not_zeroed():
   ok("reset clears the running bot's count too",
      "state.CAREERS_STARTED = 0" in reset[:600])
 
+def test_how_the_bot_runs_is_not_config():
+  """bot.json, not config.json, and migrated rather than reset.
+
+  Config presets under uma_configs/ describe a trainee and are meant to be
+  swapped; these describe this machine and this run. Loading a different preset
+  must not change whether a frozen game is restarted.
+  """
+  import shutil
+  import tempfile
+  template = json.load(open("config.template.json", encoding="utf-8"))
+  for key in ("sleep_time_multiplier", "tp_bottle_floor", "reroll_sparks",
+              "restart_on_freeze", "career_start"):
+    ok(f"{key} has left the config schema", key not in template)
+    ok(f"and has a bot default", key in state.BOT_DEFAULTS)
+  rules = [ln.strip() for ln in open(".gitignore", encoding="utf-8")]
+  ok("bot.json is gitignored", "bot.json" in rules)
+  main = open("main.py", encoding="utf-8").read()
+  ok("the migration runs before update_config strips the keys",
+     main.index("state.migrate_bot_settings()") < main.index("update_config()\n"))
+
+  original, cwd = state.BOT_FILE, os.getcwd()
+  try:
+    with tempfile.TemporaryDirectory() as d:
+      shutil.copy("config.json", os.path.join(d, "config.json"))
+      os.chdir(d)
+      state.BOT_FILE = "bot.json"
+      settled = {"sleep_time_multiplier": 2, "tp_bottle_floor": 7,
+                 "reroll_sparks": False, "restart_on_freeze": True,
+                 "career_start": {"enabled": True, "borrow_card": "Light Hello",
+                                  "max_consecutive": 3}}
+      # The bug this exists for: update_config() strips the moved keys from
+      # config.json at startup, so a migration reading the *merged* config sees
+      # nothing and a settled setup comes back as defaults - which is exactly
+      # what happened live. It therefore reads config.json itself, and runs
+      # from main.py before update_config().
+      json.dump(settled, open("config.json", "w", encoding="utf-8"))
+      ok("a settled config is migrated, not defaulted",
+         state.migrate_bot_settings() is True)
+      ok("and written to the new file", os.path.exists("bot.json"))
+      state.load_bot()
+      ok("the globals follow it",
+         state.CAREER_START_MAX == 3 and state.RESTART_ON_FREEZE is True
+         and state.REROLL_SPARKS is False)
+      ok("a second call is a no-op once the file exists",
+         state.migrate_bot_settings() is False)
+      # Saving a partial patch must not wipe the rest.
+      state.save_bot({"career_start": {"max_consecutive": 9}})
+      ok("a partial save keeps the other career_start fields",
+         state.CAREER_START_BORROW_CARD == "Light Hello"
+         and state.CAREER_START_MAX == 9)
+      ok("and keeps the settings outside it",
+         state.TP_BOTTLE_FLOOR == 7 and state.SLEEP_TIME_MULTIPLIER == 2)
+      open("bot.json", "w").write("{ not json")
+      state.load_bot()
+      ok("a corrupt file falls back to defaults",
+         state.CAREER_START_MAX == 0 and state.RESTART_ON_FREEZE is False)
+  finally:
+    os.chdir(cwd)
+    state.BOT_FILE = original
+    state.load_bot()
+
 def test_the_loop_only_starts_a_career_when_told_to():
   source = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
   branch = source[source.index('if matches["team_rank"] or matches["game_nav"]'):]
-  branch = branch[:branch.index('if click(boxes=matches["to_home"]')]
+  branch = branch[:branch.index('if matches["to_home"]')]
   ok("the home-screen branch is gated on the setting",
      "state.CAREER_START_ENABLED" in branch)
   ok("it still stops when the walk fails", "return" in branch)
@@ -406,6 +468,7 @@ if __name__ == "__main__":
   test_the_remembered_card_beats_the_configured_one()
   test_the_walk_is_bounded_and_off_by_default()
   test_the_consecutive_limit()
+  test_how_the_bot_runs_is_not_config()
   test_the_frozen_panel_detector()
   test_the_freeze_recovery()
   test_the_career_ledger()

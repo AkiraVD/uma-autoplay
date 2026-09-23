@@ -34,15 +34,6 @@ export const GrandConcertSchema = z.object({
   always_buy_gold_skill: z.boolean(),
 });
 
-// Starting the next career by itself, once one finishes. Optional so presets
-// saved before it existed still parse.
-export const CareerStartSchema = z.object({
-  enabled: z.boolean(),
-  borrow_card: z.string(),
-  // 0 = no limit. Counts careers the bot starts itself, per bot run.
-  max_consecutive: z.number().optional(),
-});
-
 export const ConfigSchema = z.object({
   config_name: z.string(),
   trainee: z.string(),
@@ -51,7 +42,6 @@ export const ConfigSchema = z.object({
   scenario: z.enum(["auto", "ura", "unity", "grand_concert"]).optional(),
   priority_stat: z.array(z.string()),
   priority_weights: z.array(z.number()),
-  sleep_time_multiplier: z.number(),
   skip_training_energy: z.number(),
   never_rest_energy: z.number(),
   skip_infirmary_unless_missing_energy: z.number(),
@@ -62,9 +52,6 @@ export const ConfigSchema = z.object({
   prioritize_g1_race: z.boolean(),
   cancel_consecutive_race: z.boolean(),
   max_race_retries: z.number(),
-  reroll_sparks: z.boolean(),
-  career_start: CareerStartSchema.optional(),
-  restart_on_freeze: z.boolean().optional(),
   position_selection_enabled: z.boolean(),
   enable_positions_by_race: z.boolean(),
   preferred_position: z.string(),

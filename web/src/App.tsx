@@ -13,26 +13,26 @@ import { Input } from "./components/ui/input";
 import EventSection from "./components/event/EventSection";
 import RaceScheduleSection from "./components/race-schedule/RaceScheduleSection";
 import SkillSection from "./components/skill/SkillSection";
-import CareerStartSection from "./components/career/CareerStartSection";
 import TrainingSection from "./components/training/TrainingSection";
 import TraineeStrategySection from "./components/general/TraineeStrategySection";
 import RestMoodSection from "./components/general/RestMoodSection";
-import AdvancedSection from "./components/general/AdvancedSection";
 import GrandConcertSection from "./components/grand-concert/GrandConcertSection";
 import LogView from "./components/logs/LogView";
 import ThemeToggle from "./components/ThemeToggle";
 import RacePlanView from "./components/race-plan/RacePlanView";
 import ToolsView from "./components/tools/ToolsView";
 import TelegramView from "./components/telegram/TelegramView";
+import BotSettingsView from "./components/bot/BotSettingsView";
 import BotToggle from "./components/BotToggle";
 
-type View = "config" | "logs" | "plan" | "tools" | "telegram";
+type View = "config" | "logs" | "plan" | "tools" | "bot" | "telegram";
 
 const VIEWS: [View, string][] = [
   ["config", "Configuration"],
   ["logs", "Live Log"],
   ["plan", "Race Plan"],
   ["tools", "Tools"],
+  ["bot", "Bot"],
   ["telegram", "Telegram"],
 ];
 
@@ -50,7 +50,9 @@ function App() {
           ? "tools"
           : window.location.hash === "#telegram"
             ? "telegram"
-            : "config"
+            : window.location.hash === "#bot"
+              ? "bot"
+              : "config"
   );
   const showView = (next: View) => {
     setView(next);
@@ -112,6 +114,8 @@ function App() {
           <RacePlanView />
         ) : view === "tools" ? (
           <ToolsView />
+        ) : view === "bot" ? (
+          <BotSettingsView />
         ) : view === "telegram" ? (
           <TelegramView />
         ) : (
@@ -178,12 +182,6 @@ function App() {
           </div>
           <div className="min-w-0">
             <EventSection config={config} updateConfig={updateConfig} />
-          </div>
-          <div className="min-w-0">
-            <CareerStartSection config={config} updateConfig={updateConfig} />
-          </div>
-          <div className="min-w-0">
-            <AdvancedSection config={config} updateConfig={updateConfig} />
           </div>
           <div className="lg:col-span-3 min-w-0">
             <GrandConcertSection config={config} updateConfig={updateConfig} />

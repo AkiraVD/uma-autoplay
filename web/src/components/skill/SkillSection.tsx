@@ -16,8 +16,6 @@ export default function SkillSection({ config, updateConfig }: Props) {
   const { skill } = config;
   const grandConcert = { ...GRAND_CONCERT_FALLBACK, ...(config.grand_concert ?? {}) };
   const alwaysGold = grandConcert.always_buy_gold_skill ?? false;
-  // Presets saved before this existed don't have it.
-  const rerollSparks = config.reroll_sparks ?? true;
 
   return (
     <div className="bg-card p-6 rounded-xl shadow-lg border border-border/20">
@@ -49,20 +47,6 @@ export default function SkillSection({ config, updateConfig }: Props) {
           <span className="text-sm text-muted-foreground">
             Grand Concert only. Buys the scenario gold skill first at career end, before the optimizer spends the
             rest. It is expensive (380 points) for a short effect, so the optimizer skips it otherwise.
-          </span>
-        </div>
-      </div>
-      <div className="h-px bg-border/60 my-6" />
-      <div className="flex flex-col gap-4">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">Career end</p>
-        <div className="w-fit">
-          <label htmlFor="reroll-sparks" className="flex gap-2 items-start">
-            <Checkbox id="reroll-sparks" className="mt-1.5" checked={rerollSparks}
-              onCheckedChange={() => updateConfig("reroll_sparks", !rerollSparks)} />
-            <span className="text-lg font-medium">Reroll sparks without a 3★ blue?</span>
-          </label>
-          <span className="text-sm text-muted-foreground">
-            Costs 30 TP at career end, and the original set stays on offer.
           </span>
         </div>
       </div>

@@ -16,7 +16,6 @@
     0,
     -1
   ],
-  "sleep_time_multiplier": 1,
   "skip_training_energy": 25,
   "never_rest_energy": 75,
   "skip_infirmary_unless_missing_energy": 20,
@@ -27,14 +26,6 @@
   "prioritize_g1_race": false,
   "cancel_consecutive_race": true,
   "max_race_retries": 1,
-  "reroll_sparks": true,
-  "tp_bottle_floor": 50,
-  "career_start": {
-    "enabled": false,
-    "borrow_card": "",
-    "max_consecutive": 0
-  },
-  "restart_on_freeze": false,
   "position_selection_enabled": false,
   "enable_positions_by_race": false,
   "preferred_position": "front",

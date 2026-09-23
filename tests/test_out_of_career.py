@@ -83,7 +83,7 @@ def test_dispatch_order():
   """
   source = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
   rank = source.index('if matches["team_rank"]')
-  home = source.index('if click(boxes=matches["to_home"]')
+  home = source.index('if matches["to_home"]')
   generic = source.index("# Generic handlers.")
   cancel = source.index('matches["cancel"]', generic)
   ok("team_rank is checked before to_home", rank < home)
@@ -104,7 +104,7 @@ def test_stopping_is_a_return_not_a_click():
   # To the next branch, not a fixed slice. This used to take 800 characters,
   # which stopped covering the branch the moment career_start was added to it
   # and failed on a missing "return" that had simply moved out of the window.
-  body = source[branch:source.index('if click(boxes=matches["to_home"]', branch)]
+  body = source[branch:source.index('if matches["to_home"]', branch)]
   ok("the branch returns", "return" in body)
   resume = body.index("if RESUMING_CAREER")
   ok("the resume path is gated on RESUMING_CAREER", resume < body.index("return"))
@@ -116,12 +116,13 @@ def test_stopping_is_a_return_not_a_click():
      resume < body.index("CAREER_START_ENABLED"))
   ok("and starting a new one is still behind its setting",
      "state.CAREER_START_ENABLED" in body)
-  # Set by the two reloads that leave the career in progress, and by nothing
-  # else: the daily reset and the Session Error walk-back. Both land on this
-  # same home screen, and without it either one reads a live career as finished
-  # and stops the run.
+  # Set by the three reloads that leave the career in progress, and by nothing
+  # else: the daily reset, the Session Error walk-back, and the restart after a
+  # frozen client. All three land on this same home screen, and without it any
+  # of them reads a live career as finished - or, with career_start on, starts
+  # a new one on top of a career that is still running.
   ok("RESUMING_CAREER is only set by a reload that keeps the career",
-     source.count("RESUMING_CAREER = SEEN_LOBBY") == 2,
+     source.count("RESUMING_CAREER = SEEN_LOBBY") == 3,
      f"{source.count('RESUMING_CAREER = SEEN_LOBBY')} sites")
   ok("and cleared as soon as a lobby is seen again",
      "SEEN_LOBBY = True\n    RESUMING_CAREER = False" in source)

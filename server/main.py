@@ -214,6 +214,28 @@ def log_data():
                      "enabled": state.CAREER_START_ENABLED}
   return data
 
+@app.get("/bot-settings")
+def bot_settings_get():
+  """How the bot runs, from bot.json.
+
+  Deliberately not "/bot/settings": @app.post("/bot/{action}") already owns
+  that shape and would read "settings" as a start/stop action.
+
+  Reads the file rather than trusting the globals: those are only populated by
+  reload_config(), which runs when the *bot* starts, so a server that has not
+  been started yet would otherwise hand the page module defaults and show a
+  settled setup as switched off.
+  """
+  return state.load_bot()
+
+@app.post("/bot-settings")
+def bot_settings_save(body: dict = Body(...)):
+  """Write bot.json and apply it to the running bot at once."""
+  try:
+    return state.save_bot(body)
+  except OSError as e:
+    raise HTTPException(500, f"Could not write {state.BOT_FILE}: {e}")
+
 @app.get("/telegram")
 def telegram_get():
   """The Telegram settings, from telegram.json rather than the config.
@@ -221,8 +243,11 @@ def telegram_get():
   The token comes back so the page can show and edit it. That is the same
   exposure config.json already had over this port, and the port is the one the
   config page itself is served on.
+
+  Read from the file for the same reason as /bot-settings: the globals are
+  only filled in when the bot starts.
   """
-  return state.telegram_settings()
+  return state.load_telegram()
 
 @app.post("/telegram")
 def telegram_save(body: dict = Body(...)):

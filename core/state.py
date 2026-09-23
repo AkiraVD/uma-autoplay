@@ -97,6 +97,100 @@ CAREER_UUID = None
 # not config: career_lobby() resets it and the config page reads it back.
 CAREERS_STARTED = 0
 
+# How the bot *runs*, as opposed to what it trains. Its own file for the same
+# reason as telegram.json: config presets under uma_configs/ describe a trainee
+# and are meant to be swapped, while these describe this machine and this run.
+# Loading a different preset should not change whether the bot restarts a frozen
+# game or how many careers it may start.
+BOT_FILE = "bot.json"
+BOT_DEFAULTS = {
+  "sleep_time_multiplier": 1,
+  "tp_bottle_floor": 50,
+  "reroll_sparks": True,
+  "restart_on_freeze": False,
+  "career_start": {"enabled": False, "borrow_card": "", "max_consecutive": 0},
+}
+
+MIGRATED_KEYS = ("sleep_time_multiplier", "tp_bottle_floor", "reroll_sparks",
+                 "restart_on_freeze", "career_start")
+
+def migrate_bot_settings():
+  """Seed bot.json from config.json, before update_config() strips those keys.
+
+  Ordering is the whole point and it is easy to get wrong - it was: main.py
+  calls update_config() first, which deep-merges the template over config.json
+  and drops keys the template no longer has. By the time reload_config() ran,
+  the values to migrate were already gone and a settled setup came back as
+  defaults. So this reads config.json itself and runs before that.
+  """
+  if os.path.exists(BOT_FILE):
+    return False
+  try:
+    with open("config.json", "r", encoding="utf-8") as f:
+      config = json.load(f) or {}
+  except (OSError, ValueError):
+    return False
+  seed = {k: config[k] for k in MIGRATED_KEYS if k in config}
+  if not seed:
+    return False
+  info(f"Moving {', '.join(sorted(seed))} out of config.json into {BOT_FILE}.")
+  try:
+    with open(BOT_FILE, "w", encoding="utf-8") as f:
+      json.dump({**BOT_DEFAULTS, **seed}, f, indent=2)
+  except OSError as e:
+    warning(f"Could not create {BOT_FILE}: {e}")
+    return False
+  return True
+
+def load_bot():
+  """Read bot.json into the globals.
+
+  No migration here: that is migrate_bot_settings(), and it has to run from
+  main.py before update_config() strips the old keys out of config.json.
+  """
+  global SLEEP_TIME_MULTIPLIER, TP_BOTTLE_FLOOR, RESTART_ON_FREEZE, REROLL_SPARKS
+  global CAREER_START_ENABLED, CAREER_START_BORROW_CARD, CAREER_START_MAX
+  data = None
+  try:
+    with open(BOT_FILE, "r", encoding="utf-8") as f:
+      data = json.load(f) or {}
+  except FileNotFoundError:
+    data = {}
+  except (OSError, ValueError) as e:
+    warning(f"Could not read {BOT_FILE}: {e}")
+    data = {}
+  merged = {**BOT_DEFAULTS, **(data or {})}
+  SLEEP_TIME_MULTIPLIER = merged.get("sleep_time_multiplier", 1)
+  TP_BOTTLE_FLOOR = merged.get("tp_bottle_floor", 50)
+  REROLL_SPARKS = bool(merged.get("reroll_sparks", True))
+  RESTART_ON_FREEZE = bool(merged.get("restart_on_freeze", False))
+  career_start = {**BOT_DEFAULTS["career_start"],
+                  **(merged.get("career_start") or {})}
+  CAREER_START_ENABLED = bool(career_start.get("enabled", False))
+  CAREER_START_BORROW_CARD = career_start.get("borrow_card", "")
+  CAREER_START_MAX = career_start.get("max_consecutive", 0)
+  return bot_settings()
+
+def bot_settings():
+  return {"sleep_time_multiplier": SLEEP_TIME_MULTIPLIER,
+          "tp_bottle_floor": TP_BOTTLE_FLOOR,
+          "reroll_sparks": REROLL_SPARKS,
+          "restart_on_freeze": RESTART_ON_FREEZE,
+          "career_start": {"enabled": CAREER_START_ENABLED,
+                           "borrow_card": CAREER_START_BORROW_CARD,
+                           "max_consecutive": CAREER_START_MAX}}
+
+def save_bot(data):
+  """Write bot.json and apply it at once - no Apply, no restart."""
+  current = bot_settings()
+  record = {**current, **(data or {})}
+  record["career_start"] = {**current["career_start"],
+                            **((data or {}).get("career_start") or {})}
+  with open(BOT_FILE, "w", encoding="utf-8") as f:
+    json.dump(record, f, indent=2)
+  load_bot()
+  return bot_settings()
+
 # Telegram lives in its own file, not in config.json. Two reasons: the token is
 # a secret and config presets under uma_configs/ are meant to be saved, swapped
 # and shared, and these settings belong to the machine rather than to a trainee
@@ -143,7 +237,7 @@ def reload_config():
   global PRIORITY_STAT, PRIORITY_WEIGHT, MINIMUM_MOOD, MINIMUM_MOOD_JUNIOR_YEAR, MAX_FAILURE
   global PRIORITIZE_G1_RACE, CANCEL_CONSECUTIVE_RACE, STAT_CAPS, IS_AUTO_BUY_SKILL, SKILL_PTS_CHECK, SKILL_DISTANCE, SKILL_RUN_STYLE
   global PRIORITY_EFFECTS_LIST, SKIP_TRAINING_ENERGY, NEVER_REST_ENERGY, SKIP_INFIRMARY_UNLESS_MISSING_ENERGY, PREFERRED_POSITION
-  global ENABLE_POSITIONS_BY_RACE, POSITIONS_BY_RACE, POSITION_SELECTION_ENABLED, SLEEP_TIME_MULTIPLIER
+  global ENABLE_POSITIONS_BY_RACE, POSITIONS_BY_RACE, POSITION_SELECTION_ENABLED
   global TRAINEE
   global RACE_SCHEDULE, CONFIG_NAME, USE_OPTIMAL_EVENT_CHOICE, EVENT_CHOICES, USE_CLAW_MACHINE, CLAW_1_TIMER, CLAW_2_TIMER, CLAW_3_TIMER
 
@@ -158,32 +252,12 @@ def reload_config():
   CANCEL_CONSECUTIVE_RACE = config["cancel_consecutive_race"]
   # Alarm Clocks the bot may spend retrying a lost race, per career. 0 never
   # retries; a lost goal race otherwise ends the career on the spot.
-  global MAX_RACE_RETRIES, REROLL_SPARKS
+  global MAX_RACE_RETRIES
   MAX_RACE_RETRIES = config.get("max_race_retries", 1)
-  # Spend 30 TP at career end when the stat spark is not 3-star. Off keeps
-  # whatever the career rolled, which is what the bot did before.
-  REROLL_SPARKS = config.get("reroll_sparks", True)
-  # TP bottles the bot will not spend below when a spark reroll needs TP.
-  global TP_BOTTLE_FLOOR
-  TP_BOTTLE_FLOOR = config.get("tp_bottle_floor", 50)
-  # Starting the next career by itself, from the game's own home screen. Off by
-  # default: it spends 30 TP, and the borrowed card it needs has to be named
-  # once before it can fill the Friends slot. The same tp_bottle_floor above
-  # governs whether a bottle may be spent to afford the career.
-  global CAREER_START_ENABLED, CAREER_START_BORROW_CARD
-  career_start = config.get("career_start", {}) or {}
-  CAREER_START_ENABLED = career_start.get("enabled", False)
-  CAREER_START_BORROW_CARD = career_start.get("borrow_card", "")
-  # How many careers one run may start before it stops on purpose. 0 is no
-  # limit, which is what an overnight run wants; a number is for leaving it
-  # going a fixed distance and finding the game where it stopped.
-  global CAREER_START_MAX
-  CAREER_START_MAX = career_start.get("max_consecutive", 0)
-  # Close and relaunch the game when the client stops drawing, then resume the
-  # career. Off by default: it ends the game process, and doing that to a
-  # client that is only slow would cost whatever was on screen.
-  global RESTART_ON_FREEZE
-  RESTART_ON_FREEZE = config.get("restart_on_freeze", False)
+  # How the bot runs - the sleep multiplier, the TP floor, spark rerolls,
+  # starting the next career, restarting a frozen client - is bot.json's, not
+  # the config's.
+  load_bot()
   load_telegram()
   STAT_CAPS = config["stat_caps"]
   IS_AUTO_BUY_SKILL = config["skill"]["is_auto_buy_skill"]
@@ -224,7 +298,6 @@ def reload_config():
   ENABLE_POSITIONS_BY_RACE = config["enable_positions_by_race"]
   POSITIONS_BY_RACE = config["positions_by_race"]
   POSITION_SELECTION_ENABLED = config["position_selection_enabled"]
-  SLEEP_TIME_MULTIPLIER = config["sleep_time_multiplier"]
   RACE_SCHEDULE = sort_race_schedule(config["race_schedule"])
   CONFIG_NAME = config["config_name"]
   USE_OPTIMAL_EVENT_CHOICE = config["event"]["use_optimal_event_choice"]

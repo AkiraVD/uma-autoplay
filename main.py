@@ -153,6 +153,10 @@ def start_server():
   server.run()
 
 if __name__ == "__main__":
+  # Before update_config(), which deep-merges the template over config.json and
+  # drops keys the template no longer has. How the bot runs moved to bot.json,
+  # and reading those values across has to happen while they are still there.
+  state.migrate_bot_settings()
   update_config()
   start_log_viewer()
   threading.Thread(target=hotkey_listener, daemon=True).start()
