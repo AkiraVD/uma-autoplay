@@ -26,7 +26,7 @@ import urllib.parse
 import urllib.request
 
 import core.state as state
-from utils.log import info, warning, debug
+from utils.log import warning, debug
 
 API = "https://api.telegram.org/bot{token}/sendMessage"
 # Long enough for a slow phone network, short enough that a dead endpoint does

@@ -22,7 +22,7 @@ import time
 import core.state as state
 import utils.constants as constants
 import utils.window as window
-from utils.log import info, warning, error
+from utils.log import info, error
 from utils.tools import sleep
 
 # A frozen client ignores WM_DELETE_WINDOW - measured 2026-09-23, it sat through
