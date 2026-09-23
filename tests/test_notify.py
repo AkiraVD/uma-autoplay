@@ -41,7 +41,7 @@ def use(enabled=True, token=SECRET, chat="123456"):
 def capture():
   """Replace the network call, returning the list it records into."""
   sent = []
-  notify._post = lambda text: (sent.append(text), None)[1]
+  notify._post = lambda text, token=None, chat_id=None: (sent.append(text), None)[1]
   return sent
 
 def test_off_and_unconfigured_send_nothing():
@@ -61,7 +61,7 @@ def test_sending_does_not_block_the_bot():
   """The bot loop calls this between turns; a slow Telegram must cost nothing."""
   use()
   slow = []
-  def stall(text):
+  def stall(text, token=None, chat_id=None):
     slow.append(text)
     time.sleep(1.5)
     return None
@@ -76,7 +76,7 @@ def test_sending_does_not_block_the_bot():
 
 def test_a_failing_endpoint_never_raises():
   use()
-  def boom(text):
+  def boom(text, token=None, chat_id=None):
     raise RuntimeError("network on fire")
   notify._post = boom
   # _post is what the worker calls; the worker must swallow whatever it does.
@@ -168,6 +168,45 @@ def test_the_four_events_are_wired():
   sparks = open(os.path.join("core", "sparks.py"), encoding="utf-8").read()
   ok("the kept sparks are cached", "state.LAST_SPARKS = why" in sparks)
 
+def test_the_test_button_cannot_disturb_anything():
+  """Credentials are arguments, not a global the endpoint sets around a call.
+
+  The first version assigned state.TELEGRAM_TOKEN for the duration of the
+  request. Two overlapping requests then read each other's: a test posting no
+  token at all came back "ok" because a browser test was in flight beside it.
+  That is also a way for a test to leave the running bot pointed elsewhere if
+  the restore ever failed.
+  """
+  use(token="CONFIGURED:token", chat="111")
+  seen = []
+  notify._post = lambda text, token=None, chat_id=None: (
+    seen.append((token, chat_id)), None)[1]
+
+  notify.send_now("x", token="TYPED:token", chat_id="222")
+  ok("a passed token is the one used", seen[-1] == ("TYPED:token", "222"),
+     str(seen[-1]))
+  ok("and the configured one is untouched",
+     state.TELEGRAM_TOKEN == "CONFIGURED:token" and state.TELEGRAM_CHAT_ID == "111")
+
+  notify.send_now("x")
+  ok("with nothing passed, the configured one is used",
+     seen[-1] == ("CONFIGURED:token", "111"), str(seen[-1]))
+
+  # The empty case is what reported a false success.
+  use(token="", chat="")
+  reason = notify.send_now("x")
+  ok("no credentials anywhere is refused, not reported as sent",
+     reason is not None, repr(reason))
+
+  server = open(os.path.join("server", "main.py"), encoding="utf-8").read()
+  endpoint = server[server.index("def telegram_test("):]
+  endpoint = endpoint[:endpoint.index("@app.get")]
+  ok("the endpoint assigns no global state",
+     "state.TELEGRAM_TOKEN =" not in endpoint
+     and "state.TELEGRAM_CHAT_ID =" not in endpoint)
+  ok("and passes them as arguments instead",
+     "token=" in endpoint and "chat_id=" in endpoint)
+
 def test_the_config_and_the_page():
   template = json.load(open("config.template.json", encoding="utf-8"))
   ok("telegram is in the config schema", "telegram" in template)
@@ -178,9 +217,8 @@ def test_the_config_and_the_page():
   server = open(os.path.join("server", "main.py"), encoding="utf-8").read()
   ok("the page can test the settings", "/telegram/test" in server)
   # Testing must not leave the running bot pointed at whatever was typed.
-  test = server[server.index("def telegram_test("):]
-  ok("and the test restores the saved settings",
-     "finally:" in test[:1200] and "state.TELEGRAM_TOKEN, state.TELEGRAM_CHAT_ID = token, chat" in test[:1200])
+  # There is nothing to restore any more - the endpoint never assigns - and
+  # test_the_test_button_cannot_disturb_anything is what pins that.
   app = open(os.path.join("web", "src", "App.tsx"), encoding="utf-8").read()
   ok("the tab exists", '"telegram", "Telegram"' in app)
   ok("and has its own hash", '"#telegram"' in app)
@@ -193,6 +231,7 @@ if __name__ == "__main__":
   test_the_token_never_reaches_the_log()
   test_long_messages_are_trimmed()
   test_the_four_events_are_wired()
+  test_the_test_button_cannot_disturb_anything()
   test_the_config_and_the_page()
   print()
   if failures:

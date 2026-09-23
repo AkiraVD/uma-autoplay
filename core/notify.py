@@ -44,7 +44,12 @@ _warned = set()
 def configured():
   return bool(state.TELEGRAM_TOKEN and state.TELEGRAM_CHAT_ID)
 
-def _redact(text):
+def _creds(token=None, chat_id=None):
+  """The token and chat to use: the ones passed, else the configured ones."""
+  return (token if token is not None else state.TELEGRAM_TOKEN,
+          chat_id if chat_id is not None else state.TELEGRAM_CHAT_ID)
+
+def _redact(text, token=None):
   """Take the token out of anything on its way to a log or an API response.
 
   The sendMessage URL has the token in its path, and an exception is free to
@@ -52,7 +57,7 @@ def _redact(text):
   is a real shape. Rather than audit every error string for whether it might
   carry the URL, scrub the token from all of them.
   """
-  token = state.TELEGRAM_TOKEN
+  token = token if token is not None else state.TELEGRAM_TOKEN
   if token and text:
     return str(text).replace(token, "<token>")
   return text
@@ -62,21 +67,29 @@ def _warn_once(key, message):
     _warned.add(key)
     warning(message)
 
-def _post(text):
-  """One sendMessage call. Returns None on success, or a reason to log."""
+def _post(text, token=None, chat_id=None):
+  """One sendMessage call. Returns None on success, or a reason to log.
+
+  The credentials are arguments, defaulting to the configured ones. They used
+  to be read from `state` alone, and the config page's test button set `state`
+  around the call to try a token before saving it - which meant two overlapping
+  requests could read each other's, and one did: a test with no token at all
+  reported success because a browser test was in flight beside it.
+  """
+  token, chat_id = _creds(token, chat_id)
   data = urllib.parse.urlencode({
-    "chat_id": state.TELEGRAM_CHAT_ID,
+    "chat_id": chat_id,
     "text": text[:MAX_LEN],
     "disable_web_page_preview": "true",
   }).encode()
-  url = API.format(token=state.TELEGRAM_TOKEN)
+  url = API.format(token=token)
   try:
     with urllib.request.urlopen(url, data=data, timeout=TIMEOUT) as res:
       body = json.loads(res.read().decode("utf-8", "replace") or "{}")
     if not body.get("ok"):
       # description carries Telegram's own reason: a wrong chat id reads
       # "chat not found", a wrong token never gets this far.
-      return _redact(body.get("description")) or "Telegram refused the message"
+      return _redact(body.get("description"), token) or "Telegram refused the message"
     return None
   except urllib.error.HTTPError as e:
     # The URL contains the token, so report the code and not the URL.
@@ -85,9 +98,9 @@ def _post(text):
       detail = json.loads(e.read().decode("utf-8", "replace")).get("description", "")
     except Exception:
       pass
-    return _redact(f"HTTP {e.code}{': ' + detail if detail else ''}")
+    return _redact(f"HTTP {e.code}{': ' + detail if detail else ''}", token)
   except Exception as e:
-    return _redact(f"{type(e).__name__}: {e}")
+    return _redact(f"{type(e).__name__}: {e}", token)
 
 def _run():
   while True:
@@ -141,12 +154,15 @@ def send(text):
   _queue.put(text)
   return True
 
-def send_now(text):
+def send_now(text, token=None, chat_id=None):
   """Send on this thread and report the outcome, for the config page's test.
 
   The queue is the right shape for the bot and the wrong shape for a button
-  that has to say whether it worked.
+  that has to say whether it worked. Credentials are passed in rather than
+  taken from the config, so trying an unsaved token cannot disturb the running
+  bot or another request doing the same thing.
   """
-  if not configured():
+  token, chat_id = _creds(token, chat_id)
+  if not (token and chat_id):
     return "The token and chat id both have to be set."
-  return _post(text)
+  return _post(text, token, chat_id)

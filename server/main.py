@@ -220,18 +220,18 @@ def telegram_test(body: dict = Body(default={})):
 
   Takes the token and chat id from the request rather than the saved config, so
   the button works before Apply - which is the moment someone is most likely to
-  have them wrong. They are put back afterwards, so testing cannot leave the
-  running bot pointed somewhere else.
+  have them wrong.
+
+  They are passed to send_now rather than assigned to `state` around the call.
+  The first version did assign, and two overlapping requests then read each
+  other's credentials: a test posting no token at all reported success while a
+  browser test was in flight beside it.
   """
   import core.notify as notify
-  token, chat = state.TELEGRAM_TOKEN, state.TELEGRAM_CHAT_ID
-  try:
-    state.TELEGRAM_TOKEN = (body.get("token") or "").strip() or token
-    state.TELEGRAM_CHAT_ID = str(body.get("chat_id") or "").strip() or chat
-    reason = notify.send_now(
-      "Uma Autoplay: test message. If you can read this, the bot can reach you.")
-  finally:
-    state.TELEGRAM_TOKEN, state.TELEGRAM_CHAT_ID = token, chat
+  reason = notify.send_now(
+    "Uma Autoplay: test message. If you can read this, the bot can reach you.",
+    token=(body.get("token") or "").strip() or state.TELEGRAM_TOKEN,
+    chat_id=str(body.get("chat_id") or "").strip() or state.TELEGRAM_CHAT_ID)
   return {"ok": reason is None, "reason": reason}
 
 @app.get("/career/count")
