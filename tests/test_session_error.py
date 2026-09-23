@@ -1,4 +1,4 @@
-"""The "Session Error" dialog, and walking back into the career from it.
+"""The "back to the title screen" dialog, and walking into the career from it.
 
 Run with `python tests/test_session_error.py` from the repo root.
 
@@ -8,17 +8,26 @@ recovery cannot advance it - DIALOG_ADVANCE_MOUSE_POS (553,400) lands on empty
 dialog body. It stalls rather than loops, so the one-repeating-log-line
 signature that gives an ordinary wedge away is absent too.
 
-This was first written to *read* the dialog behind a pixel gate, on the belief
-that no capture of it existed. One did, misfiled under shots/gl/, and it broke
-that approach outright: the gate looked for a green button and this dialog's
-button is **white**. The frame also settled how common it is - nine captures at
-1.000, not the two occurrences the TODO recorded - so a template it is.
+It has been got wrong twice, each time by keying on something that varies.
+
+First a pixel gate looking for a green button - and this dialog's button is
+white. Then the message line, "Returning to Title screen due to inactivity.",
+which was blind to the second wording four days later: "A session verification
+error occurred.", under a different header, scoring 0.544. That miss cost 41
+minutes of blind tapping, an Alarm Clock spent on a phantom Retry, and the
+career (2026-09-23 17:57).
+
+It is now keyed on the **button**, which is the one thing both wordings share -
+to the pixel, x 434-671 and y 672-735 in both - and which is also the thing the
+handler presses. The lesson is in the ordering: match what you are going to
+click, not what happens to be written above it.
 
 Fixtures:
-  out_of_career/session_error.png   the dialog itself (was shots/gl/c6_deck.png)
-  out_of_career/game_home.png       the home screen, where it is also raised
-  out_of_career/in_career.png       a career lobby
-  sparks/spark_selection_notice.png another one-button dialog, the near miss
+  out_of_career/session_error.png              "...due to inactivity."
+  out_of_career/session_verification_error.png "A session verification error..."
+  out_of_career/game_home.png                  home, which has "To Title Screen"
+  out_of_career/in_career.png                  a career lobby
+  sparks/spark_selection_notice.png            another one-button dialog
 """
 import os
 import sys
@@ -39,6 +48,7 @@ DIALOG = os.path.join(FIXTURES, "out_of_career", "session_error.png")
 HOME = os.path.join(FIXTURES, "out_of_career", "game_home.png")
 LOBBY = os.path.join(FIXTURES, "out_of_career", "in_career.png")
 SPARK_NOTICE = os.path.join(FIXTURES, "sparks", "spark_selection_notice.png")
+VERIFICATION = os.path.join(FIXTURES, "out_of_career", "session_verification_error.png")
 
 failures = []
 
@@ -54,6 +64,15 @@ def test_the_template_is_registered():
   ok("session_error is in the dispatch templates", "session_error" in E.templates)
   ok("and its asset exists", os.path.exists(E.templates["session_error"]),
      E.templates["session_error"])
+
+def test_both_wordings_are_recognised():
+  """The point of keying on the button: one template, every wording."""
+  for path, what in ((DIALOG, "...due to inactivity"),
+                     (VERIFICATION, "A session verification error occurred")):
+    if not os.path.exists(path):
+      print(f"skip  no fixture {path}")
+      continue
+    ok(f"matched: {what}", bool(matches(path)["session_error"]))
 
 def test_the_dialog_is_recognised():
   if not os.path.exists(DIALOG):
@@ -105,9 +124,15 @@ def test_the_walk_back_is_bounded_and_resumes():
 
 def test_the_button_sits_where_the_dialog_draws_it():
   bx, by = constants.SESSION_ERROR_BUTTON_MOUSE_POS
-  # Measured on the capture: the button's outline spans x 434-671, y 672-735.
+  # Measured on both captures, which agree to the pixel: x 434-671, y 672-735.
   ok("the press lands inside the button", 434 < bx < 671 and 672 < by < 735,
      f"({bx},{by})")
+  # The template *is* the button now, so unlike the message it replaced it can
+  # be clicked at its own centre - and a drifting dialog would take the press
+  # with it rather than leaving it behind.
+  ok("and the template is the button, not the message",
+     "title_screen_btn" in E.templates["session_error"],
+     E.templates["session_error"])
   # The title tap is the one fixed point of the startup walk, and it is outside
   # the game panel, so a press that missed cannot hit anything.
   tx, _ = constants.TITLE_SCREEN_TAP_MOUSE_POS
@@ -117,6 +142,7 @@ def test_the_button_sits_where_the_dialog_draws_it():
 
 if __name__ == "__main__":
   test_the_template_is_registered()
+  test_both_wordings_are_recognised()
   test_the_dialog_is_recognised()
   test_ordinary_screens_do_not_match()
   test_the_branch_runs_before_the_home_screen_stop()

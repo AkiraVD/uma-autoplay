@@ -31,15 +31,26 @@ rarity, and the server's pickers. Two uses are still open:
 ## Untested paths, each waiting on a screen that has not appeared
 
 - **`unity_begin_showdown`'s settle delay** against a live Team Zenith screen.
-- **The `Session Error` walk-back**, against a live dialog. Handled since
-  2026-09-22: the dialog is recognised by template
-  (`assets/ui/session_error.png`, 9 positives at 1.000 against a best negative
-  of 0.577 over 1998 frames) and the branch presses `Title Screen` (553,704),
-  taps the title at (960,940) and hands the reload to `RESUMING_CAREER`, which
-  is the date-changed path's own proven walk. What is unproven is only the two
-  waits - 10s for the reload and 12s after the title tap - which are the
-  uma-launch skill's settle figures rather than anything measured here.
-  Recognition needs no further work; timing might.
+- **The title-screen walk-back**, against a live dialog. Recognition is
+  settled: keyed on the `Title Screen` button (`assets/ui/title_screen_btn.png`,
+  5 positives at 1.000 against a best negative of 0.700 over 360 frames), which
+  covers every wording the dialog has. What is unproven is the two waits - 10s
+  for the reload and 12s after the title tap - which are the uma-launch skill's
+  settle figures rather than anything measured here.
+
+  **It has been keyed wrong twice, and the second time cost a career.** A pixel
+  gate looking for a green button, when this one is white; then the message
+  line, which was blind to a second wording four days later. On 2026-09-23 at
+  17:57 the game raised **"Session Verification Error - A session verification
+  error occurred. Returning to title screen."** during a Lessons confirmation
+  at Senior Late Dec. The message template scored **0.544**, nothing in the
+  dispatch dict matched at all, `cancel_btn` took the Lessons Cancel underneath
+  six times, a phantom Retry spent an Alarm Clock, and the loop blind-tapped
+  for **41 minutes** before `LOBBY_LOST_LIMIT` stopped it at 18:39:15.
+
+  The generalisation worth keeping: **match what you are going to click.** The
+  wording above a button is free to change and did; the button did not, to the
+  pixel - x 434-671, y 672-735 in both variants.
 
 Cleared, kept briefly as a record of what the evidence was:
 

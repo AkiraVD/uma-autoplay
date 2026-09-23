@@ -196,13 +196,22 @@ templates = {
   # the home screen, with the career still there behind "Continue Career".
   "date_changed": "assets/ui/date_changed.png",
   "continue_career": "assets/ui/continue_career.png",
-  # "Session Error - Returning to Title screen due to inactivity.", raised after
-  # the game has sat idle for hours. Its single "Title Screen" button leaves the
-  # generic dismisser nothing to take, so before this the loop fell through to
-  # blind taps that land on empty dialog body - a stall, not a loop, so the one
-  # repeating log line that gives a wedge away was absent too. Cut from the
-  # message line, so it must not be clicked at its own centre.
-  "session_error": "assets/ui/session_error.png",
+  # The game's "go back to the title screen" dialog, in every wording it has.
+  # A single "Title Screen" button leaves the generic dismisser nothing to take,
+  # so without this the loop falls through to blind taps that land on empty
+  # dialog body - a stall, not a loop, so the one repeating log line that gives
+  # a wedge away is absent too.
+  #
+  # Keyed on the **button**, not on the message. The first version matched the
+  # sentence "Returning to Title screen due to inactivity." and was blind to
+  # "A session verification error occurred." four days later - a different
+  # header (Session Verification Error) and a different body, scoring 0.544
+  # against the message template. That one cost 41 minutes of blind tapping, an
+  # Alarm Clock spent on a phantom Retry, and the career. The wording varies;
+  # the button does not, to the pixel - both variants put it at x 434-671,
+  # y 672-735. 5 positives at 1.000 against a best negative of 0.700 over 360
+  # frames. It *is* the click target, unlike the message it replaced.
+  "session_error": "assets/ui/title_screen_btn.png",
   # Grand Concert. The concert screen replaces the lobby after each half-year's
   # last turn and has no Tazuna hint and no Back, so the lobby recovery used to
   # be all that saw it - and its alternate blind tap, DIALOG_ADVANCE_ALT, lands
