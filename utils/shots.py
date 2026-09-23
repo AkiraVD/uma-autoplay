@@ -20,7 +20,7 @@ import re
 # longest burst was twenty clicks.
 KEEP = 30
 
-# `click_174924.png` and nothing else. Anchored at both ends on purpose: a
+# `type_174924.png` and nothing else. Anchored at both ends on purpose: a
 # `click_notes.png` somebody saved by hand is not one of these, and neither is
 # anything in a subdirectory.
 STAMPED = r"^%s\d{6}\.png$"

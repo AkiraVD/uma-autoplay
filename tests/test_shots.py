@@ -82,8 +82,11 @@ def test_both_writers_call_it():
   ok("health prunes after saving its frame",
      health.index('img.save(path)') < health.index('shots.prune(SHOTS, "health_")'))
   umatool = open(os.path.join("tools", "umatool.py"), encoding="utf-8").read()
-  ok("umatool prunes after a click's capture",
-     'shots.prune(SHOTS, "click_")' in umatool)
+  # `click` captures nothing any more - the Tools tab refreshes its own screen
+  # instead of waiting for a frame - so `type` is umatool's frame writer.
+  typed = umatool[umatool.index("def cmd_type"):umatool.index("def cmd_scan")]
+  ok("umatool prunes after a type's capture",
+     typed.index('_grab(out)') < typed.index('shots.prune(SHOTS, "type_")'))
   ok("and the cap is a number a session can work with",
      isinstance(shots.KEEP, int) and 10 <= shots.KEEP <= 200, str(shots.KEEP))
 

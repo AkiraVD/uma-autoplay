@@ -81,6 +81,9 @@ const TYPE: Tool = { name: "type", label: "Type text", hint: "Type into the fiel
 const MAX_TYPE = 120;
 
 const POLL_MS = 1500;
+// While a job runs, poll fast: the picker only reloads the screen once the job
+// is over, so this interval is most of the wait between a tap and seeing it.
+const BUSY_POLL_MS = 400;
 const CARD = "bg-card p-5 rounded-xl shadow-lg border border-border/20";
 
 function duration(job: Job) {
@@ -203,13 +206,24 @@ export default function ToolsView() {
     }
   }, []);
 
+  const job = status?.job ?? null;
+  const busy = job?.state === "running";
+
   useEffect(() => {
     refresh();
-    const id = setInterval(refresh, POLL_MS);
+    const id = setInterval(refresh, busy ? BUSY_POLL_MS : POLL_MS);
     return () => clearInterval(id);
-  }, [refresh]);
+  }, [refresh, busy]);
 
-  const job = status?.job ?? null;
+  // The key the screen picker reloads on. It advances only when a job *ends*:
+  // keying it on the running job too meant every tap grabbed a frame from
+  // before the click and then sat on it, which read as the tap not landing.
+  const settled = job && !busy ? `${job.id}:${job.state}` : null;
+  const [screenKey, setScreenKey] = useState("idle");
+  useEffect(() => {
+    if (settled) setScreenKey(settled);
+  }, [settled]);
+
   const lineCount = job?.lines.length ?? 0;
   useEffect(() => {
     if (outputRef.current) outputRef.current.scrollTop = outputRef.current.scrollHeight;
@@ -234,7 +248,6 @@ export default function ToolsView() {
     refresh();
   };
 
-  const busy = job?.state === "running";
   const botRunning = status?.bot_running ?? false;
 
   // unready: the tool is missing an input it needs, like a point to click.
@@ -301,7 +314,7 @@ export default function ToolsView() {
                         </DialogDescription>
                       </DialogHeader>
                       <ScreenPicker
-                        reloadKey={`${job?.id ?? "none"}:${job?.state ?? "idle"}`}
+                        reloadKey={screenKey}
                         picked={parsePoint(at)}
                         onPick={(x, y) => setAt(`${x},${y}`)}
                       />

@@ -474,17 +474,19 @@ def cmd_advance(a):
 
 
 def cmd_click(a):
+  """Click one point, and capture nothing.
+
+  It used to wait two seconds and save a PNG. The Tools tab reloads its own
+  live screen (/tools/screen.jpg) as soon as the job ends, so that wait was
+  two seconds of showing a frame from before the click. From the CLI, take the
+  frame with `shot` afterwards.
+  """
   import utils.control as control
   x, y = (int(v) for v in a.at.split(","))
   control.moveTo(960, 540)
   time.sleep(0.15)
   control.click(x, y)
-  time.sleep(a.after)
-  out = os.path.join(SHOTS, time.strftime("click_%H%M%S.png"))
-  _grab(out)
-  # One of these per press adds up fast during a debugging session.
-  shots.prune(SHOTS, "click_")
-  print(f"clicked ({x},{y}) -> {out}")
+  print(f"clicked ({x},{y})")
 
 
 def cmd_type(a):
@@ -505,6 +507,8 @@ def cmd_type(a):
   time.sleep(a.after)
   out = os.path.join(SHOTS, time.strftime("type_%H%M%S.png"))
   _grab(out)
+  # One of these per press adds up fast during a debugging session.
+  shots.prune(SHOTS, "type_")
   print(f"typed {len(a.text)} character(s) -> {out}")
 
 
@@ -600,9 +604,8 @@ def main():
   s.add_argument("--min", type=float, default=0.88)
   s.set_defaults(func=cmd_watch)
 
-  s = sub.add_parser("click", help="click a point, then capture")
+  s = sub.add_parser("click", help="click a point (capture with `shot` after)")
   s.add_argument("at", help="X,Y")
-  s.add_argument("--after", type=float, default=2.0)
   s.set_defaults(func=cmd_click)
 
   s = sub.add_parser("type", help="type text into the focused field, then capture")
