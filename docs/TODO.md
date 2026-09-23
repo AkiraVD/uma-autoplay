@@ -182,9 +182,23 @@ Worth deriving properly if the behaviour ever looks wrong:
   brightness readings were **identical** to the first run's, 0.499 empty and
   0.797 filled, on a different deck and a different day.
 
-  Still open: `restore_tp` remains unexercised. TP was 100/100 on the first
-  start and had regenerated to 55 by the second (`T P 55 25`), both comfortably
-  over the 30 a career costs, so the short-of-TP prompt has never appeared.
+  **`restore_tp` fired 2026-09-23 at 11:18**, which closes the last unexercised
+  branch. The spark reroll three minutes earlier had spent a bottle of its own
+  (152 -> 151) and left TP under 30, so pressing Start Career! raised the
+  prompt; the walk read the stock, spent one bottle against a floor of 50,
+  confirmed the quantity dialog, closed Recover TP and pressed Start Career!
+  again:
+
+      11:18:25  Short of TP to start a career; opening Recover TP.
+      11:18:27  Spending 1 of 151 TP bottles to start a career.
+      11:18:36  Start Career! face brightness 0.797 -> enabled
+      11:18:41  Final Confirmation: Spend 30 TP to begin training? T P 55 25
+      11:18:50  Career started.
+
+  **Three careers have now been started by the loop** - 01:12, 09:15 and 11:17 -
+  and the run from 07:54 to 11:18 went resume -> finish -> start -> finish ->
+  start with nobody watching. Every one of them read the same two brightness
+  values, 0.499 and 0.797.
 - **Nothing reads which card is already in the Friends slot.** If the slot is
   filled and `Start Career!` is live, the walk presses it without checking
   *which* card is there. Harmless when the slot is empty every career, which is

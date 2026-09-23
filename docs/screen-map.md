@@ -1288,8 +1288,29 @@ matches `to_home` alone, the spark frames match `sparks` alone, and only
 `game_home.png` carries `team_rank`/`game_nav`. The bot therefore always walks
 Career Complete -> skills -> sparks -> To Home before the walk can begin.
 
-The `restore_tp` branch is still unexercised: TP was 100/100 on the first start
-and 55 on the second, both over the 30 a career costs.
+#### The TP branch, exercised at last (2026-09-23 11:18)
+
+It took a spark reroll to get there. That career's reroll spent a bottle of its
+own at 11:14:58 (152 -> 151) and left TP under the 30 a career costs, so
+pressing Start Career! raised the prompt instead of the Final Confirmation:
+
+```
+11:18:19  Start Career! (Support Formation).
+11:18:25  Short of TP to start a career; opening Recover TP.
+11:18:27  Spending 1 of 151 TP bottles to start a career.
+11:18:32  Closing Recover TP.
+11:18:36  Start Career! face brightness 0.797  -> still enabled
+11:18:36  Start Career! (Support Formation).
+11:18:41  Final Confirmation: Spend 30 TP to begin training? T P 55 25
+11:18:50  Career started.
+```
+
+Eleven seconds, and the shape is worth noting: the branch does **not** try to
+remember where it was. It restores, returns to the loop, and the next pass finds
+Support Formation again and presses Start Career! a second time - the reader
+loop absorbing a detour with no state to get wrong. `restore_tp` shares its two
+assets and its `tp_bottle_floor` with `core/sparks.py`, and both spent a bottle
+within four minutes of each other here, from 152 down to 150.
 
 ### Verified end-to-end (2026-09-17, career 13)
 
