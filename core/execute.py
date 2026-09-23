@@ -1062,6 +1062,8 @@ def career_lobby():
   not_in_lobby = 0
   blank_panel = 0
   session_errors = 0
+  # "Consecutive" is per bot run: a stop and start begins the count again.
+  state.CAREERS_STARTED = 0
   # Set once the back-out probes have found no button to press, so the dialogue
   # tap can run every cycle rather than every fifth. Cleared whenever a button
   # is found or the lobby comes back, so each new unknown screen is probed
@@ -1367,7 +1369,18 @@ def career_lobby():
       # stopped at the home screen three times inside ten minutes. With
       # career_start on, walk the setup screens and begin the next one.
       if state.CAREER_START_ENABLED:
+        # The cap is counted in careers *started here*, not careers played: one
+        # already in progress when the bot started is nobody's doing but the
+        # person's, and counting it would make "run 3" mean two.
+        if state.CAREER_START_MAX and state.CAREERS_STARTED >= state.CAREER_START_MAX:
+          info(f"Started {state.CAREERS_STARTED} career(s) this run, the"
+               f" configured limit. Stopping at the home screen.")
+          return
         if career_start.start():
+          state.CAREERS_STARTED += 1
+          limit = (f" of {state.CAREER_START_MAX}" if state.CAREER_START_MAX
+                   else "")
+          info(f"Career {state.CAREERS_STARTED}{limit} started by the bot.")
           SEEN_LOBBY = False
           RESUMING_CAREER = False
           state.apply_scenario(new_career=True)

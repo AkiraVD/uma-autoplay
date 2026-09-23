@@ -31,7 +31,8 @@
   "tp_bottle_floor": 50,
   "career_start": {
     "enabled": false,
-    "borrow_card": ""
+    "borrow_card": "",
+    "max_consecutive": 0
   },
   "position_selection_enabled": false,
   "enable_positions_by_race": false,

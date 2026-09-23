@@ -20,6 +20,7 @@ export default function SkillSection({ config, updateConfig }: Props) {
   // Presets saved before this existed don't have it.
   const rerollSparks = config.reroll_sparks ?? true;
   const careerStart = config.career_start ?? { enabled: false, borrow_card: "" };
+  const maxConsecutive = careerStart.max_consecutive ?? 0;
 
   return (
     <div className="bg-card p-6 rounded-xl shadow-lg border border-border/20">
@@ -91,6 +92,23 @@ export default function SkillSection({ config, updateConfig }: Props) {
           <span className="block text-sm text-muted-foreground mt-1">
             The Friends slot is the one thing a new career forgets, and a deck without it will not start. After the
             first career the bot reuses whatever it borrowed last time; this is only the seed for the first one.
+          </span>
+        </div>
+        <div className="w-fit">
+          <label htmlFor="max-consecutive" className="block text-lg font-medium">
+            Careers per run
+          </label>
+          <Input id="max-consecutive" className="w-24 mt-1" type="number" min={0}
+            value={maxConsecutive}
+            onChange={(e) =>
+              updateConfig("career_start", {
+                ...careerStart,
+                max_consecutive: Number.isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber,
+              })} />
+          <span className="block text-sm text-muted-foreground mt-1">
+            Stop after starting this many careers, counted from when the bot was last started. <strong>0</strong> is no
+            limit. A career already in progress when you start the bot is not counted &mdash; it was not one of these.
+            The Live Log header shows the running count.
           </span>
         </div>
       </div>

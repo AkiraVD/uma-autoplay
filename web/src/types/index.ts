@@ -39,6 +39,8 @@ export const GrandConcertSchema = z.object({
 export const CareerStartSchema = z.object({
   enabled: z.boolean(),
   borrow_card: z.string(),
+  // 0 = no limit. Counts careers the bot starts itself, per bot run.
+  max_consecutive: z.number().optional(),
 });
 
 export const ConfigSchema = z.object({

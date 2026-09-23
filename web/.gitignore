@@ -1,5 +1,7 @@
-# Logs
-logs
+# Logs. Anchored: a bare `logs` matches any directory of that name at any
+# depth, which silently kept src/components/logs/LogView.tsx - the Live Log
+# view - out of the repo entirely. Only web/logs/ is meant here.
+/logs
 *.log
 npm-debug.log*
 yarn-debug.log*

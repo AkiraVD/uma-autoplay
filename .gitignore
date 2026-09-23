@@ -18,8 +18,11 @@ data/support_cards_owned.json
 # Design canvas working files
 design/
 
-# Logs
-logs
+# Logs. Anchored to the repo root on purpose: a bare `logs` matches a
+# directory of that name at any depth, and it was quietly keeping
+# web/src/components/logs/ - the Live Log view's source - out of the repo.
+# tests/logs/ has its own rule above.
+/logs
 *.log
 npm-debug.log*
 yarn-debug.log*

@@ -82,6 +82,10 @@ REROLL_SPARKS = True
 TP_BOTTLE_FLOOR = 50
 CAREER_START_ENABLED = False
 CAREER_START_BORROW_CARD = ""
+CAREER_START_MAX = 0
+# Careers career_start has begun since the bot was last started. Live state,
+# not config: career_lobby() resets it and the config page reads it back.
+CAREERS_STARTED = 0
 
 def load_config():
   with open("config.json", "r", encoding="utf-8") as file:
@@ -122,6 +126,11 @@ def reload_config():
   career_start = config.get("career_start", {}) or {}
   CAREER_START_ENABLED = career_start.get("enabled", False)
   CAREER_START_BORROW_CARD = career_start.get("borrow_card", "")
+  # How many careers one run may start before it stops on purpose. 0 is no
+  # limit, which is what an overnight run wants; a number is for leaving it
+  # going a fixed distance and finding the game where it stopped.
+  global CAREER_START_MAX
+  CAREER_START_MAX = career_start.get("max_consecutive", 0)
   STAT_CAPS = config["stat_caps"]
   IS_AUTO_BUY_SKILL = config["skill"]["is_auto_buy_skill"]
   SKILL_PTS_CHECK = config["skill"]["skill_pts_check"]

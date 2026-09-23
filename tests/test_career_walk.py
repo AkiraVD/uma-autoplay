@@ -199,6 +199,62 @@ def test_the_walk_is_bounded_and_off_by_default():
      template["career_start"]["enabled"] is False)
   ok("state reads it", hasattr(state, "CAREER_START_ENABLED"))
 
+def test_the_consecutive_limit():
+  """How many careers one run may start, and who counts as one.
+
+  The limit counts careers the bot *starts itself*. A career already in
+  progress when the bot was started is not one of them, so "3" means three
+  started here, not three played - and the Live Log's count has to be read off
+  the same number or the two disagree.
+  """
+  template = json.load(open("config.template.json", encoding="utf-8"))
+  ok("max_consecutive is in the config schema",
+     "max_consecutive" in template["career_start"])
+  ok("and defaults to no limit", template["career_start"]["max_consecutive"] == 0)
+  ok("state reads it", hasattr(state, "CAREER_START_MAX"))
+  ok("and carries the running count", hasattr(state, "CAREERS_STARTED"))
+
+  source = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
+  branch = source[source.index('if matches["team_rank"] or matches["game_nav"]'):]
+  branch = branch[:branch.index('if click(boxes=matches["to_home"]')]
+  # The guard has to sit before the walk, or the run overshoots by one career
+  # and spends 30 TP doing it.
+  guard = branch.index("CAREERS_STARTED >= state.CAREER_START_MAX")
+  ok("the limit is checked before a career is started",
+     guard < branch.index("career_start.start()"))
+  ok("and 0 means no limit",
+     "state.CAREER_START_MAX and" in branch)
+  ok("the count rises only on a career that really started",
+     branch.index("career_start.start()") < branch.index("state.CAREERS_STARTED += 1"))
+  ok("the run resets the count",
+     "state.CAREERS_STARTED = 0" in source)
+
+def test_the_log_page_is_told_the_count():
+  """The Live Log header reads the same number the limit counts."""
+  server = open(os.path.join("server", "main.py"), encoding="utf-8").read()
+  payload = server[server.index("def log_data("):]
+  payload = payload[:payload.index("return data")]
+  for key in ("CAREERS_STARTED", "CAREER_START_MAX", "CAREER_START_ENABLED"):
+    ok(f"/logs/data carries {key}", key in payload)
+  view = os.path.join("web", "src", "components", "logs", "LogView.tsx")
+  if not os.path.exists(view):
+    print("skip  no LogView.tsx")
+    return
+  page = open(view, encoding="utf-8").read()
+  ok("the page types the careers field", "careers?:" in page)
+  ok("and renders it", "careerLabel" in page)
+  # It must not number from the career it was handed: started+1 would read one
+  # out for the whole run.
+  ok("it shows the count, not a position", "careers.started + 1" not in page)
+
+def test_the_live_log_source_is_in_the_repo():
+  """LogView.tsx was ignored by a bare `logs` rule in both .gitignore files,
+  which matches a directory of that name at any depth - so the Live Log view's
+  only source lived outside the repo while its build output was committed."""
+  for path in (".gitignore", os.path.join("web", ".gitignore")):
+    rules = [ln.strip() for ln in open(path, encoding="utf-8")]
+    ok(f"{path} anchors its logs rule", "logs" not in rules, "bare 'logs' rule")
+
 def test_the_loop_only_starts_a_career_when_told_to():
   source = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
   branch = source[source.index('if matches["team_rank"] or matches["game_nav"]'):]
@@ -221,6 +277,9 @@ if __name__ == "__main__":
   test_an_enabled_start_button_reads_as_enabled()
   test_the_remembered_card_beats_the_configured_one()
   test_the_walk_is_bounded_and_off_by_default()
+  test_the_consecutive_limit()
+  test_the_log_page_is_told_the_count()
+  test_the_live_log_source_is_in_the_repo()
   test_the_loop_only_starts_a_career_when_told_to()
   print()
   if failures:

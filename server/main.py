@@ -205,6 +205,13 @@ def log_data():
     since = None
   data["status"] = {"state": "running" if state.is_bot_running else "stopped",
                     "secs_since_log": since}
+  # Which career of the run this is, for the Live Log header. `limit` is 0 when
+  # career_start is set to run without one, and `started` counts only the
+  # careers the bot began itself - a career already in progress when the bot
+  # started is not one of them.
+  data["careers"] = {"started": state.CAREERS_STARTED,
+                     "limit": state.CAREER_START_MAX,
+                     "enabled": state.CAREER_START_ENABLED}
   return data
 
 # main.py hands over its start/stop function at startup. The server cannot import
