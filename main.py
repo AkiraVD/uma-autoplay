@@ -12,6 +12,7 @@ from utils.log import info, warning, error, debug
 
 from core.execute import career_lobby
 import core.state as state
+import core.notify as notify
 from server.main import app
 import server.main as server_main
 from update_config import update_config
@@ -158,6 +159,14 @@ if __name__ == "__main__":
   # and reading those values across has to happen while they are still there.
   state.migrate_bot_settings()
   update_config()
+  # bot.json and telegram.json are not part of the config, so nothing else
+  # loads them until reload_config() runs at the first bot start. Load them
+  # here so the config page and the Telegram listener are right before that.
+  state.load_bot()
+  state.load_telegram()
+  # Answers /health from the phone. Waits for Telegram to be switched on rather
+  # than needing a restart when it is.
+  notify.listen()
   start_log_viewer()
   threading.Thread(target=hotkey_listener, daemon=True).start()
   # The config page's Start/Stop button, which works where a key press cannot

@@ -169,6 +169,24 @@ export default function TelegramView() {
       </div>
 
       <div className={CARD}>
+        <h3 className="text-xl font-semibold mb-3">What you can ask it</h3>
+        <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
+          <li>
+            <code className="text-foreground">/health</code> &mdash; the same check the terminal runs: whether the bot
+            is up and toggled on, whether the turn is still advancing, its recent warnings, the display and the game
+            window.
+          </li>
+          <li>
+            <code className="text-foreground">/help</code> &mdash; the list of commands.
+          </li>
+        </ul>
+        <p className="text-sm text-muted-foreground mt-4">
+          Only the chat ID above is answered &mdash; anyone can find a bot by its name and message it, and nobody else
+          gets to ask this machine anything.
+        </p>
+      </div>
+
+      <div className={CARD}>
         <h3 className="text-xl font-semibold mb-3">What gets sent</h3>
         <ul className="flex flex-col gap-3 text-sm text-muted-foreground">
           <li>

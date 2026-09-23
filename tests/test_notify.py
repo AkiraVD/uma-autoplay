@@ -207,6 +207,62 @@ def test_the_test_button_cannot_disturb_anything():
   ok("and passes them as arguments instead",
      "token=" in endpoint and "chat_id=" in endpoint)
 
+def test_commands_answer_only_the_configured_chat():
+  """Anyone can find a bot by name and message it.
+
+  Nobody but the configured chat gets to ask this machine anything, and the
+  offset has to advance for ignored messages too - otherwise a stranger could
+  park one update at the head of the queue and the listener would fetch that
+  same update forever instead of ever reaching a real one.
+  """
+  use(chat="111")
+  sent = []
+  notify._post = lambda text, token=None, chat_id=None: (sent.append(text), None)[1]
+
+  def update(uid, chat_id, text):
+    return {"update_id": uid, "message": {"chat": {"id": chat_id}, "text": text}}
+
+  notify._offset = 0
+  answered = notify._process([update(10, 999, "/help")], SECRET, "111")
+  ok("a stranger gets no answer", answered == 0 and not sent)
+  ok("but their update is still stepped over", notify._offset == 11,
+     str(notify._offset))
+
+  answered = notify._process([update(11, 111, "/help")], SECRET, "111")
+  ok("the configured chat is answered", answered == 1 and len(sent) == 1)
+  ok("and the offset advances", notify._offset == 12, str(notify._offset))
+
+  # Telegram sends the id as a number; the config keeps it as a string.
+  sent.clear()
+  ok("a numeric chat id still matches the configured string",
+     notify._process([update(12, 111, "/help")], SECRET, "111") == 1)
+
+  sent.clear()
+  notify._process([update(13, 111, "chatter")], SECRET, "111")
+  ok("ordinary chatter is not answered", not sent)
+
+def test_the_commands_themselves():
+  ok("/help lists the commands",
+     all(c in notify._handle("/help") for c in notify.COMMANDS))
+  ok("/start is treated as /help", notify._handle("/start") == notify._handle("/help"))
+  # Telegram appends @thebotname when a command is used in a group.
+  health = notify._handle("/health@whatever_bot")
+  ok("/health works in its group form", bool(health) and "health" in health.lower())
+  ok("and reports the real check", "uma-auto health" in health, health[:40])
+  ok("its answer fits a message", len(health) < notify.MAX_LEN, str(len(health)))
+  for junk in ("", None, "hello", "/nope"):
+    ok(f"{junk!r} gets no reply", notify._handle(junk) is None)
+
+def test_the_listener_starts_and_survives():
+  ok("listen() returns a running daemon thread",
+     notify.listen().is_alive() and notify.listen().daemon)
+  ok("and calling it twice does not start a second",
+     notify.listen() is notify.listen())
+  main = open("main.py", encoding="utf-8").read()
+  ok("the process starts it", "notify.listen()" in main)
+  ok("after loading the settings it needs",
+     main.index("state.load_telegram()") < main.index("notify.listen()"))
+
 def test_the_settings_live_in_their_own_file():
   """Not in the config, and that is the point.
 
@@ -277,6 +333,9 @@ if __name__ == "__main__":
   test_long_messages_are_trimmed()
   test_the_four_events_are_wired()
   test_the_test_button_cannot_disturb_anything()
+  test_commands_answer_only_the_configured_chat()
+  test_the_commands_themselves()
+  test_the_listener_starts_and_survives()
   test_the_settings_live_in_their_own_file()
   test_the_page_talks_to_that_file()
   print()
