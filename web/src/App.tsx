@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import rawConfig from "../../config.json";
 import { useConfig } from "./hooks/useConfig";
 import { useConfigStore } from "./hooks/useConfigStore";
+import { configTitle } from "./utils/configTitle";
 import ConfigStore from "./components/config-store/ConfigStore";
 
 import type { Config } from "./types";
 
 import { Button } from "./components/ui/button";
-import { Input } from "./components/ui/input";
 
 import EventSection from "./components/event/EventSection";
 import RaceScheduleSection from "./components/race-schedule/RaceScheduleSection";
@@ -64,7 +64,14 @@ function App() {
   const [storeOpen, setStoreOpen] = useState(false);
   const store = useConfigStore({ config, setConfig });
 
-  const { config_name } = config;
+  // The title is read off the config rather than typed into it, so it can't
+  // describe a trainee the config no longer trains. It is still stored, because
+  // the preset list and the bot's own startup line both quote it.
+  const config_name = configTitle(config);
+  useEffect(() => {
+    if (config.config_name !== config_name)
+      setConfig((prev) => ({ ...prev, config_name }));
+  }, [config.config_name, config_name, setConfig]);
 
   const updateConfig = <K extends keyof typeof config>(
     key: K,
@@ -121,14 +128,12 @@ function App() {
         ) : (
         <>
         <div className="mx-2 flex flex-wrap items-center gap-2 rounded-xl border border-border/20 bg-card p-3 shadow-lg">
-          <Input
-            aria-label="Config Name"
-            title="Config Name"
-            className="h-9 w-full bg-background sm:w-auto sm:min-w-48 sm:flex-1"
-            placeholder="Config Name"
-            value={config_name}
-            onChange={(e) => updateConfig("config_name", e.target.value)}
-          />
+          <div
+            title="Trainee, run style and distances - taken from the settings below"
+            className="flex h-9 w-full min-w-0 items-center truncate rounded-md border border-input bg-background px-3 text-base font-medium sm:w-auto sm:min-w-48 sm:flex-1 md:text-sm"
+          >
+            {config_name}
+          </div>
           <Button
             variant="outline"
             onClick={() => {
