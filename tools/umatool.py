@@ -35,7 +35,9 @@ from PIL import Image, ImageGrab
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import shots  # noqa: E402
 import utils.window as window  # noqa: E402
 
 SHOTS = os.path.join(REPO, "shots")
@@ -481,6 +483,8 @@ def cmd_click(a):
   time.sleep(a.after)
   out = os.path.join(SHOTS, time.strftime("click_%H%M%S.png"))
   _grab(out)
+  # One of these per press adds up fast during a debugging session.
+  shots.prune(SHOTS, "click_")
   print(f"clicked ({x},{y}) -> {out}")
 
 

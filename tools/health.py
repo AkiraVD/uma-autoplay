@@ -40,6 +40,7 @@ REPO = os.path.dirname(TOOLS)
 sys.path.insert(0, REPO)
 sys.path.insert(0, TOOLS)
 
+import shots  # noqa: E402
 from logserver import tail  # noqa: E402
 
 LOG = os.path.join(REPO, "logs", "log.txt")
@@ -232,6 +233,8 @@ def screen_report():
   os.makedirs(SHOTS, exist_ok=True)
   path = os.path.join(SHOTS, time.strftime("health_%H%M%S.png"))
   img.save(path)
+  # Every check writes one of these, including every /health from a phone.
+  shots.prune(SHOTS, "health_")
   screen = cv2.cvtColor(np.asarray(img.convert("RGB")), cv2.COLOR_RGB2BGR)
   seen = []
   for label, rel in PROBES:
