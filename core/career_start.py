@@ -426,6 +426,7 @@ def start():
         # career_lobby's to drive, exactly as for one started by hand.
         career_uuid = uuid.uuid4().hex
         info(f"Career started (uuid {career_uuid}).")
+        state.CAREER_UUID = career_uuid
         # Recorded whether or not this walk did the borrowing: the row is the
         # career, and the count has to include a career that started on a slot
         # somebody else had already filled.

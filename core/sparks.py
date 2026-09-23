@@ -281,6 +281,9 @@ def _choose(original):
   return _keep(f"{best[0] or 'the better set'}: blue {blue}*, {whites} white spark(s)")
 
 def _keep(why):
+  # The end-of-career notification reports what was kept, and this is the only
+  # place that knows it.
+  state.LAST_SPARKS = why
   if not _press(CONFIRM_BTN, region=constants.SCREEN_BOTTOM_REGION,
                 text=f"Keeping the sparks ({why})."):
     warning("On the spark screen but could not find Confirm; leaving it alone"

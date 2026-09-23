@@ -84,6 +84,15 @@ CAREER_START_ENABLED = False
 CAREER_START_BORROW_CARD = ""
 CAREER_START_MAX = 0
 RESTART_ON_FREEZE = False
+TELEGRAM_ENABLED = False
+TELEGRAM_TOKEN = ""
+TELEGRAM_CHAT_ID = ""
+# The last stats and spark set the run read, so the end-of-career message can
+# report them without re-reading a screen that has already gone.
+LAST_STATS = None
+LAST_SPARKS = None
+# The career the bot is playing, when it started that career itself.
+CAREER_UUID = None
 # Careers career_start has begun since the bot was last started. Live state,
 # not config: career_lobby() resets it and the config page reads it back.
 CAREERS_STARTED = 0
@@ -137,6 +146,14 @@ def reload_config():
   # client that is only slow would cost whatever was on screen.
   global RESTART_ON_FREEZE
   RESTART_ON_FREEZE = config.get("restart_on_freeze", False)
+  # Telegram, for following a run nobody is watching. The token is the one
+  # secret in this config: never log it, and note that saved presets under
+  # uma_configs/ carry it too (both are gitignored).
+  global TELEGRAM_ENABLED, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
+  telegram = config.get("telegram", {}) or {}
+  TELEGRAM_ENABLED = telegram.get("enabled", False)
+  TELEGRAM_TOKEN = (telegram.get("token") or "").strip()
+  TELEGRAM_CHAT_ID = str(telegram.get("chat_id") or "").strip()
   STAT_CAPS = config["stat_caps"]
   IS_AUTO_BUY_SKILL = config["skill"]["is_auto_buy_skill"]
   SKILL_PTS_CHECK = config["skill"]["skill_pts_check"]

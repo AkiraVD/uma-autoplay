@@ -1046,6 +1046,9 @@ def do_something(results):
   year = check_current_year()
   current_stats = stat_state()
   info(f"Current stats: {current_stats}")
+  # Kept for the end-of-career notification: by the time the career is over the
+  # lobby that shows these is gone, and this is the last turn that had them.
+  state.LAST_STATS = current_stats
   game_caps = stat_caps_state()
   info(f"Stat caps on screen: {game_caps}")
   # Published before any scorer runs: gain_score reads it to discount gains

@@ -23,22 +23,24 @@ import LogView from "./components/logs/LogView";
 import ThemeToggle from "./components/ThemeToggle";
 import RacePlanView from "./components/race-plan/RacePlanView";
 import ToolsView from "./components/tools/ToolsView";
+import TelegramView from "./components/telegram/TelegramView";
 import BotToggle from "./components/BotToggle";
 
-type View = "config" | "logs" | "plan" | "tools";
+type View = "config" | "logs" | "plan" | "tools" | "telegram";
 
 const VIEWS: [View, string][] = [
   ["config", "Configuration"],
   ["logs", "Live Log"],
   ["plan", "Race Plan"],
   ["tools", "Tools"],
+  ["telegram", "Telegram"],
 ];
 
 function App() {
   const defaultConfig = rawConfig as Config;
-  // "#logs", "#plan" and "#tools" open those views straight away, so a bookmark
-  // can land on them. A shared plan arrives as "#plan=<settings>", so match the
-  // prefix rather than the whole hash.
+  // "#logs", "#plan", "#tools" and "#telegram" open those views straight away,
+  // so a bookmark can land on them. A shared plan arrives as
+  // "#plan=<settings>", so match the prefix rather than the whole hash.
   const [view, setView] = useState<View>(() =>
     window.location.hash === "#logs"
       ? "logs"
@@ -46,7 +48,9 @@ function App() {
         ? "plan"
         : window.location.hash === "#tools"
           ? "tools"
-          : "config"
+          : window.location.hash === "#telegram"
+            ? "telegram"
+            : "config"
   );
   const showView = (next: View) => {
     setView(next);
@@ -108,6 +112,8 @@ function App() {
           <RacePlanView />
         ) : view === "tools" ? (
           <ToolsView />
+        ) : view === "telegram" ? (
+          <TelegramView config={config} updateConfig={updateConfig} />
         ) : (
         <>
         <div className="mx-2 flex flex-wrap items-center gap-2 rounded-xl border border-border/20 bg-card p-3 shadow-lg">

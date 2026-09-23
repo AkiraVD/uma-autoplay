@@ -33,6 +33,7 @@ import core.lessons as lessons
 import core.sparks as sparks
 import core.career_start as career_start
 import core.recover as recover
+import core.notify as notify
 
 templates = {
   "event": "assets/icons/event_choice_1.png",
@@ -737,6 +738,16 @@ def game_panel_blank(screen):
   panel = screen.crop((l, t, l + w, t + h)).convert("L")
   return ImageStat.Stat(panel).stddev[0] < BLANK_PANEL_STD
 
+def _stat_line(stats):
+  """"spd 1100  sta 604  pwr 812  guts 410  wit 733", or a note that there is
+  no reading. A dict repr is not something to read on a phone."""
+  if not isinstance(stats, dict) or not stats:
+    return "not read"
+  order = ("spd", "sta", "pwr", "guts", "wit")
+  known = [f"{k} {stats[k]}" for k in order if k in stats]
+  rest = [f"{k} {v}" for k, v in stats.items() if k not in order]
+  return "  ".join(known + rest) or "not read"
+
 def panel_digest(screen):
   """A fingerprint of the game panel, for spotting a client that has frozen.
 
@@ -1147,8 +1158,13 @@ def career_lobby():
         freeze_restarts += 1
         info(f"Restarting the game (attempt {freeze_restarts} of"
              f" {FREEZE_RESTART_LIMIT}).")
+        notify.send("The game client froze - closing it and starting it again"
+                    f" (attempt {freeze_restarts} of {FREEZE_RESTART_LIMIT}).")
         if not recover.restart_client():
+          notify.send("Could not restart the game. The bot has stopped and the"
+                      " career is waiting; the log says which step failed.")
           return
+        notify.send("Game restarted. Resuming the career.")
         # The career is still there, behind the home screen's Career button.
         # This is the same hand-off the daily reset and the Session Error
         # dialog make, and it is what stops the reload being read as a
@@ -1465,6 +1481,10 @@ def career_lobby():
           limit = (f" of {state.CAREER_START_MAX}" if state.CAREER_START_MAX
                    else "")
           info(f"Career {state.CAREERS_STARTED}{limit} started by the bot.")
+          notify.send(f"Career {state.CAREERS_STARTED}{limit} started\n"
+                      f"Trainee: {state.TRAINEE or 'as configured'}\n"
+                      f"Borrowed: {career_start.remembered_card()}\n"
+                      f"uuid: {state.CAREER_UUID}")
           SEEN_LOBBY = False
           RESUMING_CAREER = False
           state.apply_scenario(new_career=True)
@@ -1480,7 +1500,16 @@ def career_lobby():
       return
 
     # "Career Complete - To Home / Edit Team": the last click of a career.
-    if click(boxes=matches["to_home"], text="Leaving the finished career."):
+    if matches["to_home"]:
+      # Reported here rather than at the Career Complete screen: by now the
+      # skills have been bought and the sparks kept, so both are known. The
+      # stats are the last lobby's - the screens after it do not show them.
+      notify.send("Career finished\n"
+                  f"Stats: {_stat_line(state.LAST_STATS)}\n"
+                  f"Sparks: {state.LAST_SPARKS or 'not read'}"
+                  + (f"\nuuid: {state.CAREER_UUID}" if state.CAREER_UUID else ""))
+      state.LAST_SPARKS = None
+      click(boxes=matches["to_home"], text="Leaving the finished career.")
       sleep(3)
       continue
 

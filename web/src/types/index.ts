@@ -43,6 +43,13 @@ export const CareerStartSchema = z.object({
   max_consecutive: z.number().optional(),
 });
 
+// Telegram notifications. Optional so presets saved before it existed parse.
+export const TelegramSchema = z.object({
+  enabled: z.boolean(),
+  token: z.string(),
+  chat_id: z.string(),
+});
+
 export const ConfigSchema = z.object({
   config_name: z.string(),
   trainee: z.string(),
@@ -65,6 +72,7 @@ export const ConfigSchema = z.object({
   reroll_sparks: z.boolean(),
   career_start: CareerStartSchema.optional(),
   restart_on_freeze: z.boolean().optional(),
+  telegram: TelegramSchema.optional(),
   position_selection_enabled: z.boolean(),
   enable_positions_by_race: z.boolean(),
   preferred_position: z.string(),
