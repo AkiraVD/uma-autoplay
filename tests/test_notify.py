@@ -242,16 +242,50 @@ def test_commands_answer_only_the_configured_chat():
   ok("ordinary chatter is not answered", not sent)
 
 def test_the_commands_themselves():
-  ok("/help lists the commands",
-     all(c in notify._handle("/help") for c in notify.COMMANDS))
-  ok("/start is treated as /help", notify._handle("/start") == notify._handle("/help"))
+  help_text, help_photo = notify._handle("/help")
+  ok("/help lists the commands", all(c in help_text for c in notify.COMMANDS))
+  ok("and carries no picture", help_photo is None)
+  ok("/start is treated as /help", notify._handle("/start") == (help_text, None))
   # Telegram appends @thebotname when a command is used in a group.
-  health = notify._handle("/health@whatever_bot")
+  health, shot = notify._handle("/health@whatever_bot")
   ok("/health works in its group form", bool(health) and "health" in health.lower())
   ok("and reports the real check", "uma-auto health" in health, health[:40])
   ok("its answer fits a message", len(health) < notify.MAX_LEN, str(len(health)))
+  # The picture is the point of asking from a phone: it says *what* is wrong.
+  ok("it comes with the frame the check saved",
+     bool(shot) and os.path.exists(shot), str(shot))
+  ok("taken from the check's own output, not the newest file in shots/",
+     "screenshot:" in health)
+  ok("and the report fits in a caption, so it arrives as one message",
+     len(health) <= notify.CAPTION_LEN, f"{len(health)} of {notify.CAPTION_LEN}")
   for junk in ("", None, "hello", "/nope"):
     ok(f"{junk!r} gets no reply", notify._handle(junk) is None)
+
+def test_a_picture_that_will_not_send_does_not_eat_the_report():
+  """If sendPhoto fails the text still has to arrive: the whole point of
+  asking is the answer, and the frame is the bonus."""
+  use(chat="111")
+  posted, photos = [], []
+  notify._post = lambda text, token=None, chat_id=None: (posted.append(text), None)[1]
+  notify._send_photo = lambda path, caption=None, token=None, chat_id=None: (
+    photos.append(path), "no")[1]
+  notify._handle = lambda text: ("the report", "/tmp/frame.png")
+  notify._offset = 0
+  notify._process([{"update_id": 1, "message": {"chat": {"id": 111}, "text": "/health"}}],
+                  SECRET, "111")
+  ok("a refused photo still leaves the text sent", posted == ["the report"], str(posted))
+
+def test_an_oversized_frame_is_refused_not_sent():
+  import tempfile
+  with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+    f.write(b"x" * (notify.MAX_PHOTO_BYTES + 1))
+    big = f.name
+  try:
+    reason = notify._send_photo(big, None, SECRET, "111")
+    ok("an oversized frame is refused before any upload",
+       reason is not None and "too big" in reason, repr(reason))
+  finally:
+    os.unlink(big)
 
 def test_the_listener_starts_and_survives():
   ok("listen() returns a running daemon thread",
@@ -335,6 +369,8 @@ if __name__ == "__main__":
   test_the_test_button_cannot_disturb_anything()
   test_commands_answer_only_the_configured_chat()
   test_the_commands_themselves()
+  test_an_oversized_frame_is_refused_not_sent()
+  test_a_picture_that_will_not_send_does_not_eat_the_report()
   test_the_listener_starts_and_survives()
   test_the_settings_live_in_their_own_file()
   test_the_page_talks_to_that_file()

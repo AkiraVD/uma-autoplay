@@ -174,7 +174,8 @@ export default function TelegramView() {
           <li>
             <code className="text-foreground">/health</code> &mdash; the same check the terminal runs: whether the bot
             is up and toggled on, whether the turn is still advancing, its recent warnings, the display and the game
-            window.
+            window &mdash; <strong>with a screenshot of what is on screen</strong>, which is what tells you
+            <em>why</em> a turn stopped advancing.
           </li>
           <li>
             <code className="text-foreground">/help</code> &mdash; the list of commands.

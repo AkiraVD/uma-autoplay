@@ -25,6 +25,7 @@ import subprocess
 import sys
 import threading
 import time
+import uuid
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -189,6 +190,11 @@ POLL_SECONDS = 25
 # Tools tab already run, so the answer on the phone is the same text, and a
 # wedged check cannot take the bot's own process with it.
 HEALTH_TIMEOUT = 90
+# Telegram's caption limit. The health report has run to ~520 characters, so it
+# fits and the whole answer arrives as one photo with its text underneath.
+CAPTION_LEN = 1024
+# Well under Telegram's 10MB for sendPhoto; a 1920x1080 frame is ~1-2MB.
+MAX_PHOTO_BYTES = 9 * 1024 * 1024
 
 _listener = None
 _offset = None
@@ -206,20 +212,78 @@ def _api(method, token, params=None, timeout=TIMEOUT):
     return json.loads(res.read().decode("utf-8", "replace") or "{}")
 
 def _health():
-  """tools/health.py's own words, minus the screenshot it would otherwise save."""
+  """tools/health.py's own words, and the screenshot it saved.
+
+  Returns (text, photo path or None). The picture is the point of asking from
+  a phone: "turn not advancing" tells you something is wrong, and the frame
+  tells you what - a dialog nobody handled, a frozen scene, the home screen.
+  """
   repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
   try:
-    done = subprocess.run([sys.executable, os.path.join("tools", "health.py"),
-                           "--no-shot"],
+    done = subprocess.run([sys.executable, os.path.join("tools", "health.py")],
                           cwd=repo, capture_output=True, text=True,
                           timeout=HEALTH_TIMEOUT)
   except subprocess.TimeoutExpired:
-    return f"The health check did not finish within {HEALTH_TIMEOUT}s."
+    return f"The health check did not finish within {HEALTH_TIMEOUT}s.", None
   except Exception as e:
-    return f"Could not run the health check: {type(e).__name__}: {e}"
+    return f"Could not run the health check: {type(e).__name__}: {e}", None
   # It exits 1 or 2 for WARN and FAIL, which are results rather than failures.
   out = (done.stdout or "").strip()
-  return out or (done.stderr or "").strip() or "The health check said nothing."
+  if not out:
+    return (done.stderr or "").strip() or "The health check said nothing.", None
+  # It prints the frame it saved; take the path from its own output rather than
+  # guessing at the newest file in shots/, which the bot is also writing to.
+  shot = None
+  for line in out.splitlines():
+    if "screenshot:" in line:
+      candidate = line.split("screenshot:", 1)[1].strip()
+      if os.path.exists(candidate):
+        shot = candidate
+  return out, shot
+
+def _send_photo(path, caption, token=None, chat_id=None):
+  """sendPhoto as multipart/form-data. Returns None on success, else a reason.
+
+  Hand-rolled because urllib has no multipart and `requests` is not a
+  dependency of this project - the same reason the rest of this module uses
+  urllib.
+  """
+  token, chat_id = _creds(token, chat_id)
+  try:
+    size = os.path.getsize(path)
+    if size > MAX_PHOTO_BYTES:
+      return f"the frame is {size // 1024 // 1024}MB, too big to send"
+    with open(path, "rb") as f:
+      blob = f.read()
+  except OSError as e:
+    return f"could not read the frame: {e}"
+
+  boundary = "----uma" + uuid.uuid4().hex
+  fields = {"chat_id": str(chat_id)}
+  if caption:
+    fields["caption"] = caption[:CAPTION_LEN]
+  body = b""
+  for name, value in fields.items():
+    body += (f"--{boundary}\r\n"
+             f'Content-Disposition: form-data; name="{name}"\r\n\r\n'
+             f"{value}\r\n").encode("utf-8")
+  body += (f"--{boundary}\r\n"
+           f'Content-Disposition: form-data; name="photo";'
+           f' filename="{os.path.basename(path)}"\r\n'
+           f"Content-Type: image/png\r\n\r\n").encode("utf-8")
+  body += blob + b"\r\n" + f"--{boundary}--\r\n".encode("utf-8")
+
+  request = urllib.request.Request(
+    API.format(token=token, method="sendPhoto"), data=body,
+    headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
+  try:
+    with urllib.request.urlopen(request, timeout=TIMEOUT) as res:
+      answer = json.loads(res.read().decode("utf-8", "replace") or "{}")
+    if not answer.get("ok"):
+      return _redact(answer.get("description"), token) or "Telegram refused the photo"
+    return None
+  except Exception as e:
+    return _redact(f"{type(e).__name__}: {e}", token)
 
 def _handle(text):
   command = (text or "").strip().split()[0].lower() if (text or "").strip() else ""
@@ -228,7 +292,8 @@ def _handle(text):
   if command == "/health":
     return _health()
   if command in ("/help", "/start"):
-    return "Uma Autoplay:\n" + "\n".join(f"{c}  -  {w}" for c, w in COMMANDS.items())
+    return ("Uma Autoplay:\n"
+            + "\n".join(f"{c}  -  {w}" for c, w in COMMANDS.items())), None
   return None
 
 def _process(updates, token, chat):
@@ -248,9 +313,20 @@ def _process(updates, token, chat):
     if str((message.get("chat") or {}).get("id")) != str(chat):
       continue
     reply = _handle(message.get("text"))
-    if reply:
-      _post(reply, token, chat)
-      answered += 1
+    if not reply:
+      continue
+    text, photo = reply
+    # One message when it fits: the frame with the report as its caption.
+    if photo and text and len(text) <= CAPTION_LEN:
+      if _send_photo(photo, text, token, chat) is None:
+        answered += 1
+        continue
+      # The photo failed; the text still has to arrive.
+    if text:
+      _post(text, token, chat)
+    if photo:
+      _send_photo(photo, None, token, chat)
+    answered += 1
   return answered
 
 def _listen():
