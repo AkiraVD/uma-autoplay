@@ -6,19 +6,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Tooltips from "@/components/_c/Tooltips";
-import type { Config } from "@/types";
-
-type Scenario = NonNullable<Config["scenario"]>;
-
-// Mirrors core/state.py SCENARIOS. Trackblazer was parked on 2026-09-21 and
-// removed from both; a config still holding it falls back to Auto-detect with
-// a warning (core/state.py resolve_scenario). See core/parked/README.md.
-const MODES: [Scenario, string][] = [
-  ["auto", "Auto-detect"],
-  ["ura", "URA Finale"],
-  ["unity", "Unity Cup"],
-  ["grand_concert", "Grand Concert"],
-];
+// The list lives in utils/ because the config title names the mode too, and a
+// component file can only export components.
+import { SCENARIOS as MODES, type Scenario } from "@/utils/scenarios";
 
 type Props = {
   scenario: Scenario;

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import rawConfig from "../../config.json";
 import { useConfig } from "./hooks/useConfig";
 import { useConfigStore } from "./hooks/useConfigStore";
-import { configTitle } from "./utils/configTitle";
+import { configTitle, titleParts } from "./utils/configTitle";
 import ConfigStore from "./components/config-store/ConfigStore";
 
 import type { Config } from "./types";
@@ -35,6 +35,8 @@ const VIEWS: [View, string][] = [
   ["bot", "Bot"],
   ["telegram", "Telegram"],
 ];
+
+const CHIP = "shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium";
 
 function App() {
   const defaultConfig = rawConfig as Config;
@@ -68,6 +70,7 @@ function App() {
   // describe a trainee the config no longer trains. It is still stored, because
   // the preset list and the bot's own startup line both quote it.
   const config_name = configTitle(config);
+  const title = titleParts(config);
   useEffect(() => {
     if (config.config_name !== config_name)
       setConfig((prev) => ({ ...prev, config_name }));
@@ -128,11 +131,17 @@ function App() {
         ) : (
         <>
         <div className="mx-2 flex flex-wrap items-center gap-2 rounded-xl border border-border/20 bg-card p-3 shadow-lg">
+          {/* The same line the config is stored under, set out so the eye can
+              take it in: who, then where, then how. */}
           <div
-            title="Trainee, run style and distances - taken from the settings below"
-            className="flex h-9 w-full min-w-0 items-center truncate rounded-md border border-input bg-background px-3 text-base font-medium sm:w-auto sm:min-w-48 sm:flex-1 md:text-sm"
+            title={`${config_name} - taken from the settings below`}
+            className="flex min-w-0 basis-full items-center gap-2 sm:basis-auto sm:flex-1"
           >
-            {config_name}
+            <span className="truncate text-lg font-semibold tracking-tight">
+              {title.trainee || "No trainee"}
+            </span>
+            {title.scenario && <span className={`${CHIP} border-primary/30 bg-primary/10 text-primary`}>{title.scenario}</span>}
+            {title.runs && <span className={`${CHIP} border-border/60 text-muted-foreground`}>{title.runs}</span>}
           </div>
           <Button
             variant="outline"

@@ -1,5 +1,4 @@
-const DISTANCES = ["sprint", "mile", "medium", "long"] as const;
-const RUN_STYLES = ["front", "pace", "late", "end"] as const;
+import { DISTANCES, RUN_STYLES } from "@/utils/aptitudes";
 
 type Props = {
   distance: string[];

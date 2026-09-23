@@ -8,6 +8,10 @@ export type SavedConfig = {
   config_name: string;
   trainee: string;
   scenario: string;
+  // Both optional: a server older than the filters in the Saved configs dialog
+  // doesn't send them, and neither does an unreadable preset.
+  run_style?: string;
+  distance?: string[];
   saved_at: number;
   unreadable?: boolean;
 };

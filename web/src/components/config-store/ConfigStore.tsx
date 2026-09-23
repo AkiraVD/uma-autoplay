@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import {
@@ -10,6 +10,8 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { slugify, type SavedConfig } from "../../hooks/useConfigStore";
+import { capitalise, DISTANCES, RUN_STYLES } from "@/utils/aptitudes";
+import { SCENARIOS, scenarioLabel, type Scenario } from "@/utils/scenarios";
 
 type Props = {
   open: boolean;
@@ -22,6 +24,15 @@ type Props = {
   onSave: (name: string) => void;
   onDelete: (name: string) => void;
 };
+
+// A dozen presets is already more than a glance sorts out, and they differ in
+// exactly four ways: who trains, which scenario, and the style and distances
+// she races. Filters are built from the presets themselves rather than from the
+// full vocabularies, so no choice here can ever return nothing.
+const FILTER = "h-8 rounded-md border border-input bg-background px-2 text-sm";
+
+const present = (values: string[], order: string[]) =>
+  order.filter((v) => values.includes(v));
 
 const when = (epoch: number) => {
   if (!epoch) return "";
@@ -46,6 +57,39 @@ export default function ConfigStore({
   onDelete,
 }: Props) {
   const [saveAs, setSaveAs] = useState("");
+  const [query, setQuery] = useState("");
+  const [mode, setMode] = useState("");
+  const [style, setStyle] = useState("");
+  const [distance, setDistance] = useState("");
+
+  const options = useMemo(
+    () => ({
+      modes: SCENARIOS.map(([key]) => key).filter((key) =>
+        saved.some((s) => s.scenario === key)
+      ),
+      styles: present(saved.map((s) => s.run_style ?? ""), RUN_STYLES),
+      distances: present(saved.flatMap((s) => s.distance ?? []), DISTANCES),
+    }),
+    [saved]
+  );
+
+  const needle = query.trim().toLowerCase();
+  const visible = saved.filter(
+    (s) =>
+      (!needle ||
+        `${s.trainee} ${s.config_name} ${s.name}`.toLowerCase().includes(needle)) &&
+      (!mode || s.scenario === mode) &&
+      (!style || s.run_style === style) &&
+      (!distance || (s.distance ?? []).includes(distance))
+  );
+  const filtered = Boolean(needle || mode || style || distance);
+  const clear = () => {
+    setQuery("");
+    setMode("");
+    setStyle("");
+    setDistance("");
+  };
+
   // Empty means "use the name in the toolbar", so the common case is one click.
   const target = slugify(saveAs || configName);
   const overwrites = saved.some((s) => s.name === target);
@@ -68,14 +112,70 @@ export default function ConfigStore({
           </p>
         )}
 
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            aria-label="Search saved configs"
+            className="h-8 min-w-40 flex-1"
+            placeholder="Trainee or name"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <select
+            aria-label="Game mode"
+            className={FILTER}
+            value={mode}
+            onChange={(e) => setMode(e.target.value)}
+          >
+            <option value="">Any mode</option>
+            {options.modes.map((key) => (
+              <option key={key} value={key}>
+                {scenarioLabel(key as Scenario)}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="Run style"
+            className={FILTER}
+            value={style}
+            onChange={(e) => setStyle(e.target.value)}
+          >
+            <option value="">Any style</option>
+            {options.styles.map((s) => (
+              <option key={s} value={s}>
+                {capitalise(s)}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="Distance"
+            className={FILTER}
+            value={distance}
+            onChange={(e) => setDistance(e.target.value)}
+          >
+            <option value="">Any distance</option>
+            {options.distances.map((d) => (
+              <option key={d} value={d}>
+                {capitalise(d)}
+              </option>
+            ))}
+          </select>
+          {filtered && (
+            <Button size="sm" variant="ghost" onClick={clear}>
+              Clear
+            </Button>
+          )}
+        </div>
+
         <div className="max-h-[45vh] overflow-y-auto rounded-lg border border-border">
-          {saved.length === 0 ? (
+          {visible.length === 0 ? (
             <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-              Nothing saved yet.
+              {saved.length === 0
+                ? "Nothing saved yet."
+                : "No saved config matches those filters."}
             </p>
           ) : (
             <ul className="divide-y divide-border">
-              {saved.map((s) => (
+              {visible.map((s) => (
                 <li
                   key={s.name}
                   className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2"
@@ -90,7 +190,18 @@ export default function ConfigStore({
                       )}
                     </div>
                     <div className="truncate text-xs text-muted-foreground">
-                      {[s.trainee, s.scenario].filter(Boolean).join(" · ") || s.name}
+                      {/* The same four things the filters work on, so a row
+                          shows why it is in the list. */}
+                      {[
+                        s.trainee,
+                        scenarioLabel(s.scenario as Scenario),
+                        [s.run_style ?? "", ...(s.distance ?? [])]
+                          .filter(Boolean)
+                          .map(capitalise)
+                          .join("/"),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ") || s.name}
                       <span className="ml-2 opacity-70">{when(s.saved_at)}</span>
                     </div>
                   </div>

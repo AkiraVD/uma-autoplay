@@ -56,16 +56,23 @@ def listing():
       # A hand-edited or half-written file shouldn't take the whole list down;
       # it is listed as unreadable so it is visible rather than silently gone.
       rows.append({"name": path.stem, "config_name": path.stem, "trainee": "",
-                   "scenario": "", "saved_at": int(path.stat().st_mtime),
-                   "unreadable": True})
+                   "scenario": "", "run_style": "", "distance": [],
+                   "saved_at": int(path.stat().st_mtime), "unreadable": True})
       continue
     if not isinstance(data, dict):
       continue
+    # The page filters the list on these four, so they are read here rather
+    # than by fetching every preset in turn. An old preset may have no skill
+    # block at all, hence the guarded get.
+    skill = data.get("skill") if isinstance(data.get("skill"), dict) else {}
+    distance = skill.get("skill_distance")
     rows.append({
       "name": path.stem,
       "config_name": data.get("config_name") or path.stem,
       "trainee": data.get("trainee") or "",
       "scenario": data.get("scenario") or "",
+      "run_style": skill.get("skill_run_style") or "",
+      "distance": distance if isinstance(distance, list) else [],
       "saved_at": int(path.stat().st_mtime),
       "unreadable": False,
     })
