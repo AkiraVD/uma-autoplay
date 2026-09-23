@@ -287,6 +287,49 @@ def test_an_oversized_frame_is_refused_not_sent():
   finally:
     os.unlink(big)
 
+def test_a_notification_can_carry_a_picture():
+  """Both career messages send a frame: the Final Confirmation when one starts,
+  the summary screen when one ends. A picture says more than the two lines
+  above it, and it is the thing worth checking before a two-hour run."""
+  use(chat="111")
+  delivered = []
+  notify._post = lambda text, token=None, chat_id=None: (delivered.append(("text", text)), None)[1]
+  notify._send_photo = lambda path, caption=None, token=None, chat_id=None: (
+    delivered.append(("photo", path, caption)), None)[1]
+
+  # Short enough to ride as a caption: one message, not two.
+  notify._deliver("short", "/tmp/frame.png")
+  ok("a short message rides on the picture",
+     delivered == [("photo", "/tmp/frame.png", "short")], str(delivered))
+
+  # Too long for a caption: the words go first, the picture follows.
+  delivered.clear()
+  notify._deliver("x" * (notify.CAPTION_LEN + 1), "/tmp/frame.png")
+  ok("a long one is sent beside the picture",
+     [d[0] for d in delivered] == ["text", "photo"], str([d[0] for d in delivered]))
+
+  # No picture at all is still an ordinary message.
+  delivered.clear()
+  notify._deliver("just words", None)
+  ok("and no picture is still a message",
+     [d[0] for d in delivered] == ["text"])
+
+  # send() has to carry it through the queue.
+  delivered.clear()
+  notify.send("queued", photo="/tmp/frame.png")
+  notify._queue.join()
+  ok("send() carries a picture through the queue",
+     delivered and delivered[0][0] == "photo", str(delivered))
+
+  source = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
+  ok("the career-started message sends the Final Confirmation",
+     "photo=state.CAREER_START_FRAME" in source)
+  ok("and the career-finished message sends the screen",
+     'photo=notify.save_frame(screen, "career_end_")' in source)
+  walk = open(os.path.join("core", "career_start.py"), encoding="utf-8").read()
+  ok("the walk keeps that frame before pressing Start Career!",
+     walk.index("save_frame(screen") < walk.index("FINAL_CONFIRM_START_MOUSE_POS"))
+
 def test_a_resumed_career_still_reports_its_stats():
   """"Stats: not read" is what a resumed career used to send.
 
@@ -405,6 +448,7 @@ if __name__ == "__main__":
   test_the_commands_themselves()
   test_an_oversized_frame_is_refused_not_sent()
   test_a_picture_that_will_not_send_does_not_eat_the_report()
+  test_a_notification_can_carry_a_picture()
   test_a_resumed_career_still_reports_its_stats()
   test_the_listener_starts_and_survives()
   test_the_settings_live_in_their_own_file()

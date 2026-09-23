@@ -93,6 +93,8 @@ LAST_STATS = None
 LAST_SPARKS = None
 # The career the bot is playing, when it started that career itself.
 CAREER_UUID = None
+# The Final Confirmation frame of that career, for the message announcing it.
+CAREER_START_FRAME = None
 # Careers career_start has begun since the bot was last started. Live state,
 # not config: career_lobby() resets it and the config page reads it back.
 CAREERS_STARTED = 0

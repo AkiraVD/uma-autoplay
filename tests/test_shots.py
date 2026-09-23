@@ -18,11 +18,10 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-sys.path.insert(0, os.path.join(ROOT, "tools"))
 os.chdir(ROOT)
 os.environ.setdefault("UMA_LOG_DIR", os.path.join("tests", "logs"))
 
-import shots                                   # noqa: E402
+from utils import shots                        # noqa: E402
 
 failures = []
 

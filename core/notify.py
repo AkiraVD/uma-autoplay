@@ -107,11 +107,27 @@ def _post(text, token=None, chat_id=None):
   except Exception as e:
     return _redact(f"{type(e).__name__}: {e}", token)
 
+def _deliver(text, photo, token=None, chat_id=None):
+  """One message when the picture and the words fit together, else both.
+
+  Shared by the queue and the command listener so a notification and an answer
+  to /health arrive the same way.
+  """
+  token, chat_id = _creds(token, chat_id)
+  if photo and text and len(text) <= CAPTION_LEN:
+    if _send_photo(photo, text, token, chat_id) is None:
+      return None
+    # The photo failed; the words still have to arrive.
+  reason = _post(text, token, chat_id) if text else None
+  if photo:
+    _send_photo(photo, None, token, chat_id)
+  return reason
+
 def _run():
   while True:
-    text = _queue.get()
+    text, photo = _queue.get()
     try:
-      reason = _post(text)
+      reason = _deliver(text, photo)
       if reason:
         _warn_once(reason, f"Telegram: {reason}. Messages will keep being"
                            " attempted; this is logged once per reason.")
@@ -143,11 +159,12 @@ def _ensure_worker():
       _worker = threading.Thread(target=_run, name="telegram", daemon=True)
       _worker.start()
 
-def send(text):
-  """Queue a message. True when it was queued, False when it was not.
+def send(text, photo=None):
+  """Queue a message, with a picture when there is one to send.
 
-  False is the ordinary case for an unconfigured or switched-off notifier, not
-  an error - every caller ignores the return except the test button.
+  True when it was queued, False when it was not. False is the ordinary case
+  for an unconfigured or switched-off notifier, not an error - every caller
+  ignores the return except the test button.
   """
   if not state.TELEGRAM_ENABLED:
     return False
@@ -156,8 +173,27 @@ def send(text):
                "Telegram is on but the token or chat id is empty; not sending.")
     return False
   _ensure_worker()
-  _queue.put(text)
+  _queue.put((text, photo))
   return True
+
+def save_frame(screen, prefix):
+  """Keep a frame the bot already has in hand, so a message can carry it.
+
+  Written into shots/ under its own prefix and pruned like the rest: these are
+  worth exactly as long as the message they went out with.
+  """
+  try:
+    from utils import shots as shot_files
+    repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    directory = os.path.join(repo, "shots")
+    os.makedirs(directory, exist_ok=True)
+    path = os.path.join(directory, time.strftime(f"{prefix}%H%M%S.png"))
+    screen.save(path)
+    shot_files.prune(directory, prefix, keep=10)
+    return path
+  except Exception as e:
+    debug(f"Could not keep a frame for Telegram: {type(e).__name__}: {e}")
+    return None
 
 def send_now(text, token=None, chat_id=None):
   """Send on this thread and report the outcome, for the config page's test.
@@ -315,17 +351,7 @@ def _process(updates, token, chat):
     reply = _handle(message.get("text"))
     if not reply:
       continue
-    text, photo = reply
-    # One message when it fits: the frame with the report as its caption.
-    if photo and text and len(text) <= CAPTION_LEN:
-      if _send_photo(photo, text, token, chat) is None:
-        answered += 1
-        continue
-      # The photo failed; the text still has to arrive.
-    if text:
-      _post(text, token, chat)
-    if photo:
-      _send_photo(photo, None, token, chat)
+    _deliver(*reply, token, chat)
     answered += 1
   return answered
 

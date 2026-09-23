@@ -192,11 +192,12 @@ export default function TelegramView() {
         <ul className="flex flex-col gap-3 text-sm text-muted-foreground">
           <li>
             <span className="font-medium text-foreground">A career starts</span> &mdash; which number it is of the
-            limit, the trainee, the borrowed card and the career's id.
+            limit, the trainee, the borrowed card and the career's id, <strong>with the Final Confirmation
+            screen</strong>: both Legacy parents and all six support cards, the borrowed Friends one included.
           </li>
           <li>
             <span className="font-medium text-foreground">A career finishes</span> &mdash; the final stats and the
-            spark set that was kept.
+            spark set that was kept, <strong>with the screen it finished on</strong>.
           </li>
           <li>
             <span className="font-medium text-foreground">The client freezes</span> &mdash; that it has stopped drawing

@@ -40,7 +40,7 @@ REPO = os.path.dirname(TOOLS)
 sys.path.insert(0, REPO)
 sys.path.insert(0, TOOLS)
 
-import shots  # noqa: E402
+from utils import shots  # noqa: E402
 from logserver import tail  # noqa: E402
 
 LOG = os.path.join(REPO, "logs", "log.txt")

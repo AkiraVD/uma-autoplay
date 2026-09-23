@@ -393,6 +393,11 @@ def start():
       # has already refused the press if the TP is not there, and that refusal
       # is the restore_tp branch above.
       info(f"Final Confirmation: {_confirmation_line(screen)}")
+      # Kept for the "career started" message: trainee, both Legacy parents and
+      # all six support cards - the borrowed Friends one included - are on this
+      # screen together and nowhere else.
+      import core.notify as notify
+      state.CAREER_START_FRAME = notify.save_frame(screen, "career_start_")
       _click(constants.FINAL_CONFIRM_START_MOUSE_POS,
              "Start Career! (Final Confirmation).")
       pressed_final = True

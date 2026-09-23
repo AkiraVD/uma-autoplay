@@ -1504,10 +1504,15 @@ def career_lobby():
           limit = (f" of {state.CAREER_START_MAX}" if state.CAREER_START_MAX
                    else "")
           info(f"Career {state.CAREERS_STARTED}{limit} started by the bot.")
+          # The picture is the Final Confirmation: the trainee, both Legacy
+          # parents and all six support cards, which is everything worth
+          # checking before a career runs for two hours.
           notify.send(f"Career {state.CAREERS_STARTED}{limit} started\n"
                       f"Trainee: {state.TRAINEE or 'as configured'}\n"
                       f"Borrowed: {career_start.remembered_card()}\n"
-                      f"uuid: {state.CAREER_UUID}")
+                      f"uuid: {state.CAREER_UUID}",
+                      photo=state.CAREER_START_FRAME)
+          state.CAREER_START_FRAME = None
           SEEN_LOBBY = False
           RESUMING_CAREER = False
           state.apply_scenario(new_career=True)
@@ -1530,7 +1535,10 @@ def career_lobby():
       notify.send("Career finished\n"
                   f"Stats: {_stat_line(state.LAST_STATS)}\n"
                   f"Sparks: {state.LAST_SPARKS or 'not read'}"
-                  + (f"\nuuid: {state.CAREER_UUID}" if state.CAREER_UUID else ""))
+                  + (f"\nuuid: {state.CAREER_UUID}" if state.CAREER_UUID else ""),
+                  # This screen is the career's own summary, so it says more
+                  # than the two lines above ever could.
+                  photo=notify.save_frame(screen, "career_end_"))
       state.LAST_SPARKS = None
       click(boxes=matches["to_home"], text="Leaving the finished career.")
       sleep(3)

@@ -35,9 +35,8 @@ from PIL import Image, ImageGrab
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO)
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import shots  # noqa: E402
+from utils import shots  # noqa: E402
 import utils.window as window  # noqa: E402
 
 SHOTS = os.path.join(REPO, "shots")
