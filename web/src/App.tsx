@@ -13,6 +13,7 @@ import { Input } from "./components/ui/input";
 import EventSection from "./components/event/EventSection";
 import RaceScheduleSection from "./components/race-schedule/RaceScheduleSection";
 import SkillSection from "./components/skill/SkillSection";
+import CareerStartSection from "./components/career/CareerStartSection";
 import TrainingSection from "./components/training/TrainingSection";
 import TraineeStrategySection from "./components/general/TraineeStrategySection";
 import RestMoodSection from "./components/general/RestMoodSection";
@@ -171,6 +172,9 @@ function App() {
           </div>
           <div className="min-w-0">
             <EventSection config={config} updateConfig={updateConfig} />
+          </div>
+          <div className="min-w-0">
+            <CareerStartSection config={config} updateConfig={updateConfig} />
           </div>
           <div className="min-w-0">
             <AdvancedSection config={config} updateConfig={updateConfig} />

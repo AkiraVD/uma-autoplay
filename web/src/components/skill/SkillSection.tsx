@@ -2,7 +2,6 @@ import { BrainCircuit } from "lucide-react";
 import IsAutoBuy from "./IsAutoBuy";
 import SkillPtsCheck from "./SkillPtsCheck";
 import { Checkbox } from "../ui/checkbox";
-import { Input } from "../ui/input";
 import { GRAND_CONCERT_FALLBACK } from "../grand-concert/defaults";
 import type { Config, UpdateConfigType } from "@/types";
 
@@ -19,8 +18,6 @@ export default function SkillSection({ config, updateConfig }: Props) {
   const alwaysGold = grandConcert.always_buy_gold_skill ?? false;
   // Presets saved before this existed don't have it.
   const rerollSparks = config.reroll_sparks ?? true;
-  const careerStart = config.career_start ?? { enabled: false, borrow_card: "" };
-  const maxConsecutive = careerStart.max_consecutive ?? 0;
 
   return (
     <div className="bg-card p-6 rounded-xl shadow-lg border border-border/20">
@@ -66,49 +63,6 @@ export default function SkillSection({ config, updateConfig }: Props) {
           </label>
           <span className="text-sm text-muted-foreground">
             Costs 30 TP at career end, and the original set stays on offer.
-          </span>
-        </div>
-        <div className="w-fit">
-          <label htmlFor="career-start" className="flex gap-2 items-start">
-            <Checkbox id="career-start" className="mt-1.5" checked={careerStart.enabled}
-              onCheckedChange={() =>
-                updateConfig("career_start", { ...careerStart, enabled: !careerStart.enabled })} />
-            <span className="text-lg font-medium">Start the next career by itself?</span>
-          </label>
-          <span className="text-sm text-muted-foreground">
-            At the home screen after a career, walks Scenario &rarr; Trainee &rarr; Legacy &rarr; Support Formation
-            keeping everything the last career used, re-borrows the Friends card and presses Start Career!.
-            Costs 30 TP. Off, the bot stops at the home screen as it always has.
-          </span>
-        </div>
-        <div className="w-fit">
-          <label htmlFor="borrow-card" className="block text-lg font-medium">
-            Card to borrow
-          </label>
-          <Input id="borrow-card" className="w-64 mt-1" value={careerStart.borrow_card}
-            placeholder="Light Hello"
-            onChange={(e) =>
-              updateConfig("career_start", { ...careerStart, borrow_card: e.target.value })} />
-          <span className="block text-sm text-muted-foreground mt-1">
-            The Friends slot is the one thing a new career forgets, and a deck without it will not start. After the
-            first career the bot reuses whatever it borrowed last time; this is only the seed for the first one.
-          </span>
-        </div>
-        <div className="w-fit">
-          <label htmlFor="max-consecutive" className="block text-lg font-medium">
-            Careers per run
-          </label>
-          <Input id="max-consecutive" className="w-24 mt-1" type="number" min={0}
-            value={maxConsecutive}
-            onChange={(e) =>
-              updateConfig("career_start", {
-                ...careerStart,
-                max_consecutive: Number.isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber,
-              })} />
-          <span className="block text-sm text-muted-foreground mt-1">
-            Stop after starting this many careers, counted from when the bot was last started. <strong>0</strong> is no
-            limit. A career already in progress when you start the bot is not counted &mdash; it was not one of these.
-            The Live Log header shows the running count.
           </span>
         </div>
       </div>
