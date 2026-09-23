@@ -9,6 +9,7 @@ pyautogui.useImageNotFoundException(False)
 # the bot is mid-move. Pause already stops the bot, so this only cost us a career.
 pyautogui.FAILSAFE = False
 
+import hashlib
 import os
 import re
 import time
@@ -735,6 +736,18 @@ def game_panel_blank(screen):
   panel = screen.crop((l, t, l + w, t + h)).convert("L")
   return ImageStat.Stat(panel).stddev[0] < BLANK_PANEL_STD
 
+def panel_digest(screen):
+  """A fingerprint of the game panel, for spotting a client that has frozen.
+
+  Not a similarity score - an exact digest. Measured on the live game while the
+  bot played (2026-09-23), consecutive grabs three seconds apart differed by
+  41,709 to 785,636 pixels and were *never* identical; a frozen client is
+  byte-identical every time. The two states do not overlap, so there is no
+  threshold to tune and none to get wrong."""
+  l, t, w, h = constants.GAME_SCREEN_REGION
+  panel = screen.crop((l, t, l + w, t + h)).convert("RGB")
+  return hashlib.md5(panel.tobytes()).hexdigest()
+
 def race_day():
   if state.stop_event.is_set():
     return
@@ -1040,6 +1053,19 @@ LOBBY_LOST_LIMIT = 240
 # than one.
 BLANK_PANEL_STD = 3.0
 BLANK_PANEL_LIMIT = 18
+# The other way a client stops drawing, and the one that actually happens: the
+# panel keeps a full, detailed frame and simply never changes. Three times in
+# three days - 2026-09-21 as the Japanese Derby started, 2026-09-23 inside a
+# support card event, and again that afternoon inside a story event - and
+# BLANK_PANEL_STD cannot see any of them, because a real frame has a real
+# stddev. Each one cost ~35 minutes of blind tapping before LOBBY_LOST_LIMIT
+# stopped the bot, and then the night.
+#
+# Ten consecutive identical panels, roughly 90s. A live client cannot produce
+# even one: measured while the bot played, grabs three seconds apart differed
+# by 41,709 to 785,636 pixels and were never identical. Ten is for the screen
+# nobody has captured yet, not for the ones that have been.
+FROZEN_PANEL_LIMIT = 10
 # Attempts at walking back in from a Session Error before giving up. The branch
 # ends in `continue` without touching not_in_lobby, so nothing else bounds it -
 # and an unbounded press-and-retry on one dialog is this bot's oldest failure
@@ -1062,8 +1088,16 @@ def career_lobby():
   not_in_lobby = 0
   blank_panel = 0
   session_errors = 0
-  # "Consecutive" is per bot run: a stop and start begins the count again.
-  state.CAREERS_STARTED = 0
+  frozen_panel = 0
+  last_digest = None
+  # Not zero: the count lives in logs/career_start_progress.json so it survives
+  # the restart that follows a frozen client, which is what ends most runs.
+  # The config page's Reset is what clears it.
+  state.CAREERS_STARTED = len(career_start.started_careers())
+  if state.CAREERS_STARTED:
+    info(f"{state.CAREERS_STARTED} career(s) counted since the last reset"
+         + (f", limit {state.CAREER_START_MAX}." if state.CAREER_START_MAX
+            else "."))
   # Set once the back-out probes have found no button to press, so the dialogue
   # tap can run every cycle rather than every fifth. Cleared whenever a button
   # is found or the lobby comes back, so each new unknown screen is probed
@@ -1079,6 +1113,24 @@ def career_lobby():
                 distances=getattr(state, "SKILL_DISTANCE", None))
   while state.is_bot_running and not state.stop_event.is_set():
     screen = ImageGrab.grab()
+
+    # Before anything is read off this frame: is the client still drawing it?
+    # Checked on every pass rather than only when the lobby is lost, because a
+    # freeze *in* the lobby is the worse case - the Tazuna hint keeps matching
+    # on the stale frame, so the loop would train against a board that never
+    # changes and never reach the not-in-lobby recovery at all.
+    digest = panel_digest(screen)
+    if digest == last_digest:
+      frozen_panel += 1
+      if frozen_panel >= FROZEN_PANEL_LIMIT:
+        error(f"The game panel has been pixel-identical for {frozen_panel}"
+              " checks: the client has stopped drawing. Stopping. The career is"
+              " saved - close and relaunch the game, then Continue Career.")
+        return
+    else:
+      frozen_panel = 0
+      last_digest = digest
+
     matches = multi_match_templates(templates, screen=screen)
 
     # Before select_event: its radio buttons look exactly like event choices,
@@ -1373,11 +1425,11 @@ def career_lobby():
         # already in progress when the bot started is nobody's doing but the
         # person's, and counting it would make "run 3" mean two.
         if state.CAREER_START_MAX and state.CAREERS_STARTED >= state.CAREER_START_MAX:
-          info(f"Started {state.CAREERS_STARTED} career(s) this run, the"
-               f" configured limit. Stopping at the home screen.")
+          info(f"Started {state.CAREERS_STARTED} career(s) since the last"
+               " reset, the configured limit. Stopping at the home screen."
+               " Reset the count on the config page to run more.")
           return
         if career_start.start():
-          state.CAREERS_STARTED += 1
           limit = (f" of {state.CAREER_START_MAX}" if state.CAREER_START_MAX
                    else "")
           info(f"Career {state.CAREERS_STARTED}{limit} started by the bot.")

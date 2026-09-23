@@ -214,6 +214,33 @@ def log_data():
                      "enabled": state.CAREER_START_ENABLED}
   return data
 
+@app.get("/career/count")
+def career_count():
+  """The careers counted since the last reset, for the config page's button.
+
+  Read from the ledger rather than from state, so it is right even when the bot
+  has never been started in this process.
+  """
+  import core.career_start as career_start
+  rows = career_start.started_careers()
+  return {"started": len(rows),
+          "limit": state.CAREER_START_MAX,
+          "careers": rows[-5:]}
+
+@app.post("/career/reset")
+def career_reset():
+  """Forget the careers counted so far, so a limit starts over.
+
+  Clears both the ledger and the running bot's count - they are read from the
+  same file at bot start but the bot may be mid-run, and a reset that the
+  running bot ignored until its next restart would be the opposite of useful.
+  """
+  import core.career_start as career_start
+  if not career_start.reset_count():
+    raise HTTPException(500, "Could not write the career ledger")
+  state.CAREERS_STARTED = 0
+  return {"started": 0}
+
 # main.py hands over its start/stop function at startup. The server cannot import
 # main.py, which imports this module.
 set_bot_running = None

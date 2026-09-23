@@ -32,6 +32,7 @@ The one branch still unexercised is `restore_tp()`: that run had TP 100/100.
 import json
 import os
 import time
+import uuid
 
 from PIL import ImageGrab
 
@@ -105,14 +106,61 @@ def remembered_card():
     pass
   return getattr(state, "CAREER_START_BORROW_CARD", "") or ""
 
-def remember_card(name):
+def _progress():
+  """The whole progress file, or an empty record."""
+  try:
+    with open(PROGRESS, encoding="utf-8") as f:
+      return json.load(f) or {}
+  except (OSError, ValueError):
+    return {}
+
+def _write(record):
   try:
     os.makedirs(os.path.dirname(PROGRESS) or ".", exist_ok=True)
     with open(PROGRESS, "w", encoding="utf-8") as f:
-      json.dump({"borrowed": name,
-                 "at": time.strftime("%Y-%m-%dT%H:%M:%S")}, f)
+      json.dump(record, f, indent=2)
+    return True
   except OSError as e:
-    warning(f"Could not record the borrowed card: {e}")
+    warning(f"Could not write {PROGRESS}: {e}")
+    return False
+
+def started_careers():
+  """The careers begun since the count was last reset, newest last.
+
+  Each is a row with its own uuid. The count is kept here rather than in a
+  number in memory because the thing that most often ends a run is the client
+  freezing, and the bot is restarted afterwards - an in-memory count would go
+  back to zero every time and "three careers" would never mean three. The uuid
+  is what makes a row identifiable rather than merely counted: two careers
+  started in the same second are still two rows."""
+  rows = _progress().get("careers")
+  return rows if isinstance(rows, list) else []
+
+def remember_card(name, career_uuid=None):
+  """Record the borrowed card, and - when a career really began - the career.
+
+  One file, written whole, because the two facts are written at the same moment
+  and reading back a half-updated record would be worse than losing both."""
+  record = _progress()
+  record["borrowed"] = name
+  record["at"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+  if career_uuid:
+    rows = started_careers()
+    rows.append({"uuid": career_uuid,
+                 "at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                 "borrowed": name})
+    record["careers"] = rows
+  _write(record)
+
+def reset_count():
+  """Forget the careers counted so far, keeping the borrowed card.
+
+  What the config page's Reset button calls. The card is deliberately kept: it
+  is the seed for the next borrow and has nothing to do with the count."""
+  record = _progress()
+  record["careers"] = []
+  record["reset_at"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+  return _write(record)
 
 def start_button_enabled(screen):
   """Is Support Formation's `Start Career!` live, or drawn disabled?
@@ -376,9 +424,13 @@ def start():
         # Final Confirmation was accepted, the setup screens are gone and the
         # game is not back at Home, so the career is starting. The intro is
         # career_lobby's to drive, exactly as for one started by hand.
-        info("Career started.")
-        if borrowed:
-          remember_card(wanted)
+        career_uuid = uuid.uuid4().hex
+        info(f"Career started (uuid {career_uuid}).")
+        # Recorded whether or not this walk did the borrowing: the row is the
+        # career, and the count has to include a career that started on a slot
+        # somebody else had already filled.
+        remember_card(wanted, career_uuid=career_uuid)
+        state.CAREERS_STARTED = len(started_careers())
         return True
       else:
         debug(f"Career start: nothing recognised on step {step}; waiting.")

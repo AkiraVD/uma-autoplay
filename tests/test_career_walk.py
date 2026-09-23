@@ -224,10 +224,15 @@ def test_the_consecutive_limit():
      guard < branch.index("career_start.start()"))
   ok("and 0 means no limit",
      "state.CAREER_START_MAX and" in branch)
-  ok("the count rises only on a career that really started",
-     branch.index("career_start.start()") < branch.index("state.CAREERS_STARTED += 1"))
-  ok("the run resets the count",
-     "state.CAREERS_STARTED = 0" in source)
+  # The count is no longer incremented here: career_start writes the career to
+  # the ledger and sets the count from it, so the number the loop compares
+  # against the limit is the number of rows on disk and cannot drift from it.
+  walk = open(os.path.join("core", "career_start.py"), encoding="utf-8").read()
+  ok("the count is set from the ledger, not incremented",
+     "state.CAREERS_STARTED = len(started_careers())" in walk)
+  ok("and only after a career really started",
+     walk.index("career_uuid = uuid.uuid4().hex")
+     < walk.index("state.CAREERS_STARTED = len(started_careers())"))
 
 def test_the_log_page_is_told_the_count():
   """The Live Log header reads the same number the limit counts."""
@@ -255,6 +260,85 @@ def test_the_live_log_source_is_in_the_repo():
     rules = [ln.strip() for ln in open(path, encoding="utf-8")]
     ok(f"{path} anchors its logs rule", "logs" not in rules, "bare 'logs' rule")
 
+def test_the_frozen_panel_detector():
+  """A client that keeps drawing a full frame it never changes.
+
+  Three occurrences in three days, and `game_panel_blank` caught none of them:
+  it looks for a *flat* panel, and these hold real artwork. What separates the
+  two states is exact identity - measured on the live game while the bot
+  played, consecutive grabs differed by 41,709 to 785,636 pixels and were never
+  identical, while a frozen client is byte-identical every time.
+  """
+  import core.execute as E
+  frames = [os.path.join(FIXTURES, "out_of_career", "in_career.png"),
+            os.path.join(FIXTURES, "out_of_career", "game_home.png"),
+            os.path.join(WALK, "support_formation.png")]
+  frames = [f for f in frames if os.path.exists(f)]
+  digests = [E.panel_digest(frame(f)) for f in frames]
+  ok("different screens give different digests",
+     len(set(digests)) == len(digests), f"{len(set(digests))} of {len(digests)}")
+  ok("and the same screen gives the same digest",
+     E.panel_digest(frame(frames[0])) == digests[0])
+
+  source = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
+  ok("the limit is a run of checks, not one frame",
+     isinstance(E.FROZEN_PANEL_LIMIT, int) and 2 <= E.FROZEN_PANEL_LIMIT <= 40,
+     str(E.FROZEN_PANEL_LIMIT))
+  # It has to run before the dispatch, and on every pass: a freeze *in* the
+  # lobby keeps matching the Tazuna hint, so the not-in-lobby recovery - where
+  # game_panel_blank lives - is never reached at all.
+  grab = source.index("screen = ImageGrab.grab()\n\n    # Before anything is read")
+  digest = source.index("digest = panel_digest(screen)")
+  dispatch = source.index("matches = multi_match_templates(templates, screen=screen)")
+  ok("the check runs on every pass, before the dispatch",
+     grab < digest < dispatch)
+  ok("and it stops the bot rather than tapping on",
+     "pixel-identical" in source)
+
+def test_the_career_ledger():
+  """The count lives in a file, one row per career, each with its own id.
+
+  In memory it would reset every time the bot restarted - and restarting the
+  bot is exactly what a frozen client forces, so "three careers" would never
+  have meant three.
+  """
+  import tempfile
+  progress, card = CS.PROGRESS, state.CAREER_START_BORROW_CARD
+  try:
+    with tempfile.TemporaryDirectory() as d:
+      CS.PROGRESS = os.path.join(d, "career_start_progress.json")
+      state.CAREER_START_BORROW_CARD = "Light Hello"
+      ok("a fresh ledger counts nothing", CS.started_careers() == [])
+      CS.remember_card("Light Hello", career_uuid="aaa")
+      CS.remember_card("Light Hello", career_uuid="bbb")
+      rows = CS.started_careers()
+      ok("each career is a row", len(rows) == 2, str(len(rows)))
+      ok("with its own id", {r["uuid"] for r in rows} == {"aaa", "bbb"})
+      # The walk records the card on every pass through; only a career counts.
+      CS.remember_card("Light Hello")
+      ok("a borrow without a career does not count",
+         len(CS.started_careers()) == 2, str(len(CS.started_careers())))
+      ok("the card survives", CS.remembered_card() == "Light Hello")
+      ok("reset clears the count", CS.reset_count() and CS.started_careers() == [])
+      ok("and keeps the card, which is not part of it",
+         CS.remembered_card() == "Light Hello")
+  finally:
+    CS.PROGRESS, state.CAREER_START_BORROW_CARD = progress, card
+
+def test_the_count_is_read_back_not_zeroed():
+  source = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
+  ok("the run loads the count from the ledger",
+     "len(career_start.started_careers())" in source)
+  ok("and no longer zeroes it on start",
+     "state.CAREERS_STARTED = 0" not in source)
+  server = open(os.path.join("server", "main.py"), encoding="utf-8").read()
+  ok("the page can read the count", "/career/count" in server)
+  ok("and reset it", "/career/reset" in server)
+  # A reset the running bot ignored until its next restart would be useless.
+  reset = server[server.index("def career_reset("):]
+  ok("reset clears the running bot's count too",
+     "state.CAREERS_STARTED = 0" in reset[:600])
+
 def test_the_loop_only_starts_a_career_when_told_to():
   source = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
   branch = source[source.index('if matches["team_rank"] or matches["game_nav"]'):]
@@ -278,6 +362,9 @@ if __name__ == "__main__":
   test_the_remembered_card_beats_the_configured_one()
   test_the_walk_is_bounded_and_off_by_default()
   test_the_consecutive_limit()
+  test_the_frozen_panel_detector()
+  test_the_career_ledger()
+  test_the_count_is_read_back_not_zeroed()
   test_the_log_page_is_told_the_count()
   test_the_live_log_source_is_in_the_repo()
   test_the_loop_only_starts_a_career_when_told_to()

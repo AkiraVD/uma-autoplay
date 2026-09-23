@@ -1,6 +1,9 @@
-import { Repeat } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Repeat, RotateCcw } from "lucide-react";
+import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
 import { Input } from "../ui/input";
+import { URL } from "@/constants";
 import type { Config, UpdateConfigType } from "@/types";
 
 type Props = {
@@ -19,6 +22,32 @@ export default function CareerStartSection({ config, updateConfig }: Props) {
   const careerStart = { ...FALLBACK, ...(config.career_start ?? {}) };
   const set = (patch: Partial<typeof FALLBACK>) =>
     updateConfig("career_start", { ...careerStart, ...patch });
+
+  // The count is the bot's, not the config's: it lives in the career ledger so
+  // it survives the restart that follows a frozen client. Read it, don't guess.
+  const [started, setStarted] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch(`${URL}/career/count`, { cache: "no-store" });
+      if (res.ok) setStarted((await res.json()).started ?? null);
+    } catch {
+      setStarted(null);
+    }
+  }, []);
+  useEffect(() => { void refresh(); }, [refresh]);
+
+  const reset = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch(`${URL}/career/reset`, { method: "POST" });
+      if (res.ok) setStarted(0);
+    } catch {
+      // Leave the count as it was; the next refresh corrects it.
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="bg-card p-6 rounded-xl shadow-lg border border-border/20">
@@ -62,9 +91,28 @@ export default function CareerStartSection({ config, updateConfig }: Props) {
             onChange={(e) =>
               set({ max_consecutive: Number.isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber })} />
           <span className="block text-sm text-muted-foreground mt-1">
-            Stop after starting this many careers, counted from when the bot was last started. <strong>0</strong> is no
-            limit. A career already in progress when you start the bot is not counted &mdash; it was not one of these.
-            The Live Log header shows the running count.
+            Stop after starting this many careers. <strong>0</strong> is no limit. A career already in progress when you
+            start the bot is not counted &mdash; it was not one of these.
+          </span>
+        </div>
+        <div>
+          <div className="text-lg font-medium">
+            Careers started: {started == null ? "\u2014" : started}
+            {careerStart.max_consecutive ? ` / ${careerStart.max_consecutive}` : ""}
+          </div>
+          <div className="flex items-center gap-3 mt-2">
+            <Button variant="outline" onClick={reset} disabled={busy || started === 0}>
+              <RotateCcw className="size-4" />
+              Reset count
+            </Button>
+            <Button variant="ghost" onClick={() => void refresh()} disabled={busy}>
+              Refresh
+            </Button>
+          </div>
+          <span className="block text-sm text-muted-foreground mt-2">
+            Counted in <code>logs/career_start_progress.json</code>, one row per career with its own id, so the count
+            survives restarting the bot &mdash; which is what happens every time the game client freezes. Reset it to
+            start a fresh run. This is the bot's own count, not a setting: Reset takes effect at once, with no Apply.
           </span>
         </div>
       </div>

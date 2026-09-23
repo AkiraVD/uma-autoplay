@@ -87,38 +87,31 @@ Worth deriving properly if the behaviour ever looks wrong:
 
 ## Smaller open items
 
-- **A frozen client is invisible to `game_panel_blank()`.** Second occurrence,
-  2026-09-23 ~01:52, and it defeats the guard written for the first. On
-  2026-09-21 the panel went **flat white**, which the stddev check catches at
-  0.8 against a 3.0 threshold. This time the panel held a **full, detailed
-  frame** - a support card event, "A Hint for Growth", mid-scene - so stddev was
-  high and the check saw nothing wrong. The bot fell through to blind taps and
-  only `LOBBY_LOST_LIMIT` stopped it, 240 checks and ~35 minutes later at
-  02:27:13.
+- ~~**A frozen client is invisible to `game_panel_blank()`.**~~ **Detected
+  since 2026-09-23.** Three occurrences in three days, none of which the
+  stddev check could see, because it looks for a *flat* panel and these hold
+  full artwork: 2026-09-21 as the Japanese Derby started (~7.5h uptime),
+  2026-09-23 01:52 inside a support card event (~3h14m), and 13:41 inside the
+  "Tracen Idol" story event (~6h09m). Each cost ~35 minutes of blind tapping
+  before `LOBBY_LOST_LIMIT` stopped the bot, and then the night.
 
-  Measured while it was still up (07:39, five hours after it froze):
-  **0 pixels changed** over four captures six seconds apart, and 0 again across
-  two clicks a minute apart - so nothing was being presented at all. The process
-  was alive and **spinning at 87% CPU**, 9h04m of uptime. `Xorg.1.log` had not
-  been written since Sep 19 and the display answered with backlog 0, so X was
-  clean, exactly as last time.
+  `panel_digest()` compares the panel exactly, and the two states do not
+  overlap at all, so there was no threshold to tune: measured on the live game
+  while the bot played, consecutive grabs three seconds apart differed by
+  **41,709 to 785,636 pixels and were never identical**, while a frozen client
+  is byte-identical every time. `FROZEN_PANEL_LIMIT` is 10 checks (~90s), and
+  the check runs on **every** pass rather than only when the lobby is lost -
+  a freeze *in* the lobby keeps matching the Tazuna hint, so the not-in-lobby
+  recovery where `game_panel_blank` lives would never be reached.
 
-  **Uptime is not the trigger.** This froze after ~3h14m against 7.5h before.
-  What the two share is a *scene transition*: last time the instant the Japanese
-  Derby started, this time inside a support card event.
+  What is still open is the **recovery**: it stops in 90 seconds now instead of
+  35 minutes, but a person still has to close, relaunch, tap the title and
+  press Continue Career. Every piece of that walk is measured and has been
+  driven by hand three times; what it needs is the entry below, so a resume is
+  not mistaken for a new career.
 
-  The detector to write is therefore **"nothing has changed at all"**, not
-  "everything is one colour": a frame-identical panel over N checks, which
-  catches both variants. Careful with the threshold - a lobby waiting on a
-  screen the bot is not touching is legitimately still, so it needs to be a run
-  of checks rather than one, the same way BLANK_PANEL_LIMIT is.
-
-  Recovery is still a client restart, and still needs a person: `close` (the
-  hung client ignored the polite request for 30s and had to be signalled), then
-  `launch`, then the title tap, then CAREER -> Resume. The career survived
-  intact both times - here the Continue Career dialog showed the goal still
-  `In progress` with the turn *advanced* past the freeze, so the training that
-  triggered the event had registered server-side.
+  Uptime is not the trigger - 3h, 6h, 7.5h. All three froze during a **scene
+  transition**: a race starting, a support card event, a story event.
 - **A resume after a crash does not survive `career_start`.** With
   `career_start.enabled` on, a bot started at the plain home screen while a
   career is in progress calls the walk rather than resuming: `RESUMING_CAREER`
