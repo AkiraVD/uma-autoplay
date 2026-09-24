@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 
-import rawConfig from "../../config.json";
+// The *template*, never config.json. Vite inlines whatever is imported here, so
+// importing the live file baked one machine's settings into the bundle - and a
+// page starting from that snapshot posts it back over the real config. That is
+// how a Maruzensky config kept returning over a Mihono Bourbon one on
+// 2026-09-24. The template is the schema of record and describes no trainee.
+import rawConfig from "../../config.template.json";
 import { useConfig, type ApplyState } from "./hooks/useConfig";
 import { useConfigStore } from "./hooks/useConfigStore";
 import { configTitle, titleParts } from "./utils/configTitle";

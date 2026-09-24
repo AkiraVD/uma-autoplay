@@ -1,4 +1,4 @@
-from fastapi import Body, FastAPI, HTTPException
+from fastapi import Body, FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -6,9 +6,10 @@ import re
 import sys
 import time
 
-from server.utils import load_config, save_config
+from server.utils import config_version, load_config, save_config
 from server import configs, master_data, images, race_lists, race_plan, tools
 import core.state as state
+from utils.log import info, warning
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools"))
 import logserver
@@ -21,15 +22,37 @@ app.add_middleware(
   allow_credentials=True,
   allow_methods=["*"],
   allow_headers=["*"],
+  # The page reads the config version off the response, which a browser
+  # hides cross-origin - and `npm run dev` is another origin.
+  expose_headers=["X-Config-Version"],
 )
 
 @app.get("/config")
-def get_config():
+def get_config(response: Response):
+  # The version goes back with the config, and a write has to quote it.
+  response.headers["X-Config-Version"] = config_version()
   return load_config()
 
 @app.post("/config")
-def update_config(new_config: dict):
+def update_config(new_config: dict, response: Response,
+                  x_config_version: str = Header(default=None)):
+  """Write config.json, unless the page is working from an older one.
+
+  The page posts the whole document, so the last tab touched used to win
+  outright: a phone left open on yesterday's settings put them all back the
+  next time anything on it changed. A write says which version it read, and
+  one that read something else is refused - an error the page can show beats
+  a config that quietly reverts.
+  """
+  current = config_version()
+  if x_config_version != current:
+    stale = "no version at all" if x_config_version is None else x_config_version
+    warning(f"Refused a config write based on {stale}; the file is at {current}.")
+    raise HTTPException(status_code=409, detail="CFG-E10 this page read an older config.json than the one on disk, so applying it would undo whatever changed it. Reload the page and make the change again.")
   save_config(new_config)
+  response.headers["X-Config-Version"] = config_version()
+  # Every revert this has caused was invisible until the next bot start.
+  info(f"Config applied from the page: {new_config.get('config_name') or new_config.get('trainee') or 'unnamed'}.")
   return {"status": "success", "data": new_config}
 
 # Saved presets, all in uma_configs/ beside config.json; see server/configs.py.
