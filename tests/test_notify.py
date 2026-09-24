@@ -324,8 +324,11 @@ def test_a_notification_can_carry_a_picture():
   source = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
   ok("the career-started message sends the Final Confirmation",
      "photo=state.CAREER_START_FRAME" in source)
-  ok("and the career-finished message sends the screen",
-     'photo=notify.save_frame(screen, "career_end_")' in source)
+  ok("and the career-finished message sends the Complete Career screen",
+     "photo=state.CAREER_END_FRAME" in source)
+  ok("which is kept before that button is pressed",
+     source.index('state.CAREER_END_FRAME = notify.save_frame(screen, "career_end_")')
+     < source.index('click(boxes=matches["career_complete"]'))
   walk = open(os.path.join("core", "career_start.py"), encoding="utf-8").read()
   ok("the walk keeps that frame before pressing Start Career!",
      walk.index("save_frame(screen") < walk.index("FINAL_CONFIRM_START_MOUSE_POS"))

@@ -1513,6 +1513,9 @@ def career_lobby():
                       f"uuid: {state.CAREER_UUID}",
                       photo=state.CAREER_START_FRAME)
           state.CAREER_START_FRAME = None
+          # A previous career whose To Home screen never came round would
+          # otherwise hand its picture to this one's ending.
+          state.CAREER_END_FRAME = None
           SEEN_LOBBY = False
           RESUMING_CAREER = False
           state.apply_scenario(new_career=True)
@@ -1536,9 +1539,12 @@ def career_lobby():
                   f"Stats: {_stat_line(state.LAST_STATS)}\n"
                   f"Sparks: {state.LAST_SPARKS or 'not read'}"
                   + (f"\nuuid: {state.CAREER_UUID}" if state.CAREER_UUID else ""),
-                  # This screen is the career's own summary, so it says more
-                  # than the two lines above ever could.
-                  photo=notify.save_frame(screen, "career_end_"))
+                  # The Complete Career screen, kept when it was on screen. A
+                  # bot that joined the career after it never saw one, so this
+                  # screen stands in.
+                  photo=state.CAREER_END_FRAME
+                  or notify.save_frame(screen, "career_end_"))
+      state.CAREER_END_FRAME = None
       state.LAST_SPARKS = None
       click(boxes=matches["to_home"], text="Leaving the finished career.")
       sleep(3)
@@ -1582,6 +1588,11 @@ def career_lobby():
         click(img="assets/buttons/back_btn.png", minSearch=get_secs(2), region=constants.SCREEN_BOTTOM_REGION)
         sleep(1.5)
         continue
+      # The picture the finished-career message carries. Taken here, with the
+      # skill points already spent: this screen has the fans, the stat grades,
+      # the aptitudes and the deck, and the To Home screen after it has none
+      # of them.
+      state.CAREER_END_FRAME = notify.save_frame(screen, "career_end_")
       click(boxes=matches["career_complete"], text="Career complete.")
       # The next career starts its friend card chain from step 1.
       outings.reset()

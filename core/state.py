@@ -95,6 +95,10 @@ LAST_SPARKS = None
 CAREER_UUID = None
 # The Final Confirmation frame of that career, for the message announcing it.
 CAREER_START_FRAME = None
+# The Complete Career frame, for the message announcing the career's end. Kept
+# from that screen rather than the To Home one after it: only this one carries
+# the fans, the stat grades, the aptitudes and the deck.
+CAREER_END_FRAME = None
 # Careers career_start has begun since the bot was last started. Live state,
 # not config: career_lobby() resets it and the config page reads it back.
 CAREERS_STARTED = 0
