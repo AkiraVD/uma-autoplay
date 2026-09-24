@@ -284,6 +284,41 @@ def measured():
   """Whether the position came off the Recreation panel rather than a count."""
   return _measured
 
+def _match_card(card_name):
+  """The chain owner an OCR'd panel name refers to, or None.
+
+  Loose, because the name is OCR'd, but above MATCH_THRESHOLD: a wrong match
+  moves the tracked position rather than costing one event choice.
+  """
+  if not card_name:
+    return None
+  hit = process.extractOne(card_name, [display_name(c) for c in _chains],
+                           scorer=fuzz.token_sort_ratio)
+  if hit and hit[1] / 100.0 >= MATCH_THRESHOLD:
+    return next(c for c in _chains if display_name(c) == hit[0])
+  return None
+
+
+def set_complete(card_name):
+  """Record that the panel says the chain is spent - every step is done.
+
+  "Event Complete!" is not a step count, so it cannot come through
+  set_position: the chevrons are gone by then and that reads as zero steps
+  done, which is the wrong end of the chain.
+  """
+  global _card, _depth, _measured
+  load_chains()
+  character = _match_card(card_name)
+  steps = len(_chains[character]) if character in _chains else (max(_by_depth) if _by_depth else 0)
+  if character is not None:
+    _card = character
+  if not _measured or _depth != steps:
+    info(f"Recreation panel: {character or 'the friend chain'} is complete"
+         f" at {steps} steps; counter said {_depth}.")
+  _depth, _measured = steps, True
+  return _card, steps
+
+
 def set_position(card_name, filled):
   """Record the chain position read off the Recreation panel.
 
@@ -297,12 +332,7 @@ def set_position(card_name, filled):
   load_chains()
   if filled is None or filled < 0:
     return None
-  character = None
-  if card_name:
-    hit = process.extractOne(card_name, [display_name(c) for c in _chains],
-                             scorer=fuzz.token_sort_ratio)
-    if hit and hit[1] / 100.0 >= MATCH_THRESHOLD:
-      character = next(c for c in _chains if display_name(c) == hit[0])
+  character = _match_card(card_name)
   if character is None:
     if _card is not None:
       # A name that will not match means the frame was not the chooser - the

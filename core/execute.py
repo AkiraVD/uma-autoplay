@@ -631,7 +631,10 @@ def set_skip_x2(max_presses=3):
   return False
 # Consecutive Recreation frames showing neither the confirmation nor a friend
 # row. Almost always the panel mid-animation rather than a friend-less deck.
-_recreation = {"waits": 0}
+# waits: frames seen on the panel with neither a confirmation nor a friend row,
+# which is usually mid-animation. taps: friend-row clicks that never produced
+# the confirmation dialog, which means the row is not taking them.
+_recreation = {"waits": 0, "taps": 0}
 
 CHOICE_VERTICAL_GAP = 112
 
@@ -1301,6 +1304,7 @@ def career_lobby():
       # the same header, so the only reliable tell is its OK button.
       if click(boxes=matches["ok"], text="Confirming the outing."):
         _recreation["waits"] = 0
+        _recreation["taps"] = 0
         sleep(2)
         continue
 
@@ -1309,6 +1313,29 @@ def career_lobby():
         # A friend row is on offer. It gives everything plain recreation does
         # and advances the card's chain as well, so it is never the worse pick.
         panel = check_recreation_panel()
+        # Unless the chain is spent: the row keeps its "Event Progress" label
+        # but reads "Event Complete!" and stops taking clicks, so the label
+        # alone is not an offer. Tapping it regardless looped a career for
+        # three minutes on 2026-09-24 before it was stopped by hand.
+        if panel and panel["complete"]:
+          outings.set_complete(panel["card"])
+          _recreation["taps"] = 0
+          x, y = constants.RECREATION_TRAINEE_ROW_MOUSE_POS
+          click(boxes=(x, y, 1, 1),
+                text="The friend chain is complete, so plain recreation.")
+          sleep(2)
+          continue
+        # A row that will not answer, for any other reason: the confirmation
+        # never came, so this frame is the chooser again. Two goes, then take
+        # the trainee row rather than tap forever.
+        _recreation["taps"] += 1
+        if _recreation["taps"] > 2:
+          warning("The friend row did not answer three taps; taking plain recreation.")
+          _recreation["taps"] = 0
+          x, y = constants.RECREATION_TRAINEE_ROW_MOUSE_POS
+          click(boxes=(x, y, 1, 1), text="Falling back to plain recreation.")
+          sleep(2)
+          continue
         if panel and panel["filled"] is not None:
           outings.set_position(panel["card"], panel["filled"])
         # Record what this step is predicted to give first: the Log will say
@@ -1343,6 +1370,7 @@ def career_lobby():
         sleep(0.5)
         continue
       _recreation["waits"] = 0
+      _recreation["taps"] = 0
       x, y = constants.RECREATION_TRAINEE_ROW_MOUSE_POS
       click(boxes=(x, y, 1, 1), text="No friend outing on offer, plain recreation.")
       sleep(2)

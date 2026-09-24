@@ -5,8 +5,9 @@ imports the real core.state, so it builds an easyocr Reader and is slow to
 start - the name on the panel is OCR'd and there is no honest way to stub that.
 
 Fixtures in tests/fixtures/recreation/:
-  panel_riko_step3.png       the panel open, Riko Kashimoto, 3 of 5 chevrons filled
-  team_showdown_no_panel.png a frame with no panel, so nothing must match
+  panel_riko_step3.png            the panel open, Riko Kashimoto, 3 of 5 chevrons filled
+  panel_light_hello_complete.png  Light Hello's chain spent: "Event Complete!"
+  team_showdown_no_panel.png      a frame with no panel, so nothing must match
 """
 import os
 import sys
@@ -25,6 +26,7 @@ from core.recognizer import multi_match_templates  # noqa: E402
 
 FIXTURES = os.path.join("tests", "fixtures", "recreation")
 PANEL = os.path.join(FIXTURES, "panel_riko_step3.png")
+COMPLETE = os.path.join(FIXTURES, "panel_light_hello_complete.png")
 NO_PANEL = os.path.join(FIXTURES, "team_showdown_no_panel.png")
 
 failures = []
@@ -45,6 +47,34 @@ def test_reader():
 
   # A frame with no panel must count nothing rather than inventing a position.
   ok("no chevrons off-panel", S.count_filled_chevrons(Image.open(NO_PANEL)) == 0)
+
+  ok("an unspent chain does not read as complete", panel["complete"] is False)
+
+def test_a_spent_chain():
+  """"Event Complete!" reads as zero chevrons, which is the wrong end of the
+  chain. A career sat tapping that row for three minutes on 2026-09-24."""
+  done = S.check_recreation_panel(Image.open(COMPLETE))
+  ok("the spent panel is read", done is not None)
+  ok("and reads as complete", done["complete"] is True)
+  ok("the card name is still read", done["card"] == "Light Hello", repr(done["card"]))
+  # The trap: the chevron count alone says the chain has not started.
+  ok("its chevron count is the misleading zero", done["filled"] == 0, str(done["filled"]))
+
+  O.reset()
+  ok("completion sets the far end of the chain",
+     O.set_complete(done["card"]) == ("light-hello", 5))
+  ok("and nothing is left to take", O.steps_remaining() == 0, str(O.steps_remaining()))
+
+  # The label is on screen either way, so the branch cannot key on it alone.
+  matched = multi_match_templates(E.templates, screen=Image.open(COMPLETE))
+  ok("the Event Progress label matches a spent row too",
+     bool(matched.get("event_progress")))
+  src = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
+  body = src[src.index("def career_lobby("):]
+  ok("so completion is checked before the friend row is tapped",
+     body.index('panel["complete"]') < body.index("Going out with the friend support"))
+  ok("and a row that will not answer is given up on",
+     '_recreation["taps"]' in body)
 
 def test_dispatch():
   """The panel has to be recognised, and recognised before the cancel handler."""
@@ -89,7 +119,7 @@ def test_position():
   ok("two steps are left", O.steps_remaining() == 2, str(O.steps_remaining()))
 
 def main():
-  for test in (test_reader, test_dispatch, test_position):
+  for test in (test_reader, test_a_spent_chain, test_dispatch, test_position):
     print(f"--- {test.__name__}")
     test()
   print("")

@@ -819,15 +819,41 @@ def check_outing_available():
 CHEVRON_HUE = (180, 220)
 CHEVRON_MIN_AREA = 300
 CHEVRON_SIZE = (22, 48)
+# A spent chain replaces the chevrons with a solid pink "Event Complete!" pill
+# over the same strip. The row keeps its "Event Progress" label, so the label is
+# no longer proof that an outing is on offer - the colour of the bar is. The
+# band wraps through red, hence the two ranges. Measured over that strip: 26% of
+# it pink on a spent chain and none at all with chevrons showing, against 20%
+# cyan the other way round, so the floor sits far from both.
+CHEVRON_DONE_HUE = ((310, 360), (0, 15))
+CHEVRON_DONE_COVERAGE = 0.08
 
-def count_filled_chevrons(img):
-  """Filled Event Progress chevrons in a full-screen image."""
+def _chevron_strip(img):
+  """(hue in degrees, coloured-pixel mask) over the Event Progress strip."""
   bbox = constants.RECREATION_CHEVRON_BBOX
   strip = np.array(img.crop(bbox).convert("RGB"))
   hsv = cv2.cvtColor(cv2.cvtColor(strip, cv2.COLOR_RGB2BGR), cv2.COLOR_BGR2HSV)
   hue = hsv[:, :, 0].astype(int) * 2
-  mask = ((hue >= CHEVRON_HUE[0]) & (hue <= CHEVRON_HUE[1])
-          & (hsv[:, :, 1] > 80) & (hsv[:, :, 2] > 80)).astype(np.uint8)
+  coloured = (hsv[:, :, 1] > 80) & (hsv[:, :, 2] > 80)
+  return hue, coloured
+
+def chain_complete(img):
+  """True when the Event Progress bar reads "Event Complete!".
+
+  The friend row is dead once it does: it still looks like a row and still
+  carries the label, but the game no longer takes a click on it. Reading zero
+  chevrons there and tapping it anyway is what wedged a career on 2026-09-24.
+  """
+  hue, coloured = _chevron_strip(img)
+  pink = np.zeros(hue.shape, dtype=bool)
+  for low, high in CHEVRON_DONE_HUE:
+    pink |= (hue >= low) & (hue <= high)
+  return float((pink & coloured).sum()) / hue.size >= CHEVRON_DONE_COVERAGE
+
+def count_filled_chevrons(img):
+  """Filled Event Progress chevrons in a full-screen image."""
+  hue, coloured = _chevron_strip(img)
+  mask = ((hue >= CHEVRON_HUE[0]) & (hue <= CHEVRON_HUE[1]) & coloured).astype(np.uint8)
   count, _, stats, _ = cv2.connectedComponentsWithStats(mask, connectivity=8)
 
   filled = 0
@@ -859,6 +885,7 @@ def check_recreation_panel(img=None):
     if img is None:
       img = ImageGrab.grab()
     filled = count_filled_chevrons(img)
+    complete = chain_complete(img)
   except Exception as e:
     debug(f"Could not read the Recreation chevron row: {e}")
     return None
@@ -867,8 +894,9 @@ def check_recreation_panel(img=None):
   region = constants.RECREATION_NAME_REGION
   name = extract_text(enhance_for_reading(
     img.crop((region[0], region[1], region[0] + region[2], region[1] + region[3]))))
-  debug(f"Recreation panel: {name!r}, {filled} chevrons filled.")
-  return {"card": name, "filled": filled}
+  debug(f"Recreation panel: {name!r}, "
+        + ("Event Complete!" if complete else f"{filled} chevrons filled."))
+  return {"card": name, "filled": filled, "complete": complete}
 
 def read_log_lines():
   """Lines of the game's Log panel, newest last.
