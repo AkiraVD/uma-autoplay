@@ -24,6 +24,12 @@ SKILL_PTS_RANGE = (0, 9999)
 TURNS_LEFT_RANGE = (0, 99)
 
 stop_event = threading.Event()
+# Set by the server when the page writes config.json, cleared by
+# career_lobby(). The page applies every edit as it is made, so a run picks
+# them up without being restarted - but between two actions, never inside one:
+# reload_config() rebinds a few dozen globals, and a decision half-read from
+# the old config and half from the new is the one thing worse than waiting.
+config_dirty = threading.Event()
 is_bot_running = False
 bot_thread = None
 bot_lock = threading.Lock()

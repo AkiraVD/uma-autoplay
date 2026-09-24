@@ -1144,6 +1144,22 @@ def career_lobby():
                 run_style=getattr(state, "SKILL_RUN_STYLE", None),
                 distances=getattr(state, "SKILL_DISTANCE", None))
   while state.is_bot_running and not state.stop_event.is_set():
+    # An edit on the config page lands here rather than at the next bot start.
+    # Between two actions is the only safe point: reload_config() rebinds a few
+    # dozen globals at once, and every branch below re-observes anyway.
+    if state.config_dirty.is_set():
+      state.config_dirty.clear()
+      try:
+        state.reload_config()
+        trainee.check(state.TRAINEE, position=state.PREFERRED_POSITION,
+                      run_style=getattr(state, "SKILL_RUN_STYLE", None),
+                      distances=getattr(state, "SKILL_DISTANCE", None))
+        info(f"Config reloaded while running: {state.CONFIG_NAME}.")
+      except Exception as e:
+        # A half-written file or a key the template no longer has: keep playing
+        # on the config already loaded rather than stopping the career.
+        error(f"Could not reload the config: {type(e).__name__}: {e}."
+              " Carrying on with the one already loaded.")
     screen = ImageGrab.grab()
 
     # Before anything is read off this frame: is the client still drawing it?

@@ -99,9 +99,36 @@ def test_the_page_bakes_in_no_config():
     ok("and carries no trainee from this machine's config", not baked, str(baked))
 
 
+def test_a_running_career_picks_up_a_change():
+  """An applied edit used to wait for the next bot start to mean anything."""
+  import core.state as state
+  ok("the flag exists and starts clear",
+     hasattr(state, "config_dirty") and not state.config_dirty.is_set())
+
+  src = open(os.path.join("server", "main.py"), encoding="utf-8").read()
+  route = src[src.index('@app.post("/config")'):src.index('@app.get("/configs")')]
+  ok("a write raises it",
+     "state.config_dirty.set()" in route
+     and route.index("save_config(new_config)") < route.index("config_dirty.set()"))
+
+  body = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
+  loop = body[body.index("while state.is_bot_running"):]
+  ok("the loop takes it before reading the frame",
+     loop.index("config_dirty.is_set()") < loop.index("screen = ImageGrab.grab()"))
+  ok("and clears it before reloading, so a write during the reload is not lost",
+     loop.index("config_dirty.clear()") < loop.index("state.reload_config()"))
+  ok("a bad config leaves the run on the one it has",
+     "Carrying on with the one already loaded" in loop)
+
+  start = open("main.py", encoding="utf-8").read()
+  ok("a bot start has nothing left to pick up",
+     start.index("state.reload_config()") < start.index("state.config_dirty.clear()"))
+
+
 def main():
   for test in (test_version, test_the_route_refuses_a_stale_write,
-               test_the_page_bakes_in_no_config):
+               test_the_page_bakes_in_no_config,
+               test_a_running_career_picks_up_a_change):
     print(f"--- {test.__name__}")
     test()
   print("")

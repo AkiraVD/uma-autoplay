@@ -40,6 +40,9 @@ def main():
   try:
     state.reload_config()
     state.stop_event.clear()
+    # Anything the page wrote while the bot was stopped is in the config
+    # just loaded, so the loop has nothing left to pick up.
+    state.config_dirty.clear()
 
     if focus_umamusume():
       info(f"Config: {state.CONFIG_NAME}")

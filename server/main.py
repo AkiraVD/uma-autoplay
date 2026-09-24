@@ -51,6 +51,9 @@ def update_config(new_config: dict, response: Response,
     raise HTTPException(status_code=409, detail="CFG-E10 this page read an older config.json than the one on disk, so applying it would undo whatever changed it. Reload the page and make the change again.")
   save_config(new_config)
   response.headers["X-Config-Version"] = config_version()
+  # A running career picks this up at its next lobby pass; core/execute.py
+  # reloads between two actions rather than in the middle of one.
+  state.config_dirty.set()
   # Every revert this has caused was invisible until the next bot start.
   info(f"Config applied from the page: {new_config.get('config_name') or new_config.get('trainee') or 'unnamed'}.")
   return {"status": "success", "data": new_config}
