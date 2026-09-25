@@ -65,6 +65,10 @@ PERFORMANCE_URGENT_POINTS = 4.0
 ALWAYS_BUY_GOLD_SKILL = False
 # URA Finale: take a facility carrying the Duel! badge when it is safe.
 URA_CHASE_DUELS = True
+# Which duel contests are worth winning, best first. Energy leads because it
+# pays Racing Spirit: Mood - the better skill - and because it is never the
+# guaranteed first option, so it is the scarcer chance.
+URA_DUEL_TARGETS = ["energy", "sta"]
 # The game mode from config: "auto", "ura", "unity" or "grand_concert". A fixed
 # mode sets the SEEN flags outright (apply_scenario); "auto" learns them by
 # sighting the mode's own screens (saw_scenario).
@@ -313,8 +317,9 @@ def reload_config():
   SPIRIT_BURST_EX_POINTS = unity_config.get("spirit_burst_ex_points", 3.0)
   BURST_ENABLED_STATS = unity_config.get("burst_enabled_stats", [])
   ura_config = config.get("ura", {})
-  global URA_CHASE_DUELS
+  global URA_CHASE_DUELS, URA_DUEL_TARGETS
   URA_CHASE_DUELS = ura_config.get("chase_duels", True)
+  URA_DUEL_TARGETS = ura_config.get("duel_targets") or ["energy", "sta"]
   gc_config = config.get("grand_concert", {})
   global SONG_PRIORITY, SONG_PLAN, LYRICS_OPTION, HOLD_FOR_TOP_SONGS, ENERGY_TECHNIQUE_BELOW, PERFORMANCE_SHORT_POINTS
   global PERFORMANCE_URGENT_POINTS, ALWAYS_BUY_GOLD_SKILL

@@ -416,6 +416,15 @@ PERFORMANCE_ROW_PITCH = 55
 # selected facility's disc rides 45px higher - so the band is deliberately tall
 # and the badge is assigned to a facility by x alone.
 DUEL_BADGE_BBOX = (260, 780, 880, 990)
+# The duel's own screen. Each option row carries a `Predictions:` glyph at a
+# fixed x; the rows themselves are the usual bottom-anchored choice rows, so
+# they are found from the glyphs rather than tabulated. Measured 2026-09-25:
+# x=798, rows at y 530 / 641 / 753 for the three options a duel always offers.
+DUEL_PREDICTION_BBOX = (776, 460, 822, 800)
+# The option's own label ("Contest of wits!"), on the same row. Stops short of
+# the "Predictions:" caption at x~660.
+DUEL_LABEL_X = (300, 655)
+DUEL_LABEL_HALF_HEIGHT = 20
 DUEL_BADGE_OFFSET_X = -31
 
 GC_RECREATION_BADGE_BBOX = (455, 875, 590, 975)

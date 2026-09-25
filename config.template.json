@@ -106,7 +106,11 @@
     "burst_enabled_stats": []
   },
   "ura": {
-    "chase_duels": true
+    "chase_duels": true,
+    "duel_targets": [
+      "energy",
+      "sta"
+    ]
   },
   "grand_concert": {
     "song_priority": [

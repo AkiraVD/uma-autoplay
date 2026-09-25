@@ -7,6 +7,7 @@ import utils.control as control
 import core.state as state
 import utils.constants as constants
 from core.ocr import extract_text
+import core.duel as duel
 from core.event_outcomes import best_option
 from core.event_effects import best_choice
 from core.state import read_choice_effects
@@ -98,6 +99,29 @@ def is_lyrics_event(event_name, panel):
 def event_choice(event_name):
   threshold = 0.8
   choice = 0
+
+  # URA Finale: Happy Meek's Challenge, decided on its own Predictions column.
+  #
+  # Ahead of everything else on purpose. The config layer below returns a fixed
+  # option index for a matched event name, and a duel randomises which contest
+  # sits in which row - so a config entry for this event cannot be right, and
+  # would win outright at similarity >= 0.8. The panel scorer cannot help
+  # either: it sums effect lines and has nowhere to put a probability, while
+  # here the probability is the entire decision.
+  #
+  # Costs one grab and four small template matches on an event turn in a URA
+  # career, and reads no text at all unless the glyphs are actually there.
+  if not state.UNITY_SEEN and not state.GRAND_CONCERT_SEEN:
+    rows = duel.read_board()
+    if duel.is_duel(rows):
+      picked = duel.pick(rows, state.URA_DUEL_TARGETS)
+      if picked:
+        taken = rows[picked - 1]
+        info(f"Happy Meek's Challenge [{duel.describe(rows)}]:"
+             f" taking #{picked}, {(taken.get('category') or '?').upper()}.")
+        return picked
+      info(f"Happy Meek's Challenge [{duel.describe(rows)}]:"
+           " nothing worth winning, leaving it to the usual scoring.")
 
   # Deliberately ahead of the name match: the panel needs no name, so it works
   # on an event whose title will not OCR at all. The config still wins over it
