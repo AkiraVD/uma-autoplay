@@ -383,6 +383,11 @@ def buy_planned():
   for wanted_name in state.URA_FORCE_BUY_SKILLS:
     card = offered.get(base_name(wanted_name))
     if not card:
+      # Silence here reads as "the force did nothing" when the truth is "the
+      # duel that grants its hint was never won", which is the thing worth
+      # knowing at the end of a career run for exactly that.
+      info(f"{wanted_name} is wanted for its spark but is not on offer;"
+           " its duel was never won.")
       continue
     if card["cost"] > budget:
       info(f"{card['name']} is wanted for its spark but costs {card['cost']}"

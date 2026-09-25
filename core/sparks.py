@@ -22,6 +22,7 @@ The reader finds rows by their gold stars rather than by fixed offsets, because
 the list screen and the selection screen put them 28px apart (y=169 against
 y=198). A row is then named by the colour of its pill.
 """
+import re
 import numpy as np
 from PIL import ImageGrab
 
@@ -118,6 +119,19 @@ def _name(screen, y):
   # about as often as it gets the circle right (core/skill.py:503).
   return base_name(text or "")
 
+def match_key(text):
+  """A spark name reduced to what OCR can be trusted to agree on.
+
+  `base_name` strips the trailing rank glyph, which is the damage skill names
+  take. Spark rows take one more: the screen puts a `+` after the name and
+  easyocr keeps it. A live career read `racing spirit: mood +`, an exact match
+  against `racing spirit: mood` failed, and the set holding the one spark the
+  career was run for was rerolled away (2026-09-25). Anything trailing that is
+  not a letter or digit goes.
+  """
+  from core.skill import base_name
+  return re.sub(r"[^a-z0-9]+$", "", base_name(text or ""))
+
 def wanted(rows):
   """How many rows name a spark config asked to keep.
 
@@ -127,9 +141,9 @@ def wanted(rows):
   """
   if not state.URA_KEEP_SPARKS:
     return 0
-  from core.skill import base_name
-  targets = {base_name(n) for n in state.URA_KEEP_SPARKS}
-  return sum(1 for r in rows if r.get("name") and r["name"] in targets)
+  targets = {match_key(n) for n in state.URA_KEEP_SPARKS}
+  targets.discard("")
+  return sum(1 for r in rows if match_key(r.get("name")) in targets)
 
 def rank(rows):
   """(wanted sparks, stars on the stat spark, number of skill sparks).

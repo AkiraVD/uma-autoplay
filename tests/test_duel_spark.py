@@ -131,7 +131,41 @@ def test_row_names_read_off_a_real_screen():
     state.URA_KEEP_SPARKS = before
 
 
+def test_the_plus_suffix_a_live_career_actually_produced():
+  """The bug this rule was written to prevent, and then caused itself.
+
+  On 2026-09-25 the rerolled set held `Racing Spirit: Mood` and the rule scored
+  it 0, because the screen puts a `+` after a spark's name and easyocr keeps it
+  (`racing spirit: mood +`). `base_name` strips the rank glyph but not that, so
+  the exact match failed and the set was rerolled away.
+  """
+  print("\n-- test_the_plus_suffix_a_live_career_actually_produced")
+  ok("a trailing + is not part of the name",
+     sparks.match_key("racing spirit: mood +") == "racing spirit: mood",
+     sparks.match_key("racing spirit: mood +"))
+  ok("and a rank glyph still goes too",
+     sparks.match_key("Standard Distance 0") == "standard distance")
+
+  original = os.path.join("tests", "fixtures", "sparks", "sparks_ura_wit_spark.png")
+  rerolled = os.path.join("tests", "fixtures", "sparks", "sparks_ura_mood_spark.png")
+  if not (os.path.exists(original) and os.path.exists(rerolled)):
+    return
+  before = state.URA_KEEP_SPARKS
+  try:
+    state.URA_KEEP_SPARKS = ["Racing Spirit: Mood", "Racing Spirit: Stamina"]
+    o = sparks.read(Image.open(original))
+    r = sparks.read(Image.open(rerolled))
+    ok("the set holding Mood is recognised", sparks.wanted(r) == 1, sparks.wanted(r))
+    ok("the set without it is not", sparks.wanted(o) == 0, sparks.wanted(o))
+    ok("and it is kept despite a worse blue star",
+       sparks.rank(r) > sparks.rank(o), f"{sparks.rank(r)} vs {sparks.rank(o)}")
+    ok("so it is not rerolled away", sparks.worth_rerolling(r) is False)
+  finally:
+    state.URA_KEEP_SPARKS = before
+
+
 for test in (test_the_optimizer_would_never_buy_them,
+             test_the_plus_suffix_a_live_career_actually_produced,
              test_a_wanted_spark_is_counted,
              test_a_wanted_spark_outranks_stars,
              test_the_ordinary_rule_is_untouched,

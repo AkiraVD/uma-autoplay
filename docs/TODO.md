@@ -645,36 +645,53 @@ than reading pixels and moving the mouse.
 
 Worth revisiting only if Trackblazer's shop inventory, coin balance and grade
 points turn out to be genuinely unreadable on screen.
+## URA duels: run against a live career (2026-09-25)
 
-## URA duels: built, never run (2026-09-25)
+One full URA career, Taiki Shuttle, capture in `shots/duel2/`. Everything in
+slices 1-3 executed end to end: badge -> 0% gate -> train -> duel screen ->
+glyph read -> contest picked -> won -> hint -> skill force-bought.
 
-The whole chain is in and tested against captured frames and unit tests, and
-**none of it has executed against a live game**. What is verified and what is
-not:
+**Numbers from that career.** 10 badges seen, 4 refused on failure rate, 6
+taken, 6 duel screens read, 6 won. The badge is *common* - roughly every other
+lobby turn - so the 0% gate does most of the deciding, not the badge reader.
 
-- **Verified on frames.** The badge reader (8 positives across Wit, Speed,
-  Power and Guts; 5 negatives including the pink `!` markers), the Predictions
-  glyphs (24/24 over 8 duels), the option labels, and the spark row names.
-- **Verified by unit test.** `duel_action`'s gates, `pick`'s rules, the stat-cap
-  escape, the Recreation door, `rank`/`worth_rerolling`.
-- **Never run.** Badge -> train that facility -> duel screen appears -> the
-  right row is *clicked* -> the hint lands -> the skill is bought at career end
-  -> the spark rolls. Every join between those steps is untested.
+**The three pick rules each fired on a real board:**
 
-Specific things to watch on the first live career:
+| Board | Picked | Rule |
+|---|---|---|
+| `SPD=O GUTS=/\ ENERGY=X` | #1 SPD | best odds; no target qualified |
+| `WIT=/\ GUTS=X ENERGY=X` | #1 WIT | best odds on a poor board |
+| `WIT=O SPD=O ENERGY=O` | #3 ENERGY | a wanted target beats equals |
+| `SPD=O STA=X PWR=X` | #1 SPD | a wanted target at a cross is refused |
 
-- `select_event` clicks by `choice_point()`, which derives the row count from
-  the first icon's y. The duel rows were measured at **530 / 641 / 753** - the
-  111px step, not the 736 / 112 one recorded for other events. If a duel's
-  three rows anchor differently, the pick is right and the click is wrong.
-- `select_event`'s repeat guard starts alternating first/last option after 3
-  sightings of one event name. A badge-chasing career sees `Happy Meek's
-  Challenge!` often; check it cannot reach 3 in a row.
-- `failure == 0` is frequently an *assumption*, not a reading: once one facility
-  reads clearly safe, `check_training` writes 0 for the rest without an OCR
-  call. A badged facility could be taken at a real 8-12%.
-- Whether a `(o)` option really is a guaranteed win (it showed a single outcome
-  where every other glyph showed two branches, on two frames).
-- Whether Energy contests are ever winnable. Over 8 duels Energy came up twice
-  and was rated `X` both times, which is the only route to
-  `Racing Spirit: Mood` - the one skill `ura.force_buy_skills` names by default.
+**The row-anchor worry was unfounded.** `choice_point` anchored option 1 at
+y=513 and option 3 at y=737 (513 + 2x112), which are the rows whose glyphs were
+measured at 530 and 753. Pick and click agree, including on a non-first option.
+
+**A won duel raises that stat's cap by +4**, which is the cheapest way to
+confirm a win from the log alone: spd went 1464 -> 1468 -> 1472 across two.
+Careful with the Energy contest - it raises max energy and a *random* cap, so
+"no cap moved" does **not** mean it was lost. It was read that way here and the
+reading was wrong; the 135-point price of `Racing Spirit: Mood` (150 less a
+10% hint discount) is what proved the win.
+
+**Repeated wins make the skills buy themselves.** Speed and Wit reached a
+maxed hint discount and the optimizer took them unaided at 90 and 97 points.
+Only `Racing Spirit: Mood`, at one hint level and 135 points, still needed
+`ura.force_buy_skills`. So the force matters for the contest won *once*, not
+for the ones chased all career.
+
+**Bug found and fixed: the spark rule threw away the spark it exists for.**
+The rerolled set held `Racing Spirit: Mood` and scored 0 wanted, so the
+original was kept instead. The spark screen writes a `+` after a row's name and
+easyocr keeps it (`racing spirit: mood +`); `base_name` strips the trailing rank
+glyph but not that, so the exact match failed. `sparks.match_key` now drops
+anything trailing that is not a letter or digit. Regression test and both real
+frames are in `tests/test_duel_spark.py` /
+`tests/fixtures/sparks/sparks_ura_{wit,mood}_spark.png`.
+
+**Still unobserved.** Whether a spark is ever actually *kept* by the wanted
+rule - the fix is verified against the captured frames, not against a live
+reroll - and whether `(o)` really means a guaranteed win (it showed a single
+outcome where other glyphs showed two branches, still only on a handful of
+frames).
