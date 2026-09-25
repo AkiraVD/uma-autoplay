@@ -21,6 +21,7 @@ from core.logic import do_something, decide_race_for_goal, training_value, shoul
 
 from utils.log import info, warning, error, debug
 import utils.constants as constants
+import utils.capture as capture
 
 from core.recognizer import is_btn_active, multi_match_templates, match_template
 from core.skill import buy_skill
@@ -399,9 +400,18 @@ def check_training():
     click(img="assets/buttons/back_btn.png")
     return {}
 
+  # One training-screen frame per lobby turn, only with UMA_CAPTURE_DIR set.
+  # The URA `Duel!` badge reader has to be built from real frames and none have
+  # ever been captured, and there is no detector yet to filter on - so this
+  # keeps every turn and the sifting is done by hand. The unbadged ones are not
+  # waste: `umatool sep` needs negatives, and a positives-only capture cannot
+  # produce a threshold.
+  screen = ImageGrab.grab() if capture.enabled() else None
+  capture.keep(screen, "duel_train")
+
   # Grand Concert: every facility's Performance chip is on screen at once and
   # does not change with the selection, so one read covers all five.
-  performance = state.check_performance() if state.GRAND_CONCERT_SEEN else None
+  performance = state.check_performance(screen) if state.GRAND_CONCERT_SEEN else None
   # A Lessons board of locked techniques has no badge to say what it needs.
   if performance is not None:
     blocked = lessons.blocked_types()
@@ -676,6 +686,14 @@ def select_event():
   # When one does it pins the outing chain exactly, which also resyncs the
   # counter after a restart mid-career.
   outings.note_event(event_name)
+
+  # The URA duel screen has never been captured, and its Predictions column -
+  # the ◎/○/△ glyphs rating each option - has no measured geometry anywhere.
+  # Keep the whole frame when the title names it, with UMA_CAPTURE_DIR set.
+  if capture.enabled() and event_name:
+    lowered = event_name.strip().lower()
+    if "meek" in lowered or fuzz.ratio(lowered, "happy meek's challenge!") >= 70:
+      capture.keep(ImageGrab.grab(), "duel_choice")
 
   # An info menu reopens after every answer, so always taking the top choice
   # loops forever - the Unity Cup tutorial does exactly this. Its way out is the

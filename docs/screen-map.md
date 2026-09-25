@@ -2132,3 +2132,90 @@ scheduled race on a Climax race day, where the Races button does not exist.
 
 The shop / Climax Store itself and its 6-turn refresh and costs, rival races
 and their red/blue VS icon, and race route epithets.
+
+## URA Finale: the Happy Meek duel (measured 2026-09-25)
+
+Captured on a live URA career (Taiki Shuttle, Deck 8) with `UMA_CAPTURE_DIR`
+set. Eight duels fired in one career. Fixtures in `tests/fixtures/duel/`.
+
+### The `Duel!` badge on the training screen
+
+An orange starburst reading `Duel` sitting on a facility disc's **top-left**,
+measured at `(742, 880)` on Wit - roughly **(-25, -30) from the disc centre**
+(`WIT_TRAIN_MOUSE_POS` x=767, resting disc centre y=910). It overlaps the icon,
+which is the documented reason facilities are clicked by position rather than
+located by template.
+
+Seen on **Wit, Speed, Power and Guts**, across facility levels 1-5 and on both
+the resting and the selected disc, so a template has to transfer across disc
+colours and backgrounds. Positives: `badge_{wit,spd,pwr,guts}_*.png`;
+`badge_spd_1_selected_disc.png` is the raised-disc case and also carries a pink
+`!` on another facility.
+
+**The badge is far more common than duels are.** That career fired 8 duel
+events but carried a badge on most turns - a duel only triggers when the bot
+actually trains the badged facility. So "the frame before a duel event" is
+*not* how to find positives; most badged frames never produce one.
+
+**The hard negatives are the pink `!` event markers** (`nobadge_*hint*.png`),
+which sit in the *same corner of the same discs*. Any badge template must be
+`sep`-ed against those, and against the orange "stat up" chevron that already
+cost this repo a working Burst reader (`core/state.py:716-718`).
+
+**Measured trap.** A 48px square cut centred on the badge - which necessarily
+includes the disc behind it - scored **1.000 on its own frame, 0.84 / 0.77 on
+other badges over similar discs, and 0.290 on a badge sitting on a pink Lvl 4
+disc**: indistinguishable from the 0.26-0.32 the true negatives scored. That is
+the documented "cut to the opaque core" failure in its exact form. The template
+has to be the orange starburst alone.
+
+### The duel choice screen
+
+Banner reads `Main Scenario Event` / `Happy Meek's Challenge!` with a gold URA
+Finale badge. Always three options; option 1 is the facility's own stat.
+
+| Element | Position |
+|---|---|
+| Predictions glyph | `x ~= 798`, rows at `y = 530 / 642 / 753` |
+| glyph size | ~22px, dark brown |
+
+Note the **111px step ending at 753** - the older figures in section 4, not the
+736 / 112 re-measurement. The option rows are tinted green / yellow / pink by
+index, so a glyph template must be cut to its opaque core or it will not
+transfer between rows.
+
+Four glyphs, all four captured: `(o)` a ring with a filled centre, `O` a hollow
+ring, `/\` a triangle, `X` a cross. **The first two separate easily at this
+size** - unlike the trailing rank glyph on skill names
+(`core/skill.py:503-509`), which is far smaller and is why that one is stripped
+rather than read. Fixture names encode the three glyphs: `d`=(o), `c`=O,
+`t`=/\, `x`=X, so `choice_4_dtc.png` is (o) /\ O.
+
+### The Choices panel states everything but the odds
+
+The panel names the skill and the hint level already held:
+
+```
+Contest of speed!
+  Speed cap +4 / Speed +15 / Skill Pts +30
+  [Racing Spirit: Speed]  (Hint Lvl 1)   hint lvl +1
+
+Contest of power!
+  Branch 1   Power cap +4 / Power +15 / Skill Pts +30
+             [Racing Spirit: Power]  (No Hint Lvls)  hint lvl +1
+  Branch 2   Power +5 / Skill Pts +15
+```
+
+Two consequences:
+
+- The target option can be identified **by skill name off the panel**
+  `read_choice_effects` already returns. No label-to-skill mapping needed.
+- `Branch 1` / `Branch 2` are **win / lose**, and
+  `core/event_effects.py::score_choice` *averages* branches - which is wrong
+  here, because their probability is the Predictions glyph. The generic scorer
+  systematically misprices a duel, so the decision has to be intercepted before
+  it.
+
+**Untested hypothesis:** in both frames checked, a `(o)` option showed a single
+outcome and every other glyph showed two branches - i.e. `(o)` may mean a
+guaranteed win. Two frames is not proof; check it before relying on it.

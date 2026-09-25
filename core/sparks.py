@@ -23,6 +23,7 @@ import numpy as np
 from PIL import ImageGrab
 
 import core.state as state
+import utils.capture as capture
 import utils.constants as constants
 from core.ocr import extract_text, extract_number
 from utils.log import info, warning, debug
@@ -90,6 +91,11 @@ def read(screen=None):
     if not kind:
       continue
     out.append({"kind": kind, "stars": _stars(gold, y)})
+  # A set with skill sparks in it, kept for building the named-spark read that
+  # would let the keep/reroll rule recognise a wanted one. Only with
+  # UMA_CAPTURE_DIR set, and `screen` is already in hand.
+  if capture.enabled() and any(row["kind"] == "skill" for row in out):
+    capture.keep(screen, "sparks")
   return out
 
 def rank(rows):
