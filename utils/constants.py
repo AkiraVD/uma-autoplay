@@ -410,6 +410,14 @@ PERFORMANCE_CHIP_OFFSET_X = -37
 PERFORMANCE_BADGE_BBOX = (195, 290, 258, 535)
 PERFORMANCE_BADGE_FIRST_Y = 302
 PERFORMANCE_ROW_PITCH = 55
+# URA Finale: an orange "Duel!" starburst sits on a facility when Happy Meek is
+# there to be duelled. It is **31px left** of the facility's centre on every
+# frame measured, but its y swings over ~48px - the badge bounces, and the
+# selected facility's disc rides 45px higher - so the band is deliberately tall
+# and the badge is assigned to a facility by x alone.
+DUEL_BADGE_BBOX = (260, 780, 880, 990)
+DUEL_BADGE_OFFSET_X = -31
+
 GC_RECREATION_BADGE_BBOX = (455, 875, 590, 975)
 # The Lessons screen is three cards on a fixed grid, 230px apart. Everything
 # below is card 1's; card i is the same box moved down by i * LESSON_CARD_PITCH.

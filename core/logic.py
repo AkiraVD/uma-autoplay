@@ -611,6 +611,16 @@ def filter_by_stat_caps(results, current_stats, game_caps=None):
     stat: data for stat, data in results.items()
     if current_stats.get(stat, 0) < stat_cap(stat, game_caps)
   }
+  # URA Finale: same argument, stronger. A capped facility carrying the Duel!
+  # badge still pays the hint, the skill points and the stat-cap raise - and a
+  # cap raise is worth most exactly where the cap is already the binding
+  # constraint. The stat gain is the only part that goes to waste.
+  for stat, data in results.items():
+    if stat not in under and data.get("duel"):
+      info(f"{stat.upper()} is capped, but it carries the Duel! badge, which pays"
+           " a hint and a cap raise rather than a stat.")
+      under[stat] = data
+
   # Grand Concert: a capped facility still pays Performance points, and when it
   # is the only one paying a type the board is stuck on, the wasted stat gain
   # is the cheaper loss. Career 6 spent turns unable to take the one Vi chip
@@ -750,7 +760,7 @@ def training_value(results, key):
 
 def should_recreate(value, resting, energy_level, max_energy, mood_index,
                     mood_target, outing_available, debuffed, burst_ready=False,
-                    training_key=None, measured_cost=None):
+                    training_key=None, measured_cost=None, duel_ready=False):
   """Whether a Recreation outing beats training or resting this turn.
 
   One comparison rather than the ladder of thresholds this used to be: what the
@@ -769,6 +779,13 @@ def should_recreate(value, resting, energy_level, max_energy, mood_index,
   # not, and it cannot fail, so it is not energy the turn should be spent on.
   if burst_ready:
     debug("An Extreme Spirit Burst is ready, so Recreation does not get this turn.")
+    return None
+
+  # Same argument for a duel: the outing keeps until next turn, the badge does
+  # not. An outing bids highest exactly when the tank is low, which is when a
+  # one-shot opportunity is most likely to be given away.
+  if duel_ready:
+    debug("A Duel! badge is on the board, so Recreation does not get this turn.")
     return None
 
   effects, label = outings.next_outing()
@@ -1042,6 +1059,40 @@ def gold_push_action(results, energy_level):
   # bought for the points, so the stat is only the tie-break.
   return min(paying.items(), key=lambda item: (-item[1], get_stat_priority(item[0])))[0]
 
+def duel_action(results, energy_level):
+  """The facility to take for a Happy Meek duel this turn, or None.
+
+  URA Finale only, and only when `ura.chase_duels` is on. A duel pays a stat,
+  skill points, a stat-cap raise and - the point of the whole thing - a hint for
+  a Racing Spirit skill, all on top of the training's own gains and at no extra
+  energy. It is worth more than the difference between two facilities, so it is
+  decided ahead of the normal scorers rather than weighted into them.
+
+  Three deliberate rules:
+
+  - **0% failure, not MAX_FAILURE.** A failed training cancels the duel, so a
+    risky duel is strictly worse than waiting for a safe one. That is tighter
+    than the usual bar, so this opens no new unsafe path.
+  - **Stamina first.** The duel offers the trained facility's own stat as
+    option 1, so training Stamina is the only way `Contest of stamina!` is
+    guaranteed to be on the board.
+  - **Never on an empty tank.** A duel pays a normal training's stats; it does
+    not pay for the forced rest on the turn after.
+  """
+  if not state.URA_CHASE_DUELS:
+    return None
+  if state.UNITY_SEEN or state.GRAND_CONCERT_SEEN:
+    return None
+  if energy_level < state.SKIP_TRAINING_ENERGY:
+    return None
+  badged = {key: data for key, data in results.items()
+            if data.get("duel") and int(data["failure"]) == 0}
+  if not badged:
+    return None
+  if "sta" in badged:
+    return "sta"
+  return max(badged.items(), key=training_score)[0]
+
 def do_something(results):
   year = check_current_year()
   current_stats = stat_state()
@@ -1128,6 +1179,14 @@ def do_something(results):
   except Exception as e:
     # Advisory only, so it must never be able to break a turn.
     debug(f"planner: advisory failed, ignored ({e}).")
+
+  # A duel is one turn only and pays a hint the career cannot get any other way,
+  # so it is decided before the scorers and before anything that can rest.
+  duel = duel_action(filtered, energy_level)
+  if duel:
+    info(f"Taking {duel.upper()}: it carries the Duel! badge at 0% failure"
+         + (" and Stamina is the one contest that has to be trained for." if duel == "sta" else "."))
+    return duel
 
   # The run for the 18th song, when the config says the gold skill is wanted.
   # Banking energy is worth more than one turn of Performance points in every

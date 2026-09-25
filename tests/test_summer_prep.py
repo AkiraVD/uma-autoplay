@@ -34,6 +34,10 @@ fake.SPIRIT_BURST_EX_POINTS = 3.0
 fake.BURST_ENABLED_STATS = []
 # Off: this is not a Grand Concert run, so the 18-song push must not weigh in.
 fake.ALWAYS_BUY_GOLD_SKILL = False
+# do_something now asks whether this is a URA career before anything else.
+fake.UNITY_SEEN = False
+fake.GRAND_CONCERT_SEEN = False
+fake.URA_CHASE_DUELS = True
 ENERGY = [26.7]
 STATS = {"spd": 1088, "sta": 672, "pwr": 770, "guts": 500, "wit": 419}
 fake.check_energy_level = lambda *a, **k: (ENERGY[0], 100)

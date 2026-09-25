@@ -105,6 +105,9 @@
     "spirit_burst_ex_points": 3.0,
     "burst_enabled_stats": []
   },
+  "ura": {
+    "chase_duels": true
+  },
   "grand_concert": {
     "song_priority": [
       "Run for Our Dream!",
@@ -112,7 +115,7 @@
       "Precious Treasure Box",
       "Fanfare for the Future!",
       "Run n' Run!",
-      "Full Speed Ahead! Umadol Power☆",
+      "Full Speed Ahead! Umadol Power\u2606",
       "Here Comes Our Time",
       "Our Blue Bird Days",
       "Seven Colors Scenery",
@@ -121,10 +124,10 @@
       "Go This Way",
       "Sunbeam Cheer",
       "Dream Sky",
-      "Present March♪",
+      "Present March\u266a",
       "Sky-Blue Spring",
       "The World's at Our Whim",
-      "Hoppity Sunny Days♪",
+      "Hoppity Sunny Days\u266a",
       "Ring Ring Diary",
       "Hey, Guess What!",
       "Getaway! Fallin' Love"

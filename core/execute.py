@@ -360,19 +360,25 @@ def wait_for_training_screen(attempts=10):
     sleep(0.3)
   return None
 
-def peek_for_extreme_burst():
-  """Training results when an Extreme Spirit Burst is ready, else None.
+def peek_for_opportunity():
+  """Training results when the board holds something a debuff must not cost.
+
+  Two of those: a Unity Extreme Spirit Burst, and a URA Duel! badge. Both are
+  one-turn-only and both are worth more than the few percent of failure and the
+  mood a debuff costs, so the infirmary can wait a turn.
 
   Only called on a debuffed turn, which is rare, so the extra scan costs little
   over a career. The results are handed back so the turn does not pay for a
   second one. check_training leaves the lobby up again either way.
   """
   if not go_to_training():
-    debug("Training button is not found, so the burst peek is skipped.")
+    debug("Training button is not found, so the opportunity peek is skipped.")
     return None
   sleep(0.5)
   results = check_training()
   if any(has_extreme_burst(data) for data in results.values()):
+    return results
+  if any(data.get("duel") for data in results.values()):
     return results
   return None
 
@@ -400,14 +406,15 @@ def check_training():
     click(img="assets/buttons/back_btn.png")
     return {}
 
-  # One training-screen frame per lobby turn, only with UMA_CAPTURE_DIR set.
-  # The URA `Duel!` badge reader has to be built from real frames and none have
-  # ever been captured, and there is no detector yet to filter on - so this
-  # keeps every turn and the sifting is done by hand. The unbadged ones are not
-  # waste: `umatool sep` needs negatives, and a positives-only capture cannot
-  # produce a threshold.
-  screen = ImageGrab.grab() if capture.enabled() else None
+  # One frame of the training screen, shared by everything that wants it: the
+  # capture, the Grand Concert chips and the URA duel badges all read the same
+  # board, and each used to grab its own.
+  screen = ImageGrab.grab()
   capture.keep(screen, "duel_train")
+
+  # URA Finale: the Duel! badge sits on a facility and does not move with the
+  # selection, so one read covers all five. Empty in every other scenario.
+  duels = state.check_duel_badges(screen)
 
   # Grand Concert: every facility's Performance chip is on screen at once and
   # does not change with the selection, so one read covers all five.
@@ -447,6 +454,9 @@ def check_training():
     support_card_results["performance"] = ({"types": performance["chips"].get(key, []),
                                             "short": performance["short"],
                                             "urgent": performance.get("urgent", False)} if performance else {})
+    # URA Finale: training this facility starts a duel with Happy Meek, but only
+    # if the training succeeds.
+    support_card_results["duel"] = bool(duels.get(key))
 
     if key != "wit":
       if failcheck == "check_all":
@@ -1879,12 +1889,15 @@ def career_lobby():
         # Spirit Burst forces the training to 0% failure and pays several times
         # a normal one, and it is gone as soon as the turn goes elsewhere - so
         # look at the facilities before handing the turn to the infirmary.
-        peeked_training = peek_for_extreme_burst() if state.UNITY_SEEN else None
+        peeked = state.UNITY_SEEN or not state.GRAND_CONCERT_SEEN
+        peeked_training = peek_for_opportunity() if peeked else None
         if peeked_training is None:
           click(boxes=matches["infirmary"][0], text="Character debuffed, going to infirmary.")
           continue
         infirmary_deferred = matches["infirmary"][0]
-        info("An Extreme Spirit Burst is ready, so training through the debuff and leaving the infirmary for later.")
+        why = ("An Extreme Spirit Burst is ready" if any(has_extreme_burst(d) for d in peeked_training.values())
+               else "A Duel! badge is on the board")
+        info(f"{why}, so training through the debuff and leaving the infirmary for later.")
       else:
         info("Skipping infirmary because of high energy.")
         skipped_infirmary=True
@@ -2036,6 +2049,7 @@ def career_lobby():
       energy_level, max_energy, mood_index, mood_check,
       check_outing_available(), skipped_infirmary,
       burst_ready=any(has_extreme_burst(d) for d in results_training.values()),
+      duel_ready=any(d.get("duel") for d in results_training.values()),
       training_key=best_training,
       measured_cost=(results_training.get(best_training) or {}).get("energy_cost")
                     if best_training else None)

@@ -63,6 +63,8 @@ ENERGY_TECHNIQUE_BELOW = 50
 PERFORMANCE_SHORT_POINTS = 0.75
 PERFORMANCE_URGENT_POINTS = 4.0
 ALWAYS_BUY_GOLD_SKILL = False
+# URA Finale: take a facility carrying the Duel! badge when it is safe.
+URA_CHASE_DUELS = True
 # The game mode from config: "auto", "ura", "unity" or "grand_concert". A fixed
 # mode sets the SEEN flags outright (apply_scenario); "auto" learns them by
 # sighting the mode's own screens (saw_scenario).
@@ -310,6 +312,9 @@ def reload_config():
   SPIRIT_BURST_POINTS = unity_config.get("spirit_burst_points", 2.0)
   SPIRIT_BURST_EX_POINTS = unity_config.get("spirit_burst_ex_points", 3.0)
   BURST_ENABLED_STATS = unity_config.get("burst_enabled_stats", [])
+  ura_config = config.get("ura", {})
+  global URA_CHASE_DUELS
+  URA_CHASE_DUELS = ura_config.get("chase_duels", True)
   gc_config = config.get("grand_concert", {})
   global SONG_PRIORITY, SONG_PLAN, LYRICS_OPTION, HOLD_FOR_TOP_SONGS, ENERGY_TECHNIQUE_BELOW, PERFORMANCE_SHORT_POINTS
   global PERFORMANCE_URGENT_POINTS, ALWAYS_BUY_GOLD_SKILL
@@ -796,6 +801,63 @@ def check_performance(screen=None):
     if red >= PERFORMANCE_BADGE_MIN_RED:
       short.append(kind)
   return {"chips": chips, "short": short}
+
+# The Duel! badge is animated - it bounces, and squashes as it does - so one
+# template cut from one frame is not enough: the squashed phase scores 1.000 on
+# its own frame and 0.42 on the others. Three phases, scored as a bank, take the
+# worst positive from 0.441 to 0.816 against a best negative of 0.303.
+DUEL_BADGE_TEMPLATES = [f"assets/icons/ura_duel_badge_{i}.png" for i in range(3)]
+# Midway between that worst positive and that best negative.
+DUEL_BADGE_CONFIDENCE = 0.56
+_missing_duel_assets = set()
+
+def check_duel_badges(screen=None):
+  """Which facilities carry the URA `Duel!` badge, as {key: True}.
+
+  Empty in every other scenario, and empty when the templates are not cut yet,
+  so this is safe to call unconditionally.
+
+  One match over a tall band rather than five crops: the badge sits 31px left of
+  a facility's centre but its y moves ~48px between the bounce and the raised
+  selected disc, so each hit is assigned to the nearest facility **by x alone**.
+  That is the same trick `check_performance` uses, and it is what makes the
+  bounce irrelevant rather than a thing to chase.
+  """
+  if SCENARIO not in ("auto", "ura"):
+    return {}
+  if screen is None:
+    screen = ImageGrab.grab()
+  found = {}
+  try:
+    bgr = cv2.cvtColor(np.asarray(screen.convert("RGB")), cv2.COLOR_RGB2BGR)
+    left, top, right, bottom = constants.DUEL_BADGE_BBOX
+    roi = bgr[top:bottom, left:right]
+    facility_x = {key: getattr(constants, f"{key.upper()}_TRAIN_MOUSE_POS")[0]
+                       + constants.DUEL_BADGE_OFFSET_X
+                  for key in ("spd", "sta", "pwr", "guts", "wit")}
+    for path in DUEL_BADGE_TEMPLATES:
+      if not os.path.exists(path):
+        if path not in _missing_duel_assets:
+          _missing_duel_assets.add(path)
+          warning(f"{path} is not cut yet, so the Duel! badge cannot be read.")
+        continue
+      template = cv2.imread(path, cv2.IMREAD_COLOR)
+      if template is None:
+        continue
+      result = cv2.matchTemplate(roi, template, cv2.TM_CCOEFF_NORMED)
+      h, w = template.shape[:2]
+      ys, xs = np.where(result >= DUEL_BADGE_CONFIDENCE)
+      for x, y in zip(xs, ys):
+        cx = left + x + w // 2
+        key = min(facility_x, key=lambda k: abs(facility_x[k] - cx))
+        if abs(facility_x[key] - cx) <= 20:
+          found[key] = True
+  except Exception as e:
+    debug(f"check_duel_badges: could not read the board ({e}).")
+    return {}
+  if found:
+    debug(f"Duel! badge on {', '.join(sorted(k.upper() for k in found))}.")
+  return found
 
 OUTING_BADGE_CONFIDENCE = 0.80
 

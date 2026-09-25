@@ -34,6 +34,10 @@ fake.SPIRIT_BURST_EX_POINTS = 3.0
 fake.BURST_ENABLED_STATS = []
 # Off: this is not a Grand Concert run, so the 18-song push must not weigh in.
 fake.ALWAYS_BUY_GOLD_SKILL = False
+# do_something now asks whether this is a URA career before anything else.
+fake.UNITY_SEEN = True
+fake.GRAND_CONCERT_SEEN = False
+fake.URA_CHASE_DUELS = True
 ENERGY = [25.0]
 # The stats that turn had, so the cap filter behaves as it did in the career.
 STATS = {"spd": 415, "sta": 232, "pwr": 311, "guts": 217, "wit": 244}
