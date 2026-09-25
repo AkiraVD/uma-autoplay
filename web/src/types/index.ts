@@ -34,6 +34,13 @@ export const GrandConcertSchema = z.object({
   always_buy_gold_skill: z.boolean(),
 });
 
+export const UraSchema = z.object({
+  chase_duels: z.boolean(),
+  duel_targets: z.array(z.string()),
+  force_buy_skills: z.array(z.string()),
+  keep_sparks: z.array(z.string()),
+});
+
 export const ConfigSchema = z.object({
   config_name: z.string(),
   trainee: z.string(),
@@ -66,10 +73,12 @@ export const ConfigSchema = z.object({
   skill: SkillSchema,
   event: EventSchema,
   grand_concert: GrandConcertSchema,
+  ura: UraSchema.optional(),
 });
 
 export type Stat = z.infer<typeof StatSchema>;
 export type GrandConcert = z.infer<typeof GrandConcertSchema>;
+export type Ura = z.infer<typeof UraSchema>;
 export type Skill = z.infer<typeof SkillSchema>;
 export type RaceScheduleType = z.infer<typeof RaceScheduleSchema>;
 export type Config = z.infer<typeof ConfigSchema>;

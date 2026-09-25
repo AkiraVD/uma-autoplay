@@ -4,6 +4,7 @@ import SkillPtsCheck from "./SkillPtsCheck";
 import { Checkbox } from "../ui/checkbox";
 import Tooltips from "../_c/Tooltips";
 import { GRAND_CONCERT_FALLBACK } from "../grand-concert/defaults";
+import { URA_FALLBACK } from "../ura/defaults";
 import type { Config, UpdateConfigType } from "@/types";
 
 type Props = {
@@ -17,6 +18,8 @@ export default function SkillSection({ config, updateConfig }: Props) {
   const { skill } = config;
   const grandConcert = { ...GRAND_CONCERT_FALLBACK, ...(config.grand_concert ?? {}) };
   const alwaysGold = grandConcert.always_buy_gold_skill ?? false;
+  const ura = { ...URA_FALLBACK, ...(config.ura ?? {}) };
+  const buysRacingSpirit = (ura.force_buy_skills ?? []).length > 0;
 
   return (
     <div className="bg-card p-6 rounded-xl shadow-lg border border-border/20">
@@ -49,6 +52,21 @@ export default function SkillSection({ config, updateConfig }: Props) {
             Grand Concert only. Buys the scenario gold skill first at career end,
             before the optimizer spends the rest. It is expensive (380 points) for
             a short effect, so the optimizer skips it otherwise.
+          </Tooltips>
+        </div>
+        <div className="flex w-fit items-center gap-2">
+          <label htmlFor="racing-spirit" className="flex gap-2 items-center">
+            <Checkbox id="racing-spirit" checked={buysRacingSpirit}
+              onCheckedChange={() => updateConfig("ura", { ...ura,
+                force_buy_skills: buysRacingSpirit ? [] : URA_FALLBACK.force_buy_skills })} />
+            <span className="text-lg font-medium">Buy Racing Spirit skills for their sparks</span>
+          </label>
+          <Tooltips>
+            URA Finale only. A skill only becomes a white spark if it was bought,
+            and the optimizer never picks these (about 3.4 expected SV for 150
+            points), so a parent-making career has to force them. Buys
+            {" "}{URA_FALLBACK.force_buy_skills.join(", ")} first at career end,
+            when the duels won the hint. Edit config.json to change the list.
           </Tooltips>
         </div>
       </div>

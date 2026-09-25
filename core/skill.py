@@ -373,6 +373,26 @@ def buy_planned():
       info(f"Buying {card['name']} first: grand_concert.always_buy_gold_skill is on ({card['cost']} points).")
       budget -= card["cost"]
       offered.pop(base_name(card["name"]), None)
+
+  # URA Finale, and the whole reason a parent-making career chases duels: a
+  # Racing Spirit skill only becomes a white spark if it was actually bought,
+  # and the optimizer will not take one - `Racing Spirit: Mood` is ~3.4 expected
+  # SV for 150 points, which loses to almost anything. Named in config, in
+  # preference order, and taken off the top of the budget; one that no longer
+  # fits is dropped rather than crowding out the rest of the plan.
+  for wanted_name in state.URA_FORCE_BUY_SKILLS:
+    card = offered.get(base_name(wanted_name))
+    if not card:
+      continue
+    if card["cost"] > budget:
+      info(f"{card['name']} is wanted for its spark but costs {card['cost']}"
+           f" with {budget} left; skipping it.")
+      continue
+    info(f"Buying {card['name']} first: ura.force_buy_skills wants it for the spark"
+         f" ({card['cost']} points).")
+    forced.append(card)
+    budget -= card["cost"]
+    offered.pop(base_name(card["name"]), None)
   if offered and budget > 0:
     chosen = skill_score.plan(list(offered.values()), budget,
                               style=style, distance=distance)

@@ -42,7 +42,10 @@ def test_reader():
   }
   for name, want in cases.items():
     rows = S.read(fixture(name))
-    ok(f"{name} reads as {want}", S.valid(rows) and S.rank(rows) == want, S.describe(rows))
+    # rank() leads with the count of sparks config asked to keep; none of these
+    # fixtures holds one, so the blue/white pair is the tail.
+    ok(f"{name} reads as {want}",
+       S.valid(rows) and S.rank(rows)[1:] == want, S.describe(rows))
 
 def test_kinds():
   rows = S.read(fixture("sparks_power2star_c5.png"))

@@ -110,6 +110,13 @@
     "duel_targets": [
       "energy",
       "sta"
+    ],
+    "force_buy_skills": [
+      "Racing Spirit: Mood"
+    ],
+    "keep_sparks": [
+      "Racing Spirit: Mood",
+      "Racing Spirit: Stamina"
     ]
   },
   "grand_concert": {

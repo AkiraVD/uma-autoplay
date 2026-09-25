@@ -69,6 +69,11 @@ URA_CHASE_DUELS = True
 # pays Racing Spirit: Mood - the better skill - and because it is never the
 # guaranteed first option, so it is the scarcer chance.
 URA_DUEL_TARGETS = ["energy", "sta"]
+# Skills to buy at career end whatever the optimizer thinks, because a skill
+# only becomes a white spark if it was bought. In preference order.
+URA_FORCE_BUY_SKILLS = ["Racing Spirit: Mood"]
+# Spark names worth keeping a set for, instead of rerolling it away.
+URA_KEEP_SPARKS = ["Racing Spirit: Mood", "Racing Spirit: Stamina"]
 # The game mode from config: "auto", "ura", "unity" or "grand_concert". A fixed
 # mode sets the SEEN flags outright (apply_scenario); "auto" learns them by
 # sighting the mode's own screens (saw_scenario).
@@ -317,9 +322,11 @@ def reload_config():
   SPIRIT_BURST_EX_POINTS = unity_config.get("spirit_burst_ex_points", 3.0)
   BURST_ENABLED_STATS = unity_config.get("burst_enabled_stats", [])
   ura_config = config.get("ura", {})
-  global URA_CHASE_DUELS, URA_DUEL_TARGETS
+  global URA_CHASE_DUELS, URA_DUEL_TARGETS, URA_FORCE_BUY_SKILLS, URA_KEEP_SPARKS
   URA_CHASE_DUELS = ura_config.get("chase_duels", True)
   URA_DUEL_TARGETS = ura_config.get("duel_targets") or ["energy", "sta"]
+  URA_FORCE_BUY_SKILLS = ura_config.get("force_buy_skills") or []
+  URA_KEEP_SPARKS = ura_config.get("keep_sparks") or []
   gc_config = config.get("grand_concert", {})
   global SONG_PRIORITY, SONG_PLAN, LYRICS_OPTION, HOLD_FOR_TOP_SONGS, ENERGY_TECHNIQUE_BELOW, PERFORMANCE_SHORT_POINTS
   global PERFORMANCE_URGENT_POINTS, ALWAYS_BUY_GOLD_SKILL

@@ -8,6 +8,9 @@ the better one is kept.
 
 The user's rule, refined over several careers:
 
+0. A spark config named in `ura.keep_sparks` outranks everything, and is kept
+   without a reroll. A parent-making career exists to produce one of those, and
+   it is the only rule here that looks at what a grey row actually says.
 1. A 3-star blue spark is the highest priority - blue is the stat spark.
 2. With no 3-star blue, reroll. Always, however good the rest looks.
 3. When neither set has a 3-star blue, take the one with the most white
@@ -41,6 +44,10 @@ COLOUR_TOLERANCE = 40
 # A filled star is gold; three of them span the band, one covers its left third.
 STAR_BAND = (715, 795)
 STAR_SPANS = ((0, 25, 1), (25, 55, 2))
+# A row's own name, left of the pill sample and clear of the info button. Only
+# read when config names a spark worth keeping, because it costs an OCR a row.
+NAME_X = (305, 640)
+NAME_HALF_HEIGHT = 18
 # The rows live between the header and the buttons; the title art is gold too.
 LIST_TOP, LIST_BOTTOM = 140, 780
 
@@ -90,7 +97,10 @@ def read(screen=None):
     kind = _kind(pixels, y)
     if not kind:
       continue
-    out.append({"kind": kind, "stars": _stars(gold, y)})
+    row = {"kind": kind, "stars": _stars(gold, y)}
+    if kind == "skill" and state.URA_KEEP_SPARKS:
+      row["name"] = _name(screen, y)
+    out.append(row)
   # A set with skill sparks in it, kept for building the named-spark read that
   # would let the keep/reroll rule recognise a wanted one. Only with
   # UMA_CAPTURE_DIR set, and `screen` is already in hand.
@@ -98,19 +108,55 @@ def read(screen=None):
     capture.keep(screen, "sparks")
   return out
 
+def _name(screen, y):
+  """The skill or race a grey row names, canonicalised, or ""."""
+  from core.skill import base_name
+  left, right = NAME_X
+  text = extract_text(enhance_for_reading(
+    screen.crop((left, y - NAME_HALF_HEIGHT, right, y + NAME_HALF_HEIGHT))))
+  # base_name strips the trailing rank glyph, which OCR renders as 0, O or @
+  # about as often as it gets the circle right (core/skill.py:503).
+  return base_name(text or "")
+
+def wanted(rows):
+  """How many rows name a spark config asked to keep.
+
+  The whole career exists to produce one of these, and the reroll compares two
+  sets on stars and white *count* alone - so without this a set holding the
+  Racing Spirit spark loses to one with more anonymous whites.
+  """
+  if not state.URA_KEEP_SPARKS:
+    return 0
+  from core.skill import base_name
+  targets = {base_name(n) for n in state.URA_KEEP_SPARKS}
+  return sum(1 for r in rows if r.get("name") and r["name"] in targets)
+
 def rank(rows):
-  """(stars on the stat spark, number of skill sparks) - the user's order."""
+  """(wanted sparks, stars on the stat spark, number of skill sparks).
+
+  Wanted leads: a named spark is the point of the career, where the blue star
+  count is the point of every other one.
+  """
   blue = max((r["stars"] for r in rows if r["kind"] == "stat"), default=0)
   whites = sum(1 for r in rows if r["kind"] == "skill")
-  return (blue, whites)
+  return (wanted(rows), blue, whites)
 
 def describe(rows):
-  blue, whites = rank(rows)
-  return f"blue {blue}*, {whites} white spark(s), {len(rows)} rows"
+  want, blue, whites = rank(rows)
+  kept = f", {want} wanted" if want else ""
+  return f"blue {blue}*, {whites} white spark(s), {len(rows)} rows{kept}"
 
 def worth_rerolling(rows):
-  """Rule 2: anything short of a 3-star blue is worth the 30 TP."""
-  blue, _ = rank(rows)
+  """Rule 2: anything short of a 3-star blue is worth the 30 TP.
+
+  Unless the set already holds a spark config asked for. A reroll keeps the
+  better of the two sets, so it cannot lose one outright - but `rank` decides
+  "better", and spending 30 TP to go looking for a blue star when the thing the
+  career was run for is already on the board is the wrong trade.
+  """
+  want, blue, _ = rank(rows)
+  if want:
+    return False
   return blue < 3
 
 def page_label(screen=None):
@@ -283,8 +329,7 @@ def _choose(original):
       break
     _tap(constants.SPARK_PAGE_NEXT_MOUSE_POS)
     sleep(1.5)
-  blue, whites = rank(best[1])
-  return _keep(f"{best[0] or 'the better set'}: blue {blue}*, {whites} white spark(s)")
+  return _keep(f"{best[0] or 'the better set'}: {describe(best[1])}")
 
 def _keep(why):
   # The end-of-career notification reports what was kept, and this is the only
