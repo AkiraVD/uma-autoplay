@@ -645,3 +645,36 @@ than reading pixels and moving the mouse.
 
 Worth revisiting only if Trackblazer's shop inventory, coin balance and grade
 points turn out to be genuinely unreadable on screen.
+
+## URA duels: built, never run (2026-09-25)
+
+The whole chain is in and tested against captured frames and unit tests, and
+**none of it has executed against a live game**. What is verified and what is
+not:
+
+- **Verified on frames.** The badge reader (8 positives across Wit, Speed,
+  Power and Guts; 5 negatives including the pink `!` markers), the Predictions
+  glyphs (24/24 over 8 duels), the option labels, and the spark row names.
+- **Verified by unit test.** `duel_action`'s gates, `pick`'s rules, the stat-cap
+  escape, the Recreation door, `rank`/`worth_rerolling`.
+- **Never run.** Badge -> train that facility -> duel screen appears -> the
+  right row is *clicked* -> the hint lands -> the skill is bought at career end
+  -> the spark rolls. Every join between those steps is untested.
+
+Specific things to watch on the first live career:
+
+- `select_event` clicks by `choice_point()`, which derives the row count from
+  the first icon's y. The duel rows were measured at **530 / 641 / 753** - the
+  111px step, not the 736 / 112 one recorded for other events. If a duel's
+  three rows anchor differently, the pick is right and the click is wrong.
+- `select_event`'s repeat guard starts alternating first/last option after 3
+  sightings of one event name. A badge-chasing career sees `Happy Meek's
+  Challenge!` often; check it cannot reach 3 in a row.
+- `failure == 0` is frequently an *assumption*, not a reading: once one facility
+  reads clearly safe, `check_training` writes 0 for the rest without an OCR
+  call. A badged facility could be taken at a real 8-12%.
+- Whether a `(o)` option really is a guaranteed win (it showed a single outcome
+  where every other glyph showed two branches, on two frames).
+- Whether Energy contests are ever winnable. Over 8 duels Energy came up twice
+  and was rated `X` both times, which is the only route to
+  `Racing Spirit: Mood` - the one skill `ura.force_buy_skills` names by default.
