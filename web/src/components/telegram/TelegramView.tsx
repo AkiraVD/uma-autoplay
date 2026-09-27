@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { Send, MessageCircle, Save } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Send, MessageCircle, RotateCcw } from "lucide-react";
 import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
 import { Input } from "../ui/input";
@@ -9,6 +9,10 @@ type Settings = { enabled: boolean; token: string; chat_id: string };
 
 const EMPTY: Settings = { enabled: false, token: "", chat_id: "" };
 const CARD = "bg-card p-6 rounded-xl shadow-lg border border-border/20";
+// Same as the Bot and Configuration tabs', and for the same reason: long enough
+// that typing a token doesn't write the file per keystroke, short enough that
+// nobody leaves the page before their last edit lands.
+const DEBOUNCE = 500;
 
 // Telegram, for following a run nobody is watching.
 //
@@ -21,56 +25,83 @@ const CARD = "bg-card p-6 rounded-xl shadow-lg border border-border/20";
 // What follows from that, none of which the page says because none of it is
 // anything to do: the Apply button on the Configuration tab does not touch
 // these, saving here applies to the running bot at once with no restart, and
-// telegram.json is gitignored so the token stays on this machine. The page
-// shows Save, Saved and what was sent - the rest is this comment's business.
+// telegram.json is gitignored so the token stays on this machine.
+//
+// **Every change is written, debounced - there is no Save button** (2026-09-28),
+// the same arrangement the Bot and Configuration tabs have. The page says
+// nothing when a write succeeds: the only thing worth interrupting anyone for is
+// a write that *failed*, because then the page and the bot disagree, which is
+// the state a Save button used to hide.
+//
+// Two rules make auto-saving safe, both inherited from useConfig.ts:
+//
+// - **nothing is written before the first GET answers.** This page starts from
+//   EMPTY, and posting that would wipe a settled token. The baseline stays null
+//   until the server has been read, and a read that fails leaves it null, so a
+//   page that could not load never writes.
+// - **a save in flight never overwrites what is being typed.** The echo is
+//   adopted only when the page has not moved on since the request went out.
 export default function TelegramView() {
   const [settings, setSettings] = useState<Settings>(EMPTY);
   const [loaded, setLoaded] = useState(false);
-  const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // What telegram.json holds, in this page's shape. null until the first read
+  // has answered, and nothing is ever written while it is null.
+  const onDisk = useRef<string | null>(null);
   const [result, setResult] = useState<{ ok: boolean; reason?: string } | null>(null);
 
   const load = useCallback(async () => {
     try {
       const res = await fetch(`${URL}/telegram`, { cache: "no-store" });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setSettings({ ...EMPTY, ...(await res.json()) });
+      const body = { ...EMPTY, ...(await res.json()) };
+      onDisk.current = JSON.stringify(body);
+      setSettings(body);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "could not reach the server");
+      setError(
+        `${e instanceof Error ? e.message : "could not reach the server"} - nothing on this page is being saved.`
+      );
     } finally {
       setLoaded(true);
     }
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const set = (patch: Partial<Settings>) => {
-    setSettings((s) => ({ ...s, ...patch }));
-    setDirty(true);
-    setSaved(false);
-  };
+  const set = (patch: Partial<Settings>) => setSettings((s) => ({ ...s, ...patch }));
 
-  const save = async () => {
+  const save = useCallback(async (next: Settings) => {
+    const sent = JSON.stringify(next);
     setBusy(true);
     setError(null);
     try {
       const res = await fetch(`${URL}/telegram`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
+        body: sent,
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setSettings({ ...EMPTY, ...(await res.json()) });
-      setDirty(false);
-      setSaved(true);
+      const echoed = { ...EMPTY, ...(await res.json()) };
+      onDisk.current = JSON.stringify(echoed);
+      // Only take the server's copy when nothing has been typed since the
+      // request went out; otherwise the newer edit stands and the effect below
+      // saves it next.
+      setSettings((cur) => (JSON.stringify(cur) === sent ? echoed : cur));
     } catch (e) {
       setError(e instanceof Error ? e.message : "could not save");
     } finally {
       setBusy(false);
     }
-  };
+  }, []);
+
+  // Write every change, debounced.
+  useEffect(() => {
+    if (onDisk.current === null) return;
+    if (JSON.stringify(settings) === onDisk.current) return;
+    const timer = setTimeout(() => void save(settings), DEBOUNCE);
+    return () => clearTimeout(timer);
+  }, [settings, save]);
 
   // The test posts what is typed rather than what is saved, so it works before
   // saving - which is exactly when the details are most likely to be wrong.
@@ -145,24 +176,29 @@ export default function TelegramView() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Button className="font-semibold" onClick={save} disabled={busy || !dirty}>
-              <Save className="size-4" />
-              {busy ? "Saving..." : dirty ? "Save" : "Saved"}
-            </Button>
+            {/* No Save button: every change is written. Quiet while it works,
+                loud only when a write fails. */}
             <Button variant="outline" onClick={test}
               disabled={busy || !settings.token || !settings.chat_id}>
               <Send className="size-4" />
               Send a test message
             </Button>
-            {saved && !dirty && (
-              <span className="text-green-600 dark:text-green-400">Saved - the bot is using it now.</span>
-            )}
             {result && (
               <span className={result.ok ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
                 {result.ok ? "Sent - check Telegram." : `Failed: ${result.reason ?? "unknown"}`}
               </span>
             )}
-            {error && <span className="text-red-600 dark:text-red-400">{error}</span>}
+            {error && (
+              <>
+                <span className="text-red-600 dark:text-red-400">Not saved: {error}</span>
+                {onDisk.current !== null && (
+                  <Button variant="outline" onClick={() => void save(settings)} disabled={busy}>
+                    <RotateCcw className="size-4" />
+                    Retry
+                  </Button>
+                )}
+              </>
+            )}
           </div>
         </div>
         )}

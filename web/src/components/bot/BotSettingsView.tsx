@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { Cog, RotateCcw, Save } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Cog, RotateCcw } from "lucide-react";
 import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
 import { Input } from "../ui/input";
@@ -22,6 +22,22 @@ const EMPTY: Settings = {
   career_start: { enabled: false, borrow_card: "", max_consecutive: 0 },
 };
 const CARD = "bg-card p-6 rounded-xl shadow-lg border border-border/20";
+// Same as the Configuration tab's, and for the same reason: long enough that
+// typing a number doesn't write the file per keystroke, short enough that
+// nobody leaves the page before their last edit lands.
+const DEBOUNCE = 500;
+
+type SaveState = "idle" | "error";
+
+// bot.json holds keys this page does not show, and save_bot() merges rather
+// than replaces, so what comes back is not what went out. Shaping both the read
+// and the echo through here is what lets "has the page changed?" be a string
+// comparison.
+const shape = (body: Partial<Settings>): Settings => ({
+  ...EMPTY,
+  ...body,
+  career_start: { ...EMPTY.career_start, ...body.career_start },
+});
 
 // How the bot *runs*, as against what it trains.
 //
@@ -29,15 +45,30 @@ const CARD = "bg-card p-6 rounded-xl shadow-lg border border-border/20";
 // same arrangement as the Telegram tab and for the same reason: config presets
 // under uma_configs/ describe a trainee and are meant to be swapped, while
 // these describe this machine and this run. Loading a different preset should
-// not change whether a frozen game gets restarted. Saving applies at once, so
-// the Apply button on the Configuration tab has nothing to do with any of it.
+// not change whether a frozen game gets restarted.
+//
+// **Every change is written, debounced - there is no Save button** (2026-09-27),
+// which is what the Configuration tab already does. A settings page with a Save
+// button looks identical whether or not it was pressed, and here the cost of
+// missing it is silent: the bot goes on running the old value and says nothing.
+//
+// Two rules make auto-saving safe, both learned on the Configuration tab:
+//
+// - **nothing is written before the first GET answers.** This page starts from
+//   EMPTY, and posting that would reset a settled machine to defaults. The
+//   baseline stays null until the server has been read, and a read that fails
+//   leaves it null, so a page that could not load never writes.
+// - **a save in flight never overwrites what is being typed.** The echo is
+//   adopted only when the page has not moved on since the request went out.
 export default function BotSettingsView() {
   const [settings, setSettings] = useState<Settings>(EMPTY);
   const [loaded, setLoaded] = useState(false);
-  const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
   const [error, setError] = useState<string | null>(null);
+  // What bot.json holds, in this page's shape. null until the first read has
+  // answered, and nothing is ever written while it is null.
+  const onDisk = useRef<string | null>(null);
   // The career count is the bot's own running total, not a setting; it lives in
   // the career ledger so it survives the restart a frozen client forces.
   const [started, setStarted] = useState<number | null>(null);
@@ -49,46 +80,62 @@ export default function BotSettingsView() {
         fetch(`${URL}/career/count`, { cache: "no-store" }),
       ]);
       if (!s.ok) throw new Error(`HTTP ${s.status}`);
-      const body = await s.json();
-      setSettings({ ...EMPTY, ...body, career_start: { ...EMPTY.career_start, ...body.career_start } });
+      const body = shape(await s.json());
+      onDisk.current = JSON.stringify(body);
+      setSettings(body);
       if (c.ok) setStarted((await c.json()).started ?? null);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "could not reach the server");
+      setError(
+        `${e instanceof Error ? e.message : "could not reach the server"} - nothing on this page is being saved.`
+      );
+      setSaveState("error");
     } finally {
       setLoaded(true);
     }
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const set = (patch: Partial<Settings>) => {
-    setSettings((s) => ({ ...s, ...patch }));
-    setDirty(true);
-    setSaved(false);
-  };
+  const set = (patch: Partial<Settings>) => setSettings((s) => ({ ...s, ...patch }));
   const setCareer = (patch: Partial<CareerStart>) =>
     set({ career_start: { ...settings.career_start, ...patch } });
 
-  const save = async () => {
+  const save = useCallback(async (next: Settings) => {
+    const sent = JSON.stringify(next);
     setBusy(true);
     setError(null);
     try {
       const res = await fetch(`${URL}/bot-settings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
+        body: sent,
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const body = await res.json();
-      setSettings({ ...EMPTY, ...body, career_start: { ...EMPTY.career_start, ...body.career_start } });
-      setDirty(false);
-      setSaved(true);
+      const echoed = shape(await res.json());
+      onDisk.current = JSON.stringify(echoed);
+      // Only take the server's copy when nothing has been typed since the
+      // request went out; otherwise the newer edit stands and the effect below
+      // saves it next.
+      setSettings((cur) => (JSON.stringify(cur) === sent ? echoed : cur));
+      setSaveState("idle");
     } catch (e) {
       setError(e instanceof Error ? e.message : "could not save");
+      setSaveState("error");
     } finally {
       setBusy(false);
     }
-  };
+  }, []);
+
+  // Write every change, debounced. The state is cleared as soon as the page
+  // differs from the file, so a stale "Not saved" never sits over an edit that
+  // is about to be written.
+  useEffect(() => {
+    if (onDisk.current === null) return;
+    if (JSON.stringify(settings) === onDisk.current) return;
+    setSaveState("idle");
+    const timer = setTimeout(() => void save(settings), DEBOUNCE);
+    return () => clearTimeout(timer);
+  }, [settings, save]);
 
   const resetCount = async () => {
     setBusy(true);
@@ -115,15 +162,22 @@ export default function BotSettingsView() {
             <Cog className="text-primary" />
             Bot
           </h2>
+          {/* No Save button: every change is written. Silent while it works and
+              when it lands, loud only when a write fails - at which point the
+              page and the bot disagree, which is the state a Save button used
+              to hide. */}
           <div className="flex items-center gap-3">
-            <Button className="font-semibold" onClick={save} disabled={busy || !dirty}>
-              <Save className="size-4" />
-              {busy ? "Saving..." : dirty ? "Save" : "Saved"}
-            </Button>
-            {saved && !dirty && (
-              <span className="text-green-600 dark:text-green-400">Saved - the bot is using it now.</span>
+            {saveState === "error" && (
+              <>
+                <span className="text-red-600 dark:text-red-400">Not saved: {error}</span>
+                {onDisk.current !== null && (
+                  <Button variant="outline" onClick={() => void save(settings)} disabled={busy}>
+                    <RotateCcw className="size-4" />
+                    Retry
+                  </Button>
+                )}
+              </>
             )}
-            {error && <span className="text-red-600 dark:text-red-400">{error}</span>}
           </div>
         </div>
 
@@ -222,7 +276,7 @@ export default function BotSettingsView() {
             </Button>
             <span className="block text-sm text-muted-foreground mt-2">
               One row per career, each with its own id, so the count survives restarting the bot &mdash; which is what
-              happens every time the game client freezes. Reset takes effect at once, with no Save.
+              happens every time the game client freezes.
             </span>
           </div>
         </div>

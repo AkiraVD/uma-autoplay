@@ -1,9 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CalendarRange, Loader2, AlertTriangle, Check, Link2, RotateCcw, Save, Trash2, Search, Pin,
-  ChevronDown,
+  ChevronDown, FolderOpen,
 } from "lucide-react";
 import { Button } from "../ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
 import { Input } from "../ui/input";
 import RacePicker from "./RacePicker";
 import { URL } from "@/constants";
@@ -14,10 +22,11 @@ import { URL } from "@/constants";
 // master.mdb carries no per-race stat or SP gain, and a made-up number would
 // look authoritative. See server/race_plan.py.
 //
-// OP races are in the pool because a plan is meant to be typed into the game's
-// Agenda by hand. The bot cannot click them - race_select matches
-// assets/races/<name>.png and OP races have no picture - so those are marked
-// "agenda only" and the Races section filters them out when it loads a list.
+// OP races are in the pool, and since 2026-09-26 the bot can enter them: it
+// reads a race's row rather than matching assets/races/<name>.png, so the pool
+// and what the bot can click are the same thing. The one exception is a race
+// another race on its turn reads identically to - marked "ambiguous", refused
+// by the bot, and filtered out by the Races section when it loads a list.
 //
 // Layout: settings live in a sticky sidebar, results and the turn grid on the
 // right. The grid is 59 rows, so anything that scrolls away with it is
@@ -46,6 +55,7 @@ export type PlannedRace = {
   stats: number;
   sp: number;
   has_image: boolean;
+  ambiguous: boolean;
 };
 
 export type Turn = {
@@ -210,6 +220,10 @@ function RacePlanView() {
   const [saved, setSaved] = useState<SavedList[]>([]);
   const [listName, setListName] = useState("");
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
+  // The list of saved lists lives in a dialog rather than in the sidebar: it
+  // grows without limit, and inline it pushed every setting below it down the
+  // page - on a 59-row plan that means off it.
+  const [listsOpen, setListsOpen] = useState(false);
   const [confirming, setConfirming] = useState<string | null>(null);
   // Which turn's race picker is open, by turn key. One at a time, so the modal
   // is rendered once below rather than 59 times inside the grid.
@@ -322,14 +336,15 @@ function RacePlanView() {
     }
   };
 
-  const runnable = plan ? plan.schedule.filter((r) => r.has_image) : [];
+  const runnable = plan ? plan.schedule.filter((r) => !r.ambiguous) : [];
   const overrides = Object.keys(settings.locks).length + settings.skip.length;
   const target = listName.trim();
   const overwrites = saved.some((s) => s.name === target);
 
-  // The whole schedule is saved, agenda-only races included, because the list
-  // is also what gets typed into the game by hand. The Races section filters to
-  // the runnable ones when it loads, since those are all the bot can click.
+  // The whole schedule is saved, ambiguous races included, because the list is
+  // also what gets typed into the game by hand - and by hand they are not
+  // ambiguous at all, since the Agenda names them. The Races section filters
+  // them out when it loads, because only the bot cannot tell them apart.
   const saveList = async () => {
     if (!plan || !target) return;
     setError(null);
@@ -366,6 +381,7 @@ function RacePlanView() {
       setSettings(next);
       setListName(name);
       setSavedMsg(`Loaded "${data.title || name}"`);
+      setListsOpen(false);
       build(next);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -629,8 +645,8 @@ function RacePlanView() {
                 Saves {plan.schedule.length} races as <code>{target}.json</code>
                 {overwrites && " — replacing the list already there."}
                 {runnable.length < plan.schedule.length &&
-                  ` · ${plan.schedule.length - runnable.length} are agenda-only, so the Races
-                    section will load ${runnable.length}.`}
+                  ` · ${plan.schedule.length - runnable.length} read the same as another race
+                    on their turn, so the Races section will load ${runnable.length}.`}
               </p>
             )}
             {savedMsg && (
@@ -639,74 +655,95 @@ function RacePlanView() {
               </p>
             )}
 
-            <div className="mt-3 rounded-lg border border-border">
-              {saved.length === 0 ? (
-                <p className="px-3 py-5 text-center text-xs text-muted-foreground">
-                  Nothing saved yet.
-                </p>
-              ) : (
-                <ul className="divide-y divide-border">
-                  {saved.map((s) => (
-                    <li key={s.name} className="flex items-center gap-2 px-3 py-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium">
-                          {s.title}
-                          {s.unreadable && (
-                            <span className="ml-2 text-xs font-normal text-destructive">
-                              unreadable
-                            </span>
+            <Dialog open={listsOpen} onOpenChange={setListsOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="mt-3 w-full">
+                  <FolderOpen className="mr-2 h-4 w-4" />
+                  {saved.length === 0
+                    ? "No saved lists yet"
+                    : `Saved lists (${saved.length})`}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-xl">
+                <DialogHeader>
+                  <DialogTitle>Saved race lists</DialogTitle>
+                  <DialogDescription>
+                    Kept in <code>uma_race_lists/</code>, so the same lists appear on every
+                    device. Loading one replaces the plan here; nothing changes the config by
+                    itself.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="max-h-[55vh] overflow-y-auto rounded-lg border border-border">
+                  {saved.length === 0 ? (
+                    <p className="px-3 py-8 text-center text-sm text-muted-foreground">
+                      Nothing saved yet — name a plan above and save it.
+                    </p>
+                  ) : (
+                    <ul className="divide-y divide-border">
+                      {saved.map((s) => (
+                        <li key={s.name} className="flex items-center gap-2 px-3 py-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-medium">
+                              {s.title}
+                              {s.unreadable && (
+                                <span className="ml-2 text-xs font-normal text-destructive">
+                                  unreadable
+                                </span>
+                              )}
+                            </div>
+                            <div className="truncate text-xs text-muted-foreground">
+                              {s.races} races · {s.runnable} runnable · {s.epithets} epithets
+                              <span className="ml-2 opacity-70">{when(s.saved_at)}</span>
+                            </div>
+                          </div>
+                          {confirming === s.name ? (
+                            <div className="flex shrink-0 items-center gap-1 text-xs">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  deleteList(s.name);
+                                  setConfirming(null);
+                                }}
+                                className="rounded-md border border-destructive px-2 py-1 text-destructive"
+                              >
+                                Delete
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirming(null)}
+                                className="rounded-md px-2 py-1 text-muted-foreground"
+                              >
+                                No
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex shrink-0 items-center gap-1">
+                              <button
+                                type="button"
+                                disabled={s.unreadable || busy}
+                                onClick={() => loadList(s.name)}
+                                className="rounded-md border border-border px-2.5 py-1 text-xs disabled:opacity-40"
+                              >
+                                Load
+                              </button>
+                              <button
+                                type="button"
+                                aria-label={`Delete ${s.title}`}
+                                onClick={() => setConfirming(s.name)}
+                                className="rounded-md p-1 text-muted-foreground hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           )}
-                        </div>
-                        <div className="truncate text-xs text-muted-foreground">
-                          {s.races} races · {s.runnable} runnable · {s.epithets} epithets
-                          <span className="ml-2 opacity-70">{when(s.saved_at)}</span>
-                        </div>
-                      </div>
-                      {confirming === s.name ? (
-                        <div className="flex shrink-0 items-center gap-1 text-xs">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              deleteList(s.name);
-                              setConfirming(null);
-                            }}
-                            className="rounded-md border border-destructive px-2 py-1 text-destructive"
-                          >
-                            Delete
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setConfirming(null)}
-                            className="rounded-md px-2 py-1 text-muted-foreground"
-                          >
-                            No
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex shrink-0 items-center gap-1">
-                          <button
-                            type="button"
-                            disabled={s.unreadable || busy}
-                            onClick={() => loadList(s.name)}
-                            className="rounded-md border border-border px-2.5 py-1 text-xs disabled:opacity-40"
-                          >
-                            Load
-                          </button>
-                          <button
-                            type="button"
-                            aria-label={`Delete ${s.title}`}
-                            onClick={() => setConfirming(s.name)}
-                            className="rounded-md p-1 text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -881,12 +918,12 @@ function RacePlanView() {
                                   aria-label="pinned"
                                 />
                               )}
-                              {race && !race.has_image && (
+                              {race?.ambiguous && (
                                 <span
-                                  className="text-[10px] lowercase text-muted-foreground/60"
-                                  title="No picture asset, so the bot cannot click this race. Fine to enter in the game's Agenda by hand."
+                                  className="text-[10px] lowercase text-destructive/80"
+                                  title="Another race on this turn reads exactly the same off the screen - same track, surface, distance and fans - so the bot refuses to enter either rather than guess. Fine to enter in the game's Agenda by hand."
                                 >
-                                  agenda
+                                  ambiguous
                                 </span>
                               )}
                             </span>

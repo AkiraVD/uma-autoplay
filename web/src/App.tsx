@@ -43,9 +43,10 @@ const VIEWS: [View, string][] = [
 
 const CHIP = "shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium";
 
-// Small and out of the way while it works, loud only when a write fails - at
-// which point the page and the bot disagree, which is the state the Apply
-// button used to hide.
+// Silent while it works and when it succeeds. A write that landed is the
+// expected case and saying so every keystroke is noise; a write that *failed* is
+// the one thing worth the space, because then the page and the bot disagree,
+// which is the state the Apply button used to hide.
 function ApplyStatus({ state, error }: { state: ApplyState; error: string | null }) {
   if (state === "error")
     return (
@@ -53,10 +54,6 @@ function ApplyStatus({ state, error }: { state: ApplyState; error: string | null
         Not applied
       </span>
     );
-  if (state === "applying")
-    return <span className="text-sm text-muted-foreground">Applying...</span>;
-  if (state === "applied")
-    return <span className="text-sm text-muted-foreground">Applied</span>;
   return null;
 }
 

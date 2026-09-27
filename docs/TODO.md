@@ -96,6 +96,70 @@ Worth deriving properly if the behaviour ever looks wrong:
   all, so anything from 0 to just under one burst is defensible.
 - `core/skill_score.py`'s weights are the source optimizer's, not measured here.
 
+## Race rows instead of race pictures (2026-09-26)
+
+`core/race_row.py` selects a race by what its row prints - track, surface,
+metres, fans gained - so the 30-file `assets/races/` bank no longer caps what
+the bot can enter. Read and verified on a live URA Finale career: the whole
+list scans in ~15s, and Clover Sho (OP, no picture) was selected end to end.
+
+The config page followed the same day: one race pool of 402, an `ambiguous`
+flag in place of the `has_image` gate, OP and Pre-OP in the grade filter, and
+`web/dist` rebuilt.
+
+Left open:
+
+- **Akamatsu Sho and Begonia Sho cannot be told apart** (Junior Late Nov, both
+  Pre-OP, both Tokyo Turf 1600m for +1,000 fans). The scan finds both and
+  refuses to pick either. Splitting them needs something no other race needs -
+  the banner picture, or the row's position in the list.
+- **`race_select(False, None)`**, the aptitude-match path, still scrolls with
+  `drag_scroll` and its trailing click. Untouched deliberately; it picks by the
+  `match_track.png` chip rather than by name.
+- The scan costs an OCR pair per row. Reusing a row's parse across scroll
+  positions would roughly halve it, but needs a cheap way to tell that two
+  strips are the same row when the list rests a pixel or two off.
+
+## Every config page auto-saves, silently (2026-09-28)
+
+~~The Telegram tab is the last page with a Save button.~~ **Done.** It writes
+every change debounced like the Bot and Configuration tabs, on the same two
+rules (nothing written before the first GET answers; a save in flight never
+adopts the echo over what has been typed since).
+
+The success indicators went with it: none of the three pages says anything when
+a write lands, because that is the expected case and saying so on every
+keystroke is noise. Only a *failed* write speaks - "Not saved" with a Retry -
+since that is the state where the page and the bot disagree.
+
+## Race rows: the rewind bug, and what is still unverified (2026-09-27)
+
+The first live run of the row reader lost **25 races across one day** to
+`RACE-ROW-W05`, against 22 selected successfully. The scan and the key were
+never the problem - W01, W02, W03 and W04 never fired once. The rewind was:
+it dragged up from the down anchor at (560,850) by +258, targeting y=1108 on a
+1080-tall screen, so the up drag clamped and the list never went back. Exactly
+the mistake `utils/constants.py` already documents for the skill list.
+
+Fixed with two anchors and a walk that re-reads instead of trusting the step
+count, plus an arithmetic check in `tests/test_race_row.py` that would have
+caught it. **Not yet verified on a live list long enough to scroll** - the one
+live test before this used a two-race turn, where the list cannot scroll and
+the broken rewind was a harmless no-op. That is the test to run first on the
+next career.
+
+Still open from the same log:
+
+- **Does the scan ever under-read a long list?** Classic Early Sep and Late Sep
+  each offer 8 races in master.mdb and the scan reported 6. That is most likely
+  the game's own fan-requirement filter rather than a miss, but it has not been
+  confirmed against a live list. `scan_list` breaks out on the first screen
+  that reads no rows, which would truncate the list silently if a frame is ever
+  caught mid-animation; it should probably retry once before giving up.
+- **The scan logs nothing about what it read**, so a "not among the N races"
+  cannot be told from a miss without re-running it. One debug line listing the
+  rows would make the next one of these diagnosable from the log alone.
+
 ## Smaller open items
 
 - ~~**A frozen client is invisible to `game_panel_blank()`.**~~ **Detected
@@ -129,21 +193,14 @@ Worth deriving properly if the behaviour ever looks wrong:
 
   Uptime is not the trigger - 3h, 6h, 7.5h. All three froze during a **scene
   transition**: a race starting, a support card event, a story event.
-- **A resume after a crash does not survive `career_start`** *(only when a
-  person restarts the game; the bot's own restart above sets `RESUMING_CAREER`
-  and is unaffected)*. With
-  `career_start.enabled` on, a bot started at the plain home screen while a
-  career is in progress calls the walk rather than resuming: `RESUMING_CAREER`
-  is False on a fresh start, so the home-screen branch goes straight to
-  `career_start.start()`. It is **not** destructive - pressing CAREER raises the
-  Continue Career dialog, which blocks Scenario Select, and none of the walk's
-  templates match it, so it waits out `STEP_LIMIT` and stops - but it stops
-  instead of resuming, which is the opposite of what an unattended night wants.
-  Measured 2026-09-23: on that dialog `continue_career` matches while
-  `team_rank`, `game_nav` and `game_nav_alt` all read False, so the fix is
-  cheap - give the walk the `continue_career` template and let it press Resume,
-  or have the home-screen branch press CAREER and look before deciding. Note it
-  buys nothing on its own while the bot still cannot relaunch the game itself.
+- ~~**A resume after a crash does not survive `career_start`.**~~ **Fixed.**
+  The walk now watches for the Continue Career dialog and hands it back rather
+  than waiting out `STEP_LIMIT` on a career that only needed Resume:
+  `career_start.start()` returns `RESUMED` on the first pass that matches
+  `continue_career`, and `career_lobby()`'s own resume branch presses it. One
+  resume path, in the place that already owned it. Measured 2026-09-23 on a
+  Post-Career state: on that dialog `continue_career` matches while `team_rank`,
+  `game_nav` and `game_nav_alt` all read False.
 - **The game client stops drawing after long uptime.** 2026-09-21, ~7.5h into
   one client's run, the portrait panel went flat white the instant the Japanese
   Derby started and never redrew - the side panel froze on a stale Career
@@ -153,15 +210,14 @@ Worth deriving properly if the behaviour ever looks wrong:
   `close`/`launch` the Continue Career dialog showed the goal still in progress
   and the results screen had Maruzensky 2nd in the Derby. Only a client restart
   clears it.
-  `game_panel_blank()` now stops the bot after `BLANK_PANEL_LIMIT` flat frames
+  `game_panel_blank()` stops the bot after `BLANK_PANEL_LIMIT` flat frames
   rather than blind-tapping a dead window (it did so for twelve minutes before
-  anyone looked). **What is still open is the recovery**: the bot cannot restart
-  the game and press Continue Career by itself, so this still ends a night's
-  run. Everything it needs is measured - `uma-launch`'s title tap,
-  `CAREER_BUTTON_MOUSE_POS`, and the `continue_career` branch already in the
-  loop - so the missing piece is a restart path that runs *before* the loop
-  gives up, not new screen work. Whether uptime is really the trigger is a
-  guess from one occurrence; log the client's uptime when it next happens.
+  anyone looked), and the recovery it used to be missing exists: see the frozen
+  client entry above, where `core/recover.py::restart_client` closes, launches,
+  taps the title and resumes through Continue Career behind `restart_on_freeze`.
+  Uptime is **not** the trigger - the three occurrences sat at 3h, 6h and 7.5h,
+  and all three froze during a scene transition. What is left here is the same
+  thing that entry leaves open: none of it has been driven by a live freeze.
 
 - ~~**Nothing starts a career.**~~ **Driven and proven live 2026-09-22.**
   `core/career_start.py` walked Home -> Scenario -> Trainee -> Legacy -> Support
@@ -689,6 +745,12 @@ glyph but not that, so the exact match failed. `sparks.match_key` now drops
 anything trailing that is not a letter or digit. Regression test and both real
 frames are in `tests/test_duel_spark.py` /
 `tests/fixtures/sparks/sparks_ura_{wit,mood}_spark.png`.
+
+**Confirmed again since, from the purchases alone (2026-09-28).** The bot has
+bought Racing Spirit skills across later careers, and those skills only enter
+the list once their duel is won - so badge, 0% gate, glyph read, contest pick
+and win have each run repeatedly, not just the six of the captured career. The
+skill list is the cheapest proof a duel landed: no duel, no such skill to buy.
 
 **Still unobserved.** Whether a spark is ever actually *kept* by the wanted
 rule - the fix is verified against the captured frames, not against a live
