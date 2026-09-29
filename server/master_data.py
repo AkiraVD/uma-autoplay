@@ -60,10 +60,36 @@ MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", 
 
 # text_data categories.
 TEXT_RACE_NAME = 28
+TEXT_RACE_SHORT = 29
 TEXT_TRACK_NAME = 35
+TEXT_SKILL_NAME = 47
 TEXT_CHARA_NAME = 170
 TEXT_SUPPORT_NAME = 75
 TEXT_STORY_TITLE = 181
+TEXT_FACTOR_NAME = 147
+
+# succession_factor.factor_type. 5 is the race factors - the Spark a win pays,
+# named after the race that pays it. The others are stat (1), aptitude (2),
+# unique (3), skill (4), scenario (6) and event (7) Sparks, none of which a
+# race hands out.
+FACTOR_RACE = 5
+
+# succession_factor_effect.target_type: 1-5 are the five stats, 41 a skill hint
+# (value_1 is the skill). A race Spark is one or two stats, sometimes plus one
+# hint, and it pays +3/+6/+9 of each stat at 1/2/3 stars - uniformly, across all
+# 34 of them, which is why only the names are carried here.
+FACTOR_STATS = {1: "Speed", 2: "Stamina", 3: "Power", 4: "Guts", 5: "Wit"}
+FACTOR_HINT = 41
+
+# No table joins a factor to a race: the only link master.mdb draws is that the
+# Spark carries the race's name, in the game's abbreviated spelling. 32 of the
+# 34 match a race's own short name (text_data 29) exactly; these two abbreviate
+# further than any race name the game stores. tests/test_race_sparks.py fails if
+# a patch adds a third, rather than letting it drop out silently.
+FACTOR_RACE_ALIASES = {
+  "J.D. Derby": "Japan Dirt Derby",
+  "JBC L. Classic": "JBC Ladies' Classic",
+}
 
 SCENARIO_FILES = {
   "ura_finale.json": "URA Finale",
@@ -160,11 +186,77 @@ def _races_from_json():
   return {"source": "races.json", "races": _flag_ambiguous(races)}
 
 
+def _factor_key(text):
+  """Match key between a Spark's name and a race's short name.
+
+  The game writes JBC Ladies' Classic with a typographic apostrophe in one
+  place and the Spark's name is keyed off the same string, so normalise both
+  rather than trusting them to agree.
+  """
+  return re.sub(r"\s+", " ", (text or "").replace("\u2019", "'")).strip()
+
+
+def _race_sparks(con):
+  """{race name: the Spark names winning it pays}.
+
+  Only 34 of the 402 schedulable races pay a Spark at all - the JRA and NAR G1s
+  - and every other race maps to an empty list. The hint leads the list, because
+  it is the part that tells two races paying the same stats apart.
+
+  A Spark outlives the career that earned it, which is the whole reason the
+  planner shows this: a schedule is also a choice about what the next trainee
+  inherits. Nothing here scores a race - see server/race_plan.py.
+  """
+  names = _texts(con, TEXT_FACTOR_NAME)
+  skills = _texts(con, TEXT_SKILL_NAME)
+  short = _texts(con, TEXT_RACE_SHORT)
+  full = _texts(con, TEXT_RACE_NAME)
+
+  # A race runs under several instance ids (scenario and character variants),
+  # and they all share one name, so this is a set per short name.
+  by_short = {}
+  for (instance_id,) in con.execute("select distinct race_instance_id from single_mode_program"):
+    label, name = short.get(instance_id), full.get(instance_id)
+    if label and name:
+      by_short.setdefault(_factor_key(label), set()).add(asset_name(name))
+
+  effects = {}
+  for group, target, value in con.execute(
+      "select factor_group_id, target_type, value_1 from succession_factor_effect"
+      " where effect_id=1"):
+    effects.setdefault(group, []).append((target, value))
+
+  out = {}
+  for factor_id, group in con.execute(
+      "select factor_id, factor_group_id from succession_factor"
+      " where factor_type=? and rarity=1", (FACTOR_RACE,)):
+    label = _factor_key(names.get(factor_id))
+    if not label:
+      continue
+    stats, hints = [], []
+    for target, value in sorted(effects.get(group, ())):
+      if target in FACTOR_STATS:
+        stats.append(FACTOR_STATS[target])
+      elif target == FACTOR_HINT and skills.get(value):
+        hints.append(skills[value])
+    for name in by_short.get(FACTOR_RACE_ALIASES.get(label, label), ()):
+      out[name] = hints + stats
+  return out
+
+
 def _races_from_mdb(grades=GRADES):
   local = _load_races_json()
   images = _race_images()
   con = _connect()
   try:
+    # A missing factor table would be a strange master.mdb, but it is no reason
+    # to lose 402 races over 34 Sparks, so this one read fails on its own and
+    # the hand-kept values in data/races.json stand in.
+    try:
+      sparks = _race_sparks(con)
+    except sqlite3.Error as e:
+      warning(f"MDB-SPARKS-READ: race Sparks unreadable, using data/races.json: {e}")
+      sparks = {}
     names = _texts(con, TEXT_RACE_NAME)
     tracks = _texts(con, TEXT_TRACK_NAME)
     first_place_fans = dict(con.execute('select fan_set_id, fan_count from single_mode_fan_count where "order"=1'))
@@ -199,7 +291,7 @@ def _races_from_mdb(grades=GRADES):
         "racetrack": tracks.get(track_id, ""),
         "terrain": "Dirt" if ground == 2 else "Turf",
         "distance": {"type": distance_type(meters), "meters": meters},
-        "sparks": known.get("sparks", []),
+        "sparks": sparks.get(name, []) if sparks else known.get("sparks", []),
         "fans": {"required": need_fans, "gained": first_place_fans.get(fan_set, 0)},
         "grade": grades[grade],
         "has_image": name in images,

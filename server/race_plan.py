@@ -65,6 +65,15 @@ DEFAULT_FLOOR = "b"
 
 GRADED_ONLY = ("G1", "G2", "G3")
 
+# Spark hunting: schedule nothing but the races that pay a Spark.
+#
+# It is spelt as a grade because the two sets are the same one. Every G1 in the
+# pool pays a Spark and every Spark race is a G1 - 34 races over 48 turn-slots,
+# checked against master.mdb on 2026-09-29 - so there is no separate "pays a
+# Spark" pool that could drift out of step with this. If a patch ever breaks
+# that, tests/test_race_sparks.py is where it shows up.
+SPARK_GRADES = ("G1",)
+
 
 def _turn_index(date):
   try:
@@ -127,7 +136,8 @@ def _floor(min_aptitude):
   return set(APTITUDE_ORDER[:idx + 1])
 
 
-def runnable(race, aptitudes=None, include_op=True, min_aptitude=DEFAULT_FLOOR):
+def runnable(race, aptitudes=None, include_op=True, min_aptitude=DEFAULT_FLOOR,
+             grades=None):
   """Can this trainee run this race, and does the caller want it?
 
   `aptitudes` is the shape `state.APTITUDES` uses - `surface_turf`,
@@ -135,7 +145,13 @@ def runnable(race, aptitudes=None, include_op=True, min_aptitude=DEFAULT_FLOOR):
   its distance sit at or above the floor. With no aptitudes given, everything
   is runnable: a planner was asked for a schedule, not an opinion about the
   trainee.
+
+  `grades` narrows the pool to those grades and nothing else - `SPARK_GRADES`
+  is the one the page uses. It is checked before `include_op`, which then has
+  nothing left to say.
   """
+  if grades and race.get("grade") not in grades:
+    return False
   if not include_op and race.get("grade") not in GRADED_ONLY:
     return False
   if not aptitudes:
@@ -265,19 +281,26 @@ def _ordered_targets(table, everything):
 
 def plan(targets=None, aptitudes=None, races=None,
          max_consecutive=MAX_CONSECUTIVE, fill=True, include_op=True,
-         min_aptitude=DEFAULT_FLOOR, locks=None, skip=None, race_bonus=0.0):
+         min_aptitude=DEFAULT_FLOOR, locks=None, skip=None, race_bonus=0.0,
+         grades=None):
   """Build a schedule.
 
   `targets` is the epithets to chase, scarcest-first when omitted. `locks` pins
   a race to a turn (`{"Classic Year|Early Apr": "Osaka Hai"}`) and `skip` keeps
   turns empty - both are the user overriding the solver, so neither is ever
-  thinned away or reassigned.
+  thinned away or reassigned. `grades` narrows the pool; `SPARK_GRADES` with
+  aptitudes given is the page's Spark hunting.
+
+  A narrowed pool narrows the *grid* too, so the picker on a turn with no
+  qualifying race offers only Auto and No race. That is deliberate: the pool is
+  a statement about which races this plan is willing to enter, and a picker
+  that quietly ignored it would make the schedule disagree with the sidebar.
 
   Returns the schedule, the per-turn grid the UI drives, which epithets it
   earns, which it could not fit and why, and the totals.
   """
   everything = [r for r in pool(races)
-                if runnable(r, aptitudes, include_op, min_aptitude)]
+                if runnable(r, aptitudes, include_op, min_aptitude, grades)]
   by_turn = {}
   for race in everything:
     by_turn.setdefault(_turn(race), []).append(race)
@@ -335,6 +358,7 @@ def plan(targets=None, aptitudes=None, races=None,
                   "total": epithets.value_of(n) * 2,
                   "hint": table[n].get("hint")} for n in earned],
     "progress": progress(schedule, earned),
+    "sparks": sparks_earned(schedule),
     "missed": missed,
     "totals": totals(schedule, earned, race_bonus),
   }
@@ -347,6 +371,7 @@ def _entry(race, race_bonus=0.0):
           "terrain": race.get("terrain"), "distance": race.get("distance"),
           "stats": trackblazer.stats_for(grade, race_bonus),
           "sp": trackblazer.skill_points_for(grade, race_bonus),
+          "sparks": list(race.get("sparks") or []),
           "has_image": race.get("has_image", False),
           "ambiguous": race.get("ambiguous", False)}
 
@@ -451,6 +476,24 @@ def progress(schedule, earned=()):
   return out
 
 
+def sparks_earned(schedule):
+  """The Sparks the schedule's wins pay, in calendar order.
+
+  34 of the 402 races carry one - the JRA and NAR G1s - and it is the one thing
+  a career leaves behind it, since a Spark is what the next trainee inherits.
+  So it is worth reading off a plan even though, like everything else here
+  except the epithets, it decides nothing. Filling a turn with a race that pays
+  a Spark rather than one that does not is a judgement about the *next* career,
+  which the solver has no way to hold an opinion about.
+
+  A race won twice - JBC Sprint runs in Classic and Senior - pays its Spark
+  once, but both turns are listed, because the page is showing the schedule.
+  """
+  return [{"name": r["name"], "year": r["year"], "date": r["date"],
+           "sparks": list(r["sparks"])}
+          for r in sorted(schedule, key=_sort_key) if r.get("sparks")]
+
+
 def catalogue():
   """Every epithet, for the target picker. Unmodelled ones say why.
 
@@ -492,6 +535,7 @@ def totals(schedule, earned, race_bonus=0.0):
   return {
     "races": len(schedule),
     "epithets": len(earned),
+    "sparks": len({r["name"] for r in schedule if r.get("sparks")}),
     "epithet_stats": stats,
     "race_stats": race_stats,
     "race_sp": race_sp,

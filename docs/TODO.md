@@ -24,7 +24,11 @@ history (`git log -p docs/TODO.md`) and the measured screen layouts are in
 rarity, and the server's pickers. Two uses are still open:
 
 - `data/races.json` and `data/skills.json` still go stale on patches.
-  `text_data` categories 28/29/32 are race names, 47/48 skill names.
+  `text_data` categories 28/29/32 are race names, 47/48 skill names. The
+  Sparks each race pays came off it on 2026-09-29 (`succession_factor`, joined
+  to a race only by the Spark's name - see `server/master_data.py`), which
+  corrected two of the thirty it had by hand; everything else in the file is
+  still the fallback.
 - Category 181 (12,758 event names) would canonicalise event-name OCR the way
   skill names are canonicalised now.
 

@@ -179,6 +179,7 @@ def race_plan_data(options: dict = Body(default={})):
     skip=options.get("skip"),
     race_bonus=options.get("race_bonus", 0.0),
     max_consecutive=options.get("max_consecutive", race_plan.MAX_CONSECUTIVE),
+    grades=options.get("grades"),
   )
 
 RACE_ASSETS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "races")

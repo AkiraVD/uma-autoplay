@@ -76,7 +76,12 @@ export default function RacePicker({ turn, value, auto, none, onPick, onClose }:
       !query ||
       o.name.toLowerCase().includes(query) ||
       (o.racetrack ?? "").toLowerCase().includes(query) ||
-      (o.grade ?? "").toLowerCase().includes(query)
+      (o.grade ?? "").toLowerCase().includes(query) ||
+      // Typing "spark" finds the 34 races that pay one at all; a stat or skill
+      // name finds the ones paying that. Four characters before the keyword
+      // counts, or a single "s" would pull in every Sparked race on the turn.
+      (o.sparks?.length && query.length >= 4 && "sparks".startsWith(query)) ||
+      (o.sparks ?? []).some((s) => s.toLowerCase().includes(query))
   );
 
   const card = (selected: boolean) =>
@@ -104,7 +109,7 @@ export default function RacePicker({ turn, value, auto, none, onPick, onClose }:
               autoFocus
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Race, racetrack or grade..."
+              placeholder="Race, racetrack, grade or Spark..."
               className="h-9 pl-8"
             />
           </div>
@@ -164,6 +169,15 @@ export default function RacePicker({ turn, value, auto, none, onPick, onClose }:
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
+                  {o.sparks?.length ? (
+                    <p
+                      className="mt-1 flex items-start gap-1 text-xs text-amber-300"
+                      title={`Winning this pays the ${o.name} Spark, which the next trainee inherits.`}
+                    >
+                      <Sparkles className="mt-0.5 h-3 w-3 shrink-0" />
+                      <span className="min-w-0">{o.sparks.join(" · ")}</span>
+                    </p>
+                  ) : null}
                   <p className="mt-1 text-xs tabular-nums text-muted-foreground">
                     +{o.stats} stats · {o.sp} SP
                     {o.ambiguous && (

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CalendarRange, Loader2, AlertTriangle, Check, Link2, RotateCcw, Save, Trash2, Search, Pin,
-  ChevronDown, FolderOpen,
+  ChevronDown, FolderOpen, Sparkles, CalendarOff,
 } from "lucide-react";
 import { Button } from "../ui/button";
 import {
@@ -54,6 +54,15 @@ export type PlannedRace = {
   distance: Distance | null;
   stats: number;
   sp: number;
+  // The Spark winning this race pays, hint first. Empty for all but the 34
+  // JRA/NAR G1s that pay one at all.
+  //
+  // Optional, like `ambiguous` on a saved race list, because web/dist is read
+  // off disk per request while the Python is whatever the running process
+  // imported at startup: a rebuilt page is served by a server that has not been
+  // restarted yet, and it must render rather than throw on the field that
+  // server has never heard of.
+  sparks?: string[];
   has_image: boolean;
   ambiguous: boolean;
 };
@@ -70,6 +79,8 @@ export type Turn = {
 
 type EarnedEpithet = { name: string; value: number; total: number; hint: string | null };
 
+type SparkRace = { name: string; year: string; date: string; sparks: string[] };
+
 type Progress = {
   name: string;
   have: number;
@@ -85,10 +96,12 @@ type PlanResult = {
   turns: Turn[];
   epithets: EarnedEpithet[];
   progress: Progress[];
+  sparks?: SparkRace[];
   missed: Record<string, string>;
   totals: {
     races: number;
     epithets: number;
+    sparks?: number;
     epithet_stats: number;
     race_stats: number;
     race_sp: number;
@@ -127,6 +140,10 @@ const FLOORS = ["s", "a", "b", "c", "d", "e", "f", "g"];
 type Settings = {
   fill: boolean;
   includeOp: boolean;
+  // Schedule nothing but the races that pay a Spark. Spelt as a grade on the
+  // wire because every G1 pays one and every Spark race is a G1 - see
+  // SPARK_GRADES in server/race_plan.py.
+  sparkHunt: boolean;
   limitAptitude: boolean;
   surfaces: string[];
   distances: string[];
@@ -141,6 +158,7 @@ type Settings = {
 const DEFAULTS: Settings = {
   fill: true,
   includeOp: true,
+  sparkHunt: false,
   limitAptitude: false,
   surfaces: ["turf"],
   distances: ["mile", "medium"],
@@ -186,17 +204,23 @@ function Section({ title, hint, children }: {
   );
 }
 
-function Toggle({ checked, onChange, children }: {
+function Toggle({ checked, onChange, children, disabled }: {
   checked: boolean;
   onChange: () => void;
   children: React.ReactNode;
+  disabled?: boolean;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5 py-1 text-sm">
+    <label
+      className={`flex items-center gap-2.5 py-1 text-sm ${
+        disabled ? "cursor-not-allowed opacity-40" : "cursor-pointer"
+      }`}
+    >
       <input
         type="checkbox"
         checked={checked}
         onChange={onChange}
+        disabled={disabled}
         className="h-4 w-4 shrink-0 accent-[var(--primary)]"
       />
       <span>{children}</span>
@@ -237,6 +261,20 @@ function RacePlanView() {
     setDirty(true);
   };
 
+  // Spark hunting is only half a statement on its own: "G1 only" without
+  // "races she can run" schedules Long dirt G1s for a Mile turf trainee, and
+  // she would lose every one of them. So switching it on switches the aptitude
+  // filter on with it. Switching it off leaves that alone - by then it is a
+  // setting the user can see and has had a reason to keep.
+  const setSparkHunt = (on: boolean) => {
+    setSettings((prev) => ({
+      ...prev,
+      sparkHunt: on,
+      limitAptitude: on ? true : prev.limitAptitude,
+    }));
+    setDirty(true);
+  };
+
   const toggle = (list: string[], key: keyof Settings, value: string) =>
     set(key, (list.includes(value)
       ? list.filter((x) => x !== value)
@@ -260,6 +298,7 @@ function RacePlanView() {
         body: JSON.stringify({
           fill: current.fill,
           include_op: current.includeOp,
+          grades: current.sparkHunt ? ["G1"] : null,
           min_aptitude: current.minAptitude,
           max_consecutive: current.maxConsecutive,
           // The server wants a fraction; the field is a percentage.
@@ -323,6 +362,21 @@ function RacePlanView() {
     build(next);
   };
 
+  // Clearing the plan is 59 "No race" overrides, not a settings change: the
+  // sidebar is left exactly as it was, picking a race on a turn lifts that
+  // turn the way it always does, and Reset is the undo - it is already the
+  // button that takes every turn back to Auto.
+  //
+  // Done this way rather than by switching off Fill and the targets, which
+  // would empty the schedule too but silently rewrite two settings the user
+  // set, and leave no single click to get back.
+  const clearPlan = () => {
+    if (!plan) return;
+    const next = { ...settings, locks: {}, skip: plan.turns.map((t) => t.key) };
+    setSettings(next);
+    build(next);
+  };
+
   const copyLink = async () => {
     const hash = `#plan=${encodeURIComponent(btoa(JSON.stringify(settings)))}`;
     const link = `${window.location.origin}${window.location.pathname}${hash}`;
@@ -338,6 +392,10 @@ function RacePlanView() {
 
   const runnable = plan ? plan.schedule.filter((r) => !r.ambiguous) : [];
   const overrides = Object.keys(settings.locks).length + settings.skip.length;
+  // Every turn either picked or left empty by hand: the solver had no room at
+  // all, so "not fitted, and why" has nothing to say that the user did not do
+  // on purpose. True of a cleared plan and of one being built up from it.
+  const handBuilt = !!plan && plan.turns.every((t) => t.skipped || settings.locks[t.key]);
   const target = listName.trim();
   const overwrites = saved.some((s) => s.name === target);
 
@@ -486,8 +544,23 @@ function RacePlanView() {
               </div>
             </Section>
 
-            <Section title="Race pool">
-              <Toggle checked={settings.includeOp} onChange={() => set("includeOp", !settings.includeOp)}>
+            <Section
+              title="Race pool"
+              hint={settings.sparkHunt
+                ? "Spark hunting: only the 34 G1s pay a Spark, so nothing else is scheduled."
+                : undefined}
+            >
+              <Toggle checked={settings.sparkHunt} onChange={() => setSparkHunt(!settings.sparkHunt)}>
+                <span className="inline-flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+                  Spark hunting — G1 only
+                </span>
+              </Toggle>
+              <Toggle
+                checked={settings.includeOp && !settings.sparkHunt}
+                disabled={settings.sparkHunt}
+                onChange={() => set("includeOp", !settings.includeOp)}
+              >
                 Include OP / Pre-OP races
               </Toggle>
               <Toggle checked={settings.fill} onChange={() => set("fill", !settings.fill)}>
@@ -600,18 +673,28 @@ function RacePlanView() {
               <Button
                 variant="outline"
                 className="flex-1"
+                onClick={clearPlan}
+                disabled={busy || !plan || plan.totals.races === 0}
+                title="Empty every turn, so the schedule can be built by hand. The settings on the left are left alone, and Reset puts every turn back to Auto."
+              >
+                <CalendarOff className="mr-2 h-4 w-4" />
+                Clear plan
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
                 onClick={resetOverrides}
                 disabled={!overrides}
-                title="Clear every pinned turn and every 'No race' you set"
+                title="Take every turn back to Auto: clears every pinned race and every 'No race' you set, including a cleared plan"
               >
                 <RotateCcw className="mr-2 h-4 w-4" />
                 {overrides ? `Reset ${overrides}` : "No overrides"}
               </Button>
-              <Button variant="outline" className="flex-1" onClick={copyLink}>
-                {copied ? <Check className="mr-2 h-4 w-4" /> : <Link2 className="mr-2 h-4 w-4" />}
-                {copied ? "Copied" : "Copy link"}
-              </Button>
             </div>
+            <Button variant="outline" className="w-full" onClick={copyLink}>
+              {copied ? <Check className="mr-2 h-4 w-4" /> : <Link2 className="mr-2 h-4 w-4" />}
+              {copied ? "Copied" : "Copy link"}
+            </Button>
             {error && (
               <p className="flex items-start gap-2 text-sm text-destructive">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {error}
@@ -758,10 +841,15 @@ function RacePlanView() {
           {plan && (
             <>
               <div className={CARD}>
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-8">
                   {[
                     ["Races", plan.totals.races],
                     ["Epithets", plan.totals.epithets],
+                    // A server that predates Sparks reports none, and an
+                    // honest gap beats a confident 0.
+                    ...(plan.totals.sparks === undefined
+                      ? []
+                      : [["Sparks", plan.totals.sparks]]),
                     ["Epithet stats", plan.totals.epithet_stats],
                     ["Race stats", plan.totals.race_stats],
                     ["Race SP", plan.totals.race_sp],
@@ -778,7 +866,8 @@ function RacePlanView() {
                   Assumes every scheduled race is won, so these are ceilings. Race stats and SP
                   come from a per-grade table rather than the game's own files — every G2 and G3
                   pays the same, whatever the distance — so they are reported, never used to rank
-                  races. Only the epithets a schedule earns decide anything.
+                  races. Sparks are the game's own, and are reported the same way. Only the
+                  epithets a schedule earns decide anything.
                 </p>
               </div>
 
@@ -807,7 +896,15 @@ function RacePlanView() {
                   ))}
                 </div>
 
-                {Object.keys(plan.missed).length > 0 && (
+                {/* A hand-built plan misses nearly every epithet for one
+                    reason, so it says it once instead of printing forty lines
+                    of "not enough free turns". */}
+                {handBuilt ? (
+                  <p className="mt-5 text-sm text-muted-foreground">
+                    Every turn is yours — picked or left empty — so the solver had no room to
+                    fit anything else. Press Reset to hand the calendar back to it.
+                  </p>
+                ) : Object.keys(plan.missed).length > 0 ? (
                   <>
                     <h4 className={`${LABEL} mb-2 mt-5`}>Not fitted, and why</h4>
                     <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
@@ -818,25 +915,77 @@ function RacePlanView() {
                       ))}
                     </ul>
                   </>
-                )}
+                ) : null}
               </div>
+
+              {plan.sparks && (
+              <div className={CARD}>
+                <div className="mb-3 flex items-baseline justify-between gap-2">
+                  <h3 className="text-lg font-semibold">Sparks</h3>
+                  <span className="text-xs text-muted-foreground">
+                    {plan.totals.sparks} of the 34 races that pay one
+                  </span>
+                </div>
+                {plan.sparks.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Nothing on this schedule pays a Spark — only the JRA and NAR G1s do.
+                  </p>
+                ) : (
+                  <ul className="grid gap-x-6 gap-y-2 sm:grid-cols-2 xl:grid-cols-3">
+                    {plan.sparks.map((r) => (
+                      <li key={`${r.year}|${r.date}|${r.name}`} className="flex gap-2">
+                        <Sparkles className="mt-1 h-3.5 w-3.5 shrink-0 text-amber-400" />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium" title={r.name}>
+                            {r.name}
+                            <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                              {r.year.replace(" Year", "")} {r.date}
+                            </span>
+                          </p>
+                          <p className="truncate text-xs text-amber-300/90" title={r.sparks.join(" · ")}>
+                            {r.sparks.join(" · ")}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Winning a race pays its Spark: +3/+6/+9 to one or two stats at 1/2/3 stars, and
+                  for most of them a hint for the skill named first. A Spark is what the next
+                  trainee inherits, so it outlives the career that earned it — but like
+                  everything else here except the epithets, it is reported, never scheduled for.
+                </p>
+              </div>
+              )}
 
               {YEARS.map((year) => {
                 const rows = plan.turns.filter((t) => t.year === year);
                 if (!rows.length) return null;
                 const raced = rows.filter((t) => t.picked).length;
+                const g1Turns = rows.filter((t) =>
+                  t.options.some((o) => o.grade === "G1")).length;
                 return (
                   <div key={year} className={CARD}>
                     <div className="mb-3 flex items-baseline justify-between gap-2">
                       <h3 className="text-lg font-semibold">{year}</h3>
                       <span className="text-xs text-muted-foreground">
                         {raced} of {rows.length} turns raced
+                        {g1Turns > 0 && (
+                          <span className="ml-1.5 text-amber-300">
+                            · {g1Turns} with a G1
+                          </span>
+                        )}
                       </span>
                     </div>
                     <div className="flex flex-col">
                       {rows.map((turn) => {
                         const race = turn.options.find((o) => o.name === turn.picked);
                         const overridden = turnValue(turn) !== AUTO;
+                        // Which turns are worth spending on: a G1 is the only
+                        // race that pays a Spark, and there are 48 of them
+                        // across 59 turns, so the date is the thing to scan.
+                        const g1 = turn.options.filter((o) => o.grade === "G1");
                         return (
                           <div
                             key={turn.key}
@@ -844,7 +993,16 @@ function RacePlanView() {
                               race ? "" : "opacity-60"
                             }`}
                           >
-                            <span className="w-20 shrink-0 text-xs text-muted-foreground">
+                            <span
+                              className={`w-20 shrink-0 text-xs ${
+                                g1.length
+                                  ? "font-semibold text-amber-300"
+                                  : "text-muted-foreground"
+                              }`}
+                              title={g1.length
+                                ? `G1 on this turn: ${g1.map((o) => o.name).join(", ")}`
+                                : undefined}
+                            >
                               {turn.date}
                             </span>
                             <span className="w-14 shrink-0 whitespace-nowrap text-xs font-medium">
@@ -912,6 +1070,20 @@ function RacePlanView() {
                               {race ? `+${race.stats} · ${race.sp} SP` : ""}
                             </span>
                             <span className="flex shrink-0 items-center gap-1">
+                              {/* The row has no room for the Spark's names -
+                                  the fixed columns leave it about 50px - so it
+                                  marks the turn and the Sparks card above
+                                  spells every one of them out. */}
+                              {race?.sparks?.length ? (
+                                <span
+                                  title={`Winning this pays the ${race.name} Spark: ${race.sparks.join(", ")}`}
+                                >
+                                  <Sparkles
+                                    className="h-3.5 w-3.5 text-amber-400"
+                                    aria-label="pays a Spark"
+                                  />
+                                </span>
+                              ) : null}
                               {turn.pinned && (
                                 <Pin
                                   className="h-3.5 w-3.5 text-primary"
