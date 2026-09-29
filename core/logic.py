@@ -1,3 +1,4 @@
+import re
 import core.state as state
 import core.outings as outings
 import core.planner as planner
@@ -503,6 +504,22 @@ def set_goal_context(criteria=None, turn=None):
   """Publish this turn's goal text and turns-left for the advisory planner."""
   global _goal_context
   _goal_context = {"criteria": criteria, "turn": turn}
+
+
+def goal_criteria():
+  """The goal as the last lobby read it, or "".
+
+  Read by the lost-race notification, which fires on a race result screen -
+  where the goal is not on screen at all. The last lobby's copy is the right
+  one: it is the goal the race that just ended was run for.
+
+  The lobby reads the goal together with the "Entry criteria met!" line printed
+  under it, and OCR renders that tail variously as "met!", "metl" or "meti".
+  It says nothing about a race already lost, so it is cut here rather than in
+  `set_goal_context` - the planner matches on the whole string.
+  """
+  text = (_goal_context.get("criteria") or "").strip()
+  return re.split(r"\s*Entry criteria\b", text, maxsplit=1)[0].strip() or text
 # Whether the last turn was inside the band, so entering and leaving it is
 # logged once instead of on every turn - energy sits in the band most of the
 # time, which made an every-turn line pure noise.

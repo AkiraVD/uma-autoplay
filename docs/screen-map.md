@@ -701,6 +701,21 @@ counts as one of the three; two learned songs filled the gauge.
 The DIALOG_ADVANCE_ALT tap `(756, 980)` lands on the Concert button, which is
 why the concert screen needs its own branch rather than the lobby recovery.
 
+`Ready to start the concert?` puts **Start** on a green button spanning
+`x 569-805, y 743-804`, text centred at `(687, 773)`. `concert_start_btn.png`
+was the word alone (72x27 at `(686, 774)`) until 2026-09-26, and that word is
+also the first word of **`Start Career!`** on the career-setup screens - the
+same font on the same green button asset, 233px wide against this one's 236.
+It scored **0.937 on Support Formation** and **0.906 on Final Confirmation**.
+Because the concert branches sit above the home-screen branch in
+`career_lobby()`, the walk in `core/career_start.py` was never reached: the bot
+sat on Support Formation pressing a disabled `Start Career!` every 13 seconds.
+The crop is now the button's middle band, `(600, 768)-(790, 806)`, 190x38,
+which `Start Career!` fills with different text - 1.000 on all three
+confirmation fixtures against 0.735 over the rest of the fixture tree. Both
+labels are centred, so any crop that is only the word will match both; it has
+to carry enough of the button around the word to see where the word sits.
+
 Learning a song while a *different* one is scheduled raises a second, smaller
 `Confirm` dialog on top: "Your trainee won't be able to learn the scheduled
 song." `Cancel` / `OK (686, 774)`, title at `y ~ 276`. `Scheduling Complete`

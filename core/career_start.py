@@ -106,20 +106,28 @@ def _click(pos, text):
   return click(boxes=(pos[0], pos[1], 1, 1), text=text)
 
 def remembered_card():
-  """The card borrowed last career, or the configured one the first time.
+  """The card borrowed last career, or the configured one.
 
   The file wins over the config because it is the record of what actually
-  happened; the config is only ever the seed. A file naming a card that has
-  since left the borrow list falls back to the config on the next failure, and
-  that failure is logged rather than papered over with a different card."""
-  try:
-    with open(PROGRESS, encoding="utf-8") as f:
-      name = (json.load(f) or {}).get("borrowed")
-    if name:
-      return name
-  except (OSError, ValueError):
-    pass
-  return getattr(state, "CAREER_START_BORROW_CARD", "") or ""
+  happened; the config is only ever the seed. But an *edited* config has to
+  win, or changing the setting would silently do nothing for the rest of the
+  machine's life - which is what it did until 2026-09-26. So the config value
+  the record was written against is kept beside it, and a config that no longer
+  matches that seed is taken as a deliberate change."""
+  record = _progress()
+  name = record.get("borrowed")
+  configured = getattr(state, "CAREER_START_BORROW_CARD", "") or ""
+  if not name:
+    return configured
+  # A record written before the seed was kept: the card itself is the best
+  # guess at what was configured then.
+  seed = record.get("seed") or name
+  if configured and configured != seed:
+    info(f"career_start.borrow_card is now '{configured}', not the"
+         f" '{seed}' the last borrow was seeded from; borrowing the"
+         " configured card instead of the remembered one.")
+    return configured
+  return name
 
 def _progress():
   """The whole progress file, or an empty record."""
@@ -158,6 +166,9 @@ def remember_card(name, career_uuid=None):
   and reading back a half-updated record would be worse than losing both."""
   record = _progress()
   record["borrowed"] = name
+  # What the config said at the time, so remembered_card() can tell a config
+  # that has since been edited from one that never moved.
+  record["seed"] = getattr(state, "CAREER_START_BORROW_CARD", "") or name
   record["at"] = time.strftime("%Y-%m-%dT%H:%M:%S")
   if career_uuid:
     rows = started_careers()

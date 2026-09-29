@@ -1,8 +1,8 @@
 """Telegram messages, so a run that is not being watched can still be followed.
 
 The bot plays for hours on a headless display and the things worth knowing are
-rare: a career started, a career finished, the client froze, the game came back.
-This sends those four to a Telegram chat.
+rare: a career started, a career finished, a goal race lost, the client froze,
+the game came back. This sends those to a Telegram chat.
 
 Three rules shape it:
 

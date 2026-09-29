@@ -17,7 +17,7 @@ from rapidfuzz import fuzz
 import core.state as state
 import core.scenarios as scenarios
 from core.state import check_support_card, check_unity_icons, check_failure, check_turn, check_mood, check_current_year, check_criteria, check_skill_pts, check_energy_level, check_energy_reserved, get_race_type, check_status_effects, check_aptitudes, check_credit, check_outing_available, check_recreation_panel, read_log_lines
-from core.logic import do_something, decide_race_for_goal, training_value, should_recreate, has_extreme_burst, set_goal_context
+from core.logic import do_something, decide_race_for_goal, training_value, should_recreate, has_extreme_burst, set_goal_context, goal_criteria
 
 from utils.log import info, warning, error, debug
 import utils.constants as constants
@@ -1221,13 +1221,16 @@ FREEZE_RESTART_LIMIT = 5
 SESSION_ERROR_LIMIT = 3
 # Alarm Clocks spent on retries this career (see the Retry handler below).
 RACE_RETRIES = 0
+# One lost-goal message per race, not per frame: the result screen stays up
+# for many polls, and the Retry offer matches on every one of them.
+RACE_LOST_SENT = False
 # A lobby has been seen since the bot started, so a home screen now means the
 # game went back there under us (the daily reset) rather than a finished career.
 SEEN_LOBBY = False
 RESUMING_CAREER = False
 def career_lobby():
   # Program start
-  global PREFERRED_POSITION_SET, RACE_RETRIES, SEEN_LOBBY, RESUMING_CAREER
+  global PREFERRED_POSITION_SET, RACE_RETRIES, SEEN_LOBBY, RESUMING_CAREER, RACE_LOST_SENT
   PREFERRED_POSITION_SET = False
   SEEN_LOBBY = False
   RESUMING_CAREER = False
@@ -1682,6 +1685,13 @@ def career_lobby():
           # a career a person started by hand.
           sleep(4)
           continue
+        if state.stop_event.is_set() or not state.is_bot_running:
+          # career_start.start() returns False for a stop as well as a failure.
+          # Reporting a stop as an error sends whoever reads the log looking
+          # for a reason that was never logged - which is what the run of
+          # 2026-09-27 ended on.
+          debug("Stopped during the career-start walk.")
+          return
         error("Could not start the next career; stopping. The reason is above.")
         return
       info("The game is on its own screens, so the career is over."
@@ -1762,6 +1772,7 @@ def career_lobby():
       state.apply_scenario(new_career=True)
       lessons.reset()
       RACE_RETRIES = 0
+      RACE_LOST_SENT = False
       sleep(4)
       continue
 
@@ -1778,13 +1789,30 @@ def career_lobby():
     # offer without ever trying again. Each press spends an Alarm Clock, so it
     # is capped per career and can be turned off.
     retry_offer = matches["retry"] or matches["try_again"]
-    if retry_offer and state.MAX_RACE_RETRIES > 0:
-      if RACE_RETRIES < state.MAX_RACE_RETRIES:
+    if retry_offer:
+      # The Retry offer is the game saying a goal race was lost: it is only
+      # raised on a failed goal, and a failed goal ends the career. That makes
+      # it the one mid-career event worth a message - either an Alarm Clock is
+      # about to be spent, or the run is over and the next hour of training
+      # would be spent on a career that cannot finish.
+      retrying = 0 < state.MAX_RACE_RETRIES and RACE_RETRIES < state.MAX_RACE_RETRIES
+      if not RACE_LOST_SENT:
+        RACE_LOST_SENT = True
+        plan = (f"Retrying: {RACE_RETRIES + 1} of {state.MAX_RACE_RETRIES}, costs an Alarm Clock"
+                if retrying else
+                "No retries left, so the career ends here" if state.MAX_RACE_RETRIES
+                else "Retries are switched off, so the career ends here")
+        notify.send("Lost a goal race\n"
+                    f"Goal: {goal_criteria() or 'not read'}\n"
+                    f"{plan}"
+                    + (f"\nuuid: {state.CAREER_UUID}" if state.CAREER_UUID else ""),
+                    photo=notify.save_frame(screen, "race_lost_"))
+      if retrying:
         RACE_RETRIES += 1
         if click(boxes=retry_offer,
                  text=f"Retry offered; taking it ({RACE_RETRIES} of {state.MAX_RACE_RETRIES} this career, costs an Alarm Clock)."):
           continue
-      else:
+      elif state.MAX_RACE_RETRIES > 0:
         info(f"Retry offered, but {RACE_RETRIES} retries already used this career; carrying on.")
     # Before Next: this screen carries no Next at all, and leaving it to the
     # blind-tap fallback is what wedged the run. Its "View Results" sits beside
@@ -1941,6 +1969,9 @@ def career_lobby():
     # left the career on its own (the daily reset), not that the career ended.
     SEEN_LOBBY = True
     RESUMING_CAREER = False
+    # Back in the lobby, so whatever was lost is behind us and the next lost
+    # goal gets its own message.
+    RACE_LOST_SENT = False
     # Back in the lobby, so any run of repeating event screens is over. This is
     # the reset for the repeat counter rather than "no choices on screen", which
     # would clear it between an info menu's answer and its next menu.

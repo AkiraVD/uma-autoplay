@@ -156,9 +156,30 @@ def rank(rows):
   return (wanted(rows), blue, whites)
 
 def describe(rows):
+  """The set in one line, for the log and the end-of-career notification.
+
+  Names the wanted sparks rather than counting them: "1 wanted" is the one
+  number in here that a person cannot act on, because the whole career may have
+  been run for that particular spark. Names are only read for skill rows and
+  only when `URA_KEEP_SPARKS` asks for some, so this falls back to the count
+  when there is nothing to name.
+  """
   want, blue, whites = rank(rows)
-  kept = f", {want} wanted" if want else ""
+  kept = ""
+  if want:
+    names = wanted_names(rows)
+    kept = f", wanted: {', '.join(names)}" if names else f", {want} wanted"
   return f"blue {blue}*, {whites} white spark(s), {len(rows)} rows{kept}"
+
+
+def wanted_names(rows):
+  """The names of the wanted sparks in this set, as the screen spells them."""
+  if not state.URA_KEEP_SPARKS:
+    return []
+  targets = {match_key(n) for n in state.URA_KEEP_SPARKS}
+  targets.discard("")
+  return [r["name"] for r in rows
+          if r.get("name") and match_key(r["name"]) in targets]
 
 def worth_rerolling(rows):
   """Rule 2: anything short of a 3-star blue is worth the 30 TP.
@@ -208,12 +229,15 @@ def handle():
     return False
   info(f"Sparks rolled: {describe(rows)}.")
   if not worth_rerolling(rows) or not state.REROLL_SPARKS:
-    return _keep("as rolled")
+    # The reason and the set, because `why` is the whole of what the
+    # end-of-career notification gets to say about the sparks. "as rolled" on
+    # its own told nobody what was kept.
+    return _keep(f"kept as rolled - {describe(rows)}")
 
   if not _press(REROLL_BTN, region=constants.SCREEN_BOTTOM_REGION,
                 text=f"No 3-star blue spark; rerolling for 30 TP."):
     warning("Couldn't find Reroll Sparks; keeping this set.")
-    return _keep("as rolled")
+    return _keep(f"kept as rolled, Reroll not found - {describe(rows)}")
   if not _press(REROLL_CONFIRM_BTN, region=constants.GAME_SCREEN_REGION,
                 text="Confirming the reroll."):
     # Short of TP the game asks "You need N more TP to reroll Sparks. Restore
@@ -231,7 +255,7 @@ def handle():
                        text="Confirming the reroll.")):
       warning("The reroll confirmation never appeared; keeping this set.")
       _dismiss()
-      return _keep("as rolled")
+      return _keep(f"kept as rolled, reroll never confirmed - {describe(rows)}")
   sleep(8)
   # "Sparks Rerolled", then the notice that both sets are on offer.
   for _ in range(2):
@@ -335,7 +359,7 @@ def _choose(original):
     sleep(1.5)
   if not pages:
     warning("Neither spark page read; confirming whatever is on screen.")
-    return _keep("unread")
+    return _keep("unread - neither page of the reroll could be read")
   best = max(pages.items(), key=lambda item: rank(item[1]))
   # The pages alternate, so step until the label matches the one wanted.
   for _ in range(3):

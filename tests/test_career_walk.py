@@ -24,6 +24,7 @@ Fixtures in tests/fixtures/career_walk/ (plus two already in out_of_career/):
 """
 import json
 import os
+import re
 import sys
 import tempfile
 
@@ -93,6 +94,34 @@ def test_the_home_screen_is_not_a_setup_screen():
     found = multi_match_templates(CS.TEMPLATES, screen=frame(path))
     hit = [k for k, v in found.items() if v]
     ok(f"{os.path.basename(path)} matches no setup screen", not hit, ", ".join(hit))
+
+def test_no_lobby_template_fires_on_a_setup_screen():
+  """A setup screen is reached through career_lobby(), so no branch it
+  dispatches on *above* the home-screen one may fire on it.
+
+  The Grand Concert's Start used to. Its crop was the word "Start" on green,
+  and "Start Career!" is the same word on the same button: 0.937 on Support
+  Formation, 0.906 on Final Confirmation. The concert branches sit above the
+  home-screen branch, so the walk was never reached - the bot sat on Support
+  Formation clicking a disabled Start Career! every 13 seconds (2026-09-26,
+  after a failed borrow left it there). The template is now the whole button's
+  middle, which "Start Career!" fills with different text.
+
+  Below the home-screen branch nothing is checked here: by then career_start
+  has the frame, which is why Next and Cancel on these screens are harmless.
+  """
+  source = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
+  loop = source.index("def career_lobby")
+  home = source.index('if matches["team_rank"] or matches["game_nav"]', loop)
+  above = set(re.findall(r'matches\["(\w+)"\]', source[loop:home]))
+  ok("the branches above the home screen are found", len(above) > 10, str(len(above)))
+  for path in SCREENS.values():
+    if not os.path.exists(path):
+      continue
+    found = multi_match_templates(E.templates, screen=frame(path))
+    hit = [k for k in sorted(above) if found.get(k)]
+    ok(f"{os.path.basename(path)} fires no branch above the home screen",
+       not hit, ", ".join(hit))
 
 def test_the_borrow_list_reads():
   path = SCREENS["borrow_card"]
@@ -184,6 +213,22 @@ def test_the_remembered_card_beats_the_configured_one():
         f.write("{not json")
       ok("a corrupt record falls back to the config",
          CS.remembered_card() == "From Config", CS.remembered_card())
+      # Editing the setting has to reach the next borrow, or the record would
+      # pin the machine to its first card forever.
+      CS.remember_card("Light Hello")
+      state.CAREER_START_BORROW_CARD = "Fine Motion"
+      ok("an edited config beats the remembered card",
+         CS.remembered_card() == "Fine Motion", CS.remembered_card())
+      CS.remember_card("Fine Motion")
+      ok("and once borrowed, the new card is what is remembered",
+         CS.remembered_card() == "Fine Motion", CS.remembered_card())
+      # A record from before the seed was written must not read as an edit.
+      record = json.load(open(CS.PROGRESS, encoding="utf-8"))
+      del record["seed"]
+      json.dump(record, open(CS.PROGRESS, "w", encoding="utf-8"))
+      ok("a seedless record is not mistaken for an edit",
+         CS.remembered_card() == "Fine Motion", CS.remembered_card())
+      state.CAREER_START_BORROW_CARD = "From Config"
   finally:
     CS.PROGRESS = progress
     state.CAREER_START_BORROW_CARD = original
@@ -461,6 +506,7 @@ if __name__ == "__main__":
   test_every_asset_exists()
   test_each_screen_is_recognised_as_itself()
   test_the_home_screen_is_not_a_setup_screen()
+  test_no_lobby_template_fires_on_a_setup_screen()
   test_the_borrow_list_reads()
   test_the_right_row_is_chosen()
   test_a_card_that_is_not_on_the_list_is_refused()
