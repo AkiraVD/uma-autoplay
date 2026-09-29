@@ -2273,3 +2273,14 @@ Two consequences:
 **Untested hypothesis:** in both frames checked, a `(o)` option showed a single
 outcome and every other glyph showed two branches - i.e. `(o)` may mean a
 guaranteed win. Two frames is not proof; check it before relying on it.
+
+## Session Error (captured 2026-09-30)
+
+First frame ever kept of it: `shots/session_error_20260930.png`. Green header
+"Session Error" over "Returning to Title screen due to inactivity.", one
+button, `Title Screen`, centred at (553, 704). `assets/ui/title_screen_btn.png`
+scores 1.000 on it, so the existing gate is right; nothing needed re-cutting.
+
+It was raised by the *first* press after the bot had sat at the home screen
+for five and a half hours, which is also why it landed inside the career-start
+walk rather than in `career_lobby`.

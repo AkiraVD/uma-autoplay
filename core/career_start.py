@@ -69,6 +69,13 @@ TEMPLATES = {
   # raises this instead of Scenario Select. Watched for, never pressed - see
   # RESUMED below.
   "continue_career": "assets/ui/continue_career.png",
+  # "Session Error - Returning to Title screen due to inactivity." The game
+  # raises it on the first press after a long idle gap, so the walk's own
+  # opening tap on CAREER is a likely place to meet it - which is what happened
+  # on 2026-09-30, after the loop had sat at the home screen for five hours.
+  # Watched for, never pressed: career_lobby owns the walk back in through the
+  # title screen, and it is the same template that branch matches on.
+  "session_error": "assets/ui/title_screen_btn.png",
 }
 
 # start()'s third outcome, beside True and False: there was already a career in
@@ -81,6 +88,13 @@ TEMPLATES = {
 # CAREER, failed to recognise the dialog it had just raised, waited out all 40
 # steps and stopped the bot on a career that only needed Resume.
 RESUMED = "resumed"
+
+# start()'s fourth outcome: the game took the screen away mid-walk - a Session
+# Error dropping it to the title. Not a failure and not a career, so the bot
+# must neither stop nor count one; career_lobby simply re-observes and its own
+# session_error branch walks back in. Before this the walk waited out all 40
+# steps in front of a dialog it could not read and stopped the bot.
+INTERRUPTED = "interrupted"
 
 # Polls before giving up on the walk. At roughly two seconds a pass plus the
 # settles below, this is a couple of minutes - long enough for every screen to
@@ -368,6 +382,11 @@ def start():
       info("A career is already in progress; leaving it to the resume path"
            " rather than starting a new one.")
       return RESUMED
+
+    if matches["session_error"]:
+      info("Session Error during the career-start walk; handing back so the"
+           " loop can go through the title screen.")
+      return INTERRUPTED
 
     if matches["veteran_max"]:
       error("The Veteran Umamusume roster is full (260/260), so the game will"

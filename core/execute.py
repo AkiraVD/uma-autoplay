@@ -616,7 +616,9 @@ _repeated_event = {"name": None, "count": 0}
 # which is exactly what the Quick Mode dialog did.
 REPEAT_LAST_OPTION = 3
 REPEAT_GIVE_UP = 6
-_career_end = {"skills_done": False, "any_skill_done": False}
+# How many blind Career taps a resume gets before the flag is disbelieved.
+RESUME_TAP_LIMIT = 8
+_career_end = {"skills_done": False, "any_skill_done": False, "reported": False}
 # The story Skip setting resets to Off with every new career, and nothing set
 # it, so the intro was tapped line by line at ~9 s each and read as a stall.
 _career_start = {"skip_set": False}
@@ -788,6 +790,31 @@ def _stat_line(stats):
   known = [f"{k} {stats[k]}" for k in order if k in stats]
   rest = [f"{k} {v}" for k, v in stats.items() if k not in order]
   return "  ".join(known + rest) or "not read"
+
+def report_career_end(screen):
+  """Send the finished-career message, at most once per career.
+
+  Called twice over: from the To Home screen, which is the screen that means
+  "the career is done", and again from the home screen, which is where the
+  career is over whether or not that screen was ever recognised. On 2026-09-29
+  it was not - the loop tapped past it for four minutes, walked straight into
+  the next career, and a two-hour run went unreported - so the nicer trigger
+  keeps its place and the home screen is the one that cannot be missed.
+  """
+  if _career_end["reported"]:
+    return
+  _career_end["reported"] = True
+  notify.send("Career finished\n"
+              f"Stats: {_stat_line(state.LAST_STATS)}\n"
+              f"Sparks: {state.LAST_SPARKS or 'not read'}"
+              + (f"\nuuid: {state.CAREER_UUID}" if state.CAREER_UUID else ""),
+              # The Complete Career screen, kept when it was on screen. A bot
+              # that joined the career after it never saw one, so whatever is
+              # on screen now stands in.
+              photo=state.CAREER_END_FRAME
+              or notify.save_frame(screen, "career_end_"))
+  state.CAREER_END_FRAME = None
+  state.LAST_SPARKS = None
 
 def panel_digest(screen):
   """A fingerprint of the game panel, for spotting a client that has frozen.
@@ -1237,6 +1264,7 @@ def career_lobby():
   not_in_lobby = 0
   blank_panel = 0
   session_errors = 0
+  resume_taps = 0
   frozen_panel = 0
   last_digest = None
   freeze_restarts = 0
@@ -1317,6 +1345,7 @@ def career_lobby():
         # finished career - or, with career_start on, as a cue to start a new
         # one on top of a career that is still in progress.
         RESUMING_CAREER = SEEN_LOBBY
+        resume_taps = 0
         frozen_panel = 0
         last_digest = None
         not_in_lobby = 0
@@ -1578,6 +1607,7 @@ def career_lobby():
       # already walks - the login bonus, then Home - and RESUMING_CAREER is what
       # taps Career there instead of reading Home as a finished career.
       RESUMING_CAREER = SEEN_LOBBY
+      resume_taps = 0
       sleep(12)
       continue
 
@@ -1598,6 +1628,7 @@ def career_lobby():
       click(img="assets/buttons/ok_btn.png", minSearch=get_secs(5),
             region=constants.GAME_SCREEN_REGION, text="Confirming the new day.")
       RESUMING_CAREER = SEEN_LOBBY
+      resume_taps = 0
       sleep(8)
       continue
 
@@ -1638,10 +1669,33 @@ def career_lobby():
       # A career that was running a moment ago is not over: the reload after a
       # date change lands here, and the career is behind the Career button.
       if RESUMING_CAREER:
-        info("Home screen mid-career after the reload; tapping Career to resume.")
-        control.click(constants.CAREER_BUTTON_MOUSE_POS)
-        sleep(4)
-        continue
+        # Bounded, because the tap is blind: Career leads to Scenario Select
+        # when no career is waiting, and that screen still carries the team
+        # rank badge and the nav bar, so it reads as the home screen again and
+        # the tap lands on nothing. On 2026-09-30 that ran from 22:02 to 03:42
+        # - five and a half hours of one log line every 14 s. Past the limit,
+        # believe the game rather than the flag and fall through to the
+        # career-is-over path below.
+        if resume_taps < RESUME_TAP_LIMIT:
+          resume_taps += 1
+          info("Home screen mid-career after the reload; tapping Career to"
+               f" resume ({resume_taps} of {RESUME_TAP_LIMIT}).")
+          control.click(constants.CAREER_BUTTON_MOUSE_POS)
+          sleep(4)
+          continue
+        warning(f"Career did not come back after {RESUME_TAP_LIMIT} taps;"
+                " treating the career as over.")
+        RESUMING_CAREER = False
+        SEEN_LOBBY = False
+        resume_taps = 0
+      # The career is over, so report it if the To Home screen never did. That
+      # screen is the better place to read from, but it is one template on one
+      # frame; this branch is the game itself saying the career is behind us.
+      # Gated on the Complete Career frame because that is the only proof a
+      # career actually finished this run - without it, a bot started at the
+      # home screen would announce the end of a career it never played.
+      if state.CAREER_END_FRAME:
+        report_career_end(screen)
       # The career is over. Before this the loop simply stopped here, and that
       # is what ended a night's run: on 2026-09-19 it finished at 17:55 and
       # stopped at the home screen three times inside ten minutes. With
@@ -1656,6 +1710,11 @@ def career_lobby():
                " Reset the count on the config page to run more.")
           return
         outcome = career_start.start()
+        if outcome == career_start.INTERRUPTED:
+          # The game moved on its own, so drop back to the top of the loop and
+          # read what is there now rather than treating it as a failed start.
+          sleep(1)
+          continue
         if outcome == career_start.RESUMED:
           # It raised Continue Career and left it up: the branch above presses
           # Resume on the next pass. Checked before the truthiness test below,
@@ -1704,17 +1763,10 @@ def career_lobby():
       # Reported here rather than at the Career Complete screen: by now the
       # skills have been bought and the sparks kept, so both are known. The
       # stats are the last lobby's - the screens after it do not show them.
-      notify.send("Career finished\n"
-                  f"Stats: {_stat_line(state.LAST_STATS)}\n"
-                  f"Sparks: {state.LAST_SPARKS or 'not read'}"
-                  + (f"\nuuid: {state.CAREER_UUID}" if state.CAREER_UUID else ""),
-                  # The Complete Career screen, kept when it was on screen. A
-                  # bot that joined the career after it never saw one, so this
-                  # screen stands in.
-                  photo=state.CAREER_END_FRAME
-                  or notify.save_frame(screen, "career_end_"))
-      state.CAREER_END_FRAME = None
-      state.LAST_SPARKS = None
+      report_career_end(screen)
+      # The lobby is behind us for good, so nothing after this may read a home
+      # screen as a career waiting to be resumed.
+      SEEN_LOBBY = False
       click(boxes=matches["to_home"], text="Leaving the finished career.")
       sleep(3)
       continue
@@ -1763,6 +1815,13 @@ def career_lobby():
       # of them.
       state.CAREER_END_FRAME = notify.save_frame(screen, "career_end_")
       click(boxes=matches["career_complete"], text="Career complete.")
+      # The career is finished, so a Date Changed or Session Error on the walk
+      # out of it must reload to the home screen and stop, not tap Career for
+      # a career that is no longer there. That is what wedged the run of
+      # 2026-09-30: the daily reset landed seven minutes after the sparks were
+      # kept, and SEEN_LOBBY was still the last lobby's.
+      SEEN_LOBBY = False
+      RESUMING_CAREER = False
       # The next career starts its friend card chain from step 1.
       outings.reset()
       # And with the story Skip back at Off, so it has to be set again.
@@ -1980,6 +2039,8 @@ def career_lobby():
     # in the same process still gets one attempt.
     _career_end["skills_done"] = False
     _career_end["any_skill_done"] = False
+    # And for the finished-career message, so the next career gets its own.
+    _career_end["reported"] = False
     # Set the story Skip to x2 once per career. The lobby is the safe place for
     # it: the button is there at a fixed position on every lobby frame, while
     # a global handler would be pressing it on race and story screens that
