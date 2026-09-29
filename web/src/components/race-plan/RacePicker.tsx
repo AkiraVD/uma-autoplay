@@ -18,8 +18,9 @@ import type { PlannedRace, Turn } from "./RacePlanView";
 // calendar by heart.
 //
 // **On pictures.** Only 30 of the planner's 402 races have one: the
-// template-matching crops in assets/races/, which exist because `race_select`
-// needs them to click a race, not because anyone drew them for a UI. The
+// template-matching crops in assets/races/, which `race_select` used to need
+// to click a race and now keeps only as a thumbnail here (core/race_row.py
+// reads the row instead, 2026-09-26). The
 // game's own thumbnails are inside its encrypted asset bundles, and GameTora -
 // where server/images.py gets character and support art - has no race art
 // (checked 2026-09-21). So a race without a crop gets a tile drawn from its own
@@ -165,12 +166,12 @@ export default function RacePicker({ turn, value, auto, none, onPick, onClose }:
                   </p>
                   <p className="mt-1 text-xs tabular-nums text-muted-foreground">
                     +{o.stats} stats · {o.sp} SP
-                    {!o.has_image && (
+                    {o.ambiguous && (
                       <span
-                        className="ml-1 rounded border border-border px-1 py-0.5 text-[10px] uppercase"
-                        title="No picture asset, so the bot cannot click this race. Fine to enter in the game's Agenda by hand."
+                        className="ml-1 rounded border border-destructive/60 px-1 py-0.5 text-[10px] uppercase text-destructive"
+                        title="Another race on this turn reads exactly the same off the screen - same track, surface, distance and fans - so the bot refuses to enter either rather than guess. Fine to enter in the game's Agenda by hand."
                       >
-                        agenda
+                        ambiguous
                       </span>
                     )}
                   </p>

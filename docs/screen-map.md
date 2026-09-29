@@ -2023,6 +2023,45 @@ selection needs, in one place: grade badge, track line
 (`G3 Sapporo Turf 1800m (Mile) Right`), `+ 60 pts`, a coin `+ 100`,
 `+3,100 fans`, and Turf / Mile aptitude chips.
 
+#### Reading a race row (2026-09-26, URA Finale, measured live)
+
+`core/race_row.py` now selects a race by that line instead of by its banner
+picture. Measured on a Junior Year Late Aug list and checked against seven more
+frames across three turns; the numbers live in `utils/constants.py`.
+
+| Element | Where |
+|---|---|
+| list viewport (`RACE_ROW_LIST_BBOX`) | (260,580)-(845,870) |
+| row pitch | **129 px** (not the 128 measured on Trackblazer) |
+| rows visible at once | **2** - 3 x 129 does not fit 290 |
+| fans icon, the row anchor | top-left (496,659) on row 1, 22x27 |
+| track line strip, from the anchor | (-8,-43)-(+304,-21) |
+| fans strip, from the anchor | (+18,+2)-(+216,+26) |
+| banner picture centre, from the anchor | (-135,-2), i.e. (361,657) on row 1 |
+| one drag | **-258 px = exactly two rows**, no inertia over four drags |
+
+Four things that cost time to find out:
+
+- **Rows must be found by the anchor, not at a fixed offset.** A drag leaves
+  the list 1-2px off a whole row (anchors came back at y 657 and 786 where the
+  unscrolled list had 659 and 788), and the last screen of a list whose length
+  is not a whole number of screens stops where the content ends. A fixed strip
+  would cut across two rows and read half of each.
+- **Selection does not move a row's text.** The selected row draws green
+  corner brackets around the card; its track line is still at the same offset
+  from its anchor. It does widen the row's dark-pixel span to the bracket, so
+  measuring a row's extent by darkness alone reads the bracket, not the text.
+- **easyocr reads the trailing zero of a round distance as a capital O**:
+  `Niigata Turf 160Om`, `Sapporo Turf 150Om`. Upscaling the strip x3 fixed the
+  *leading* digit (`I60Om` at native size) but not the trailing one, so
+  `core/race_row.py` repairs digit lookalikes inside the number. The fans
+  number, which sits in a higher-contrast box, read clean every time.
+- **The Race List's own date arrows browse other turns read-only** - the
+  button under the list changes from `Race` to `Schedule` - which is how the
+  fixtures for three different turns were captured without advancing a career.
+  The Agenda panel (side menu, in-career) shows the same rows in a dialog at a
+  different offset; it is *not* what `race_select` reads.
+
 **First live check of `core/trackblazer.py`'s tables, and they hold:**
 
 - The G3 row pays **`+60 pts`**, matching `POINTS_BY_GRADE["G3"] = 60`.

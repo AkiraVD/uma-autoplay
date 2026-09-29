@@ -6,8 +6,10 @@ anyone editing a JSON file. It is opened read-only.
 
 What it can and can't give:
 - Races: all of it. Name, date, year, track, distance, surface, grade and fans.
-  The bot still picks a race by its picture, so each race says whether
-  assets/races/<name>.png exists; one without a picture can't be scheduled.
+  Each race also says whether `assets/races/<name>.png` exists (`has_image`),
+  which is now only the picker's thumbnail - the bot picks a race by reading
+  its row, not by its picture - and whether the bot can tell it apart from
+  everything else on its turn (`ambiguous`).
 - Events: titles and who owns them (trainee, support card, scenario), as the
   game spells them. Choice outcomes are not in master.mdb (they live in the
   story asset bundles), so those come from data/events, the same files
@@ -43,13 +45,15 @@ PERMISSION_YEARS = {
 YEAR_ORDER = ["Junior Year", "Classic Year", "Senior Year"]
 GRADES = {100: "G1", 200: "G2", 300: "G3"}
 
-# The schedule planner wants a wider pool than the race picker. OP races double
-# Junior year's options, and `Pro Racer` counts wins of "OP level or higher";
-# Maiden (800) and Debut (900) are neither schedulable nor OP-level, so they
-# stay out. Kept apart from GRADES deliberately: the config UI's picker must
-# only offer races the bot can click, and race_select finds a race by
-# assets/races/<name>.png, which OP races do not have. A planner has no such
-# limit, because its schedule is typed into the game's own agenda by hand.
+# Everything a career can schedule. OP races double Junior year's options and
+# `Pro Racer` counts wins of "OP level or higher"; Maiden (800) and Debut (900)
+# are neither schedulable nor OP-level, so they stay out.
+#
+# GRADES used to be the picker's pool and this the planner's, because
+# `race_select` found a race by `assets/races/<name>.png` and OP races have no
+# picture - offering one would have let the goal-race path hunt for a file that
+# does not exist and silently burn the turn. `core/race_row.py` reads the row
+# instead (2026-09-26), so that split is gone and both use this.
 PLAN_GRADES = {**GRADES, 400: "OP", 700: "Pre-OP"}
 
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -120,6 +124,32 @@ def _race_images():
   return {p.stem for p in RACE_ASSETS.glob("*.png")}
 
 
+def _flag_ambiguous(races):
+  """Mark the races the bot cannot tell apart on screen.
+
+  `core/race_row.py` identifies a row by track + surface + metres + fans
+  gained, and the race list only ever shows one turn, so two races clash only
+  when they share all four *on the same turn*. Across a whole career that is
+  one pair - Akamatsu Sho and Begonia Sho, Junior Late Nov, both Pre-OP, both
+  Tokyo Turf 1600m for +1,000 fans - and the bot refuses to enter either rather
+  than guess.
+
+  Derived here rather than hard-coded, from the same four fields the reader
+  uses, so a game patch that creates another pair marks it by itself.
+  """
+  for year, entries in races.items():
+    turns = {}
+    for name, detail in entries.items():
+      key = (detail.get("date"), detail.get("racetrack"), detail.get("terrain"),
+             detail.get("distance", {}).get("meters"),
+             detail.get("fans", {}).get("gained"))
+      turns.setdefault(key, []).append(name)
+    for key, names in turns.items():
+      for name in names:
+        entries[name]["ambiguous"] = len(names) > 1
+  return races
+
+
 def _races_from_json():
   images = _race_images()
   races = _load_races_json()
@@ -127,7 +157,7 @@ def _races_from_json():
     for name, detail in year.items():
       detail.setdefault("grade", "G1")
       detail["has_image"] = name in images
-  return {"source": "races.json", "races": races}
+  return {"source": "races.json", "races": _flag_ambiguous(races)}
 
 
 def _races_from_mdb(grades=GRADES):
@@ -178,14 +208,19 @@ def _races_from_mdb(grades=GRADES):
 
   for year in YEAR_ORDER:
     races[year] = dict(sorted(races[year].items(), key=lambda kv: order[(year, kv[0])]))
-  return {"source": "master.mdb", "races": races}
+  return {"source": "master.mdb", "races": _flag_ambiguous(races)}
 
 
 def get_races():
+  """Every race a career can schedule: G1 down to Pre-OP.
+
+  Falls back to data/races.json, which holds only the 43 G1s, when master.mdb
+  cannot be read - so the pool is much smaller without the game installed.
+  """
   def build(has_mdb):
     if has_mdb:
       try:
-        return _races_from_mdb()
+        return _races_from_mdb(PLAN_GRADES)
       except (sqlite3.Error, OSError) as e:
         warning(f"MDB-RACES-READ: master.mdb unreadable, using data/races.json: {e}")
     return _races_from_json()
@@ -193,25 +228,13 @@ def get_races():
 
 
 def get_plan_races():
-  """The planner's race pool: GRADES plus OP and Pre-OP.
+  """The planner's race pool, which is now simply every race.
 
-  Deliberately not get_races(): that one feeds the config UI's race picker,
-  which must only offer races `race_select` can click by picture. Admitting OP
-  there would let the goal-race path pick a race with no
-  `assets/races/<name>.png` and silently burn the turn. The planner is safe
-  because its output is typed into the game's own agenda by hand.
-
-  Falls back to data/races.json, which holds only G1s, when master.mdb cannot
-  be read - so the pool is much smaller without the game installed.
+  It had its own pool while the picker was restricted to races with a picture.
+  Kept as a name because server/race_plan.py reads it, and because the planner
+  is the one caller that would notice if the two ever had to diverge again.
   """
-  def build(has_mdb):
-    if has_mdb:
-      try:
-        return _races_from_mdb(PLAN_GRADES)
-      except (sqlite3.Error, OSError) as e:
-        warning(f"MDB-PLAN-RACES: master.mdb unreadable, using data/races.json: {e}")
-    return _races_from_json()
-  return _cached("plan_races", build)
+  return get_races()
 
 
 # ---------------------------------------------------------------- trainees

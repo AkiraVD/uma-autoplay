@@ -27,6 +27,38 @@ SCREEN_MIDDLE_REGION=(125, 300, 1000-125, 800-300)
 SCREEN_TOP_REGION=(125, 0, 1000-125, 300)
 RACE_INFO_TEXT_REGION=(285, 335, 810-285, 370-335)
 RACE_LIST_BOX_REGION=(260, 580, 850-265, 870-580)
+
+# The Race List's rows, read by core/race_row.py. Measured on a live Junior Year
+# Late Aug list, 1920x1080, and checked against three more frames.
+#
+# Rows are found by the pink fans icon every row carries, never by a fixed row
+# offset. Two things break a fixed offset: a drag leaves the list 1-2px off a
+# whole row, and the last screen of a list that is not a whole number of screens
+# long stops where the content ends rather than on a row boundary - so a fixed
+# strip would cut across two rows and read half of each.
+RACE_ROW_ANCHOR="assets/ui/race_row_fans_icon.png"
+RACE_ROW_LIST_BBOX=(260, 580, 845, 870)
+# Both strips are (left, top, right, bottom) *offsets from the anchor's
+# top-left*, not screen coordinates: the anchor is what moves.
+RACE_ROW_TRACK_FROM_ANCHOR_BBOX=(-8, -43, 304, -21)
+RACE_ROW_FANS_FROM_ANCHOR_BBOX=(18, 2, 216, 26)
+# The row's banner picture, which is what a row is selected by. Its centre sat
+# at (361,657) with the anchor at (496,659).
+RACE_ROW_CLICK_FROM_ANCHOR=(-135, -2)
+RACE_ROW_PITCH=129
+# One drag moves the list exactly two rows; measured 258px of content for 258px
+# of drag, with no inertia over four consecutive drags.
+RACE_ROW_SCROLL=-2*RACE_ROW_PITCH
+# Two anchors, not one, for the same reason the skill list above has two: a
+# drag has to start AND finish on screen or it clamps. Scrolling back up from
+# the down anchor (560,850) targets y=1108, so the up drag travelled less than
+# the down drag and a scan could never rewind - which cost six races in the
+# career of 2026-09-27 before anyone noticed. These two are exactly
+# RACE_ROW_SCROLL apart and both inside RACE_ROW_LIST_BBOX, so travel is
+# symmetric. x=560 is over the row's text, clear of the banner picture, and
+# nothing here ends in a click.
+RACE_ROW_SCROLL_DOWN_FROM_MOUSE_POS=(560, 850)
+RACE_ROW_SCROLL_UP_FROM_MOUSE_POS=(560, 850+RACE_ROW_SCROLL)
 CLAW_EVENT_REGION=(740, 20, 190, 50)
 
 FULL_STATS_STATUS_REGION=(265, 575, 845-265, 940-575)

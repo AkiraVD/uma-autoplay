@@ -14,11 +14,12 @@ import type { RaceScheduleType } from "@/types";
 
 // Loads a race list saved by the Race Plan tab into config.race_schedule.
 //
-// Only the runnable races come across. The planner deliberately admits OP races
-// so a plan can be typed into the game's own Agenda by hand, but `race_select`
-// finds a race by assets/races/<name>.png - handing the bot one without a
-// picture would let the goal-race path burn the turn silently. The count of
-// what was left behind is shown rather than hidden.
+// Only the runnable races come across. Since 2026-09-26 that is nearly all of
+// them: `race_select` reads a race's row rather than matching
+// assets/races/<name>.png, so OP races load like any other. What stays behind
+// is a race another race on the same turn reads identically to - the bot
+// refuses to enter either rather than guess, so handing it one would burn the
+// turn silently. The count left behind is shown rather than hidden.
 
 type SavedList = {
   name: string;
@@ -34,7 +35,9 @@ type SavedRace = {
   name: string;
   year: string;
   date: string;
-  has_image?: boolean;
+  // Absent in a list saved before 2026-09-26, when the filter was has_image.
+  // Absent means loadable, which is right: those lists held only picture races.
+  ambiguous?: boolean;
 };
 
 const when = (epoch: number) => {
@@ -75,7 +78,7 @@ export default function LoadRaceList({ onLoad }: Props) {
       if (!res.ok) throw new Error((await res.json()).detail ?? `server said ${res.status}`);
       const data = await res.json();
       const rows: RaceScheduleType[] = (data.races ?? [])
-        .filter((r: SavedRace) => r.has_image !== false)
+        .filter((r: SavedRace) => r.ambiguous !== true)
         .map((r: SavedRace) => ({ name: r.name, year: r.year, date: r.date }));
       onLoad(rows);
       setLoaded(`Loaded ${rows.length} races from "${data.title || name}"`);
@@ -138,7 +141,7 @@ export default function LoadRaceList({ onLoad }: Props) {
                       size="sm"
                       variant="outline"
                       disabled={busy || s.unreadable || s.runnable === 0}
-                      title={s.runnable === 0 ? "No race in this list has a picture the bot can click." : undefined}
+                      title={s.runnable === 0 ? "Every race in this list reads the same as another race on its turn, so the bot can't enter any of them." : undefined}
                       onClick={() => load(s.name)}
                     >
                       {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Load"}

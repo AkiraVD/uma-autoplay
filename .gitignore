@@ -17,6 +17,7 @@ config.*.json
 !config.template.json
 # The config page saves every preset here, whichever device it is opened from.
 uma_configs/
+uma_race_lists/
 # The owned-support-card scan: account data regenerated locally, not repo data.
 data/support_cards_owned.json
 

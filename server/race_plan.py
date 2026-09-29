@@ -30,8 +30,7 @@ coins are still *reported* from `core.trackblazer`, because Trackblazer's year
 targets are denominated in Result Pts - but they decide nothing.
 
 **Everything is passed in.** The race pool defaults to
-`master_data.get_plan_races()`, which admits OP races, so this is testable
-without the game.
+`master_data.get_plan_races()`, so this is testable without the game.
 """
 import core.epithets as epithets
 import core.trackblazer as trackblazer
@@ -348,7 +347,8 @@ def _entry(race, race_bonus=0.0):
           "terrain": race.get("terrain"), "distance": race.get("distance"),
           "stats": trackblazer.stats_for(grade, race_bonus),
           "sp": trackblazer.skill_points_for(grade, race_bonus),
-          "has_image": race.get("has_image", False)}
+          "has_image": race.get("has_image", False),
+          "ambiguous": race.get("ambiguous", False)}
 
 
 def _grid(by_turn, placed, reserved, blocked, race_bonus=0.0):

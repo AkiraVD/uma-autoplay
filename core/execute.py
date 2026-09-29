@@ -28,6 +28,7 @@ from core.skill import buy_skill
 from core.gains import check_stat_gains
 from core.events import event_choice, get_event_name
 import core.outings as outings
+import core.race_row as race_row
 import core.training_cost as training_cost
 import core.trainee as trainee
 import core.lessons as lessons
@@ -835,6 +836,97 @@ def race_day():
   sleep(1)
   after_race()
 
+def list_scroll(down=True):
+  """One drag of the race list, a screen at a time.
+
+  Not `drag_scroll`: that one ends in `control.click()`, which here lands on
+  whatever row the drag finished over and selects it. The picture search did
+  not care - it was about to click a row anyway - but the row scan reads the
+  whole list before it chooses, so a stray selection would be a click the bot
+  never decided to make.
+
+  Each direction starts from its own anchor so that both drags finish on
+  screen. Dragging up from the down anchor targets y=1108, which clamps, and
+  then no number of up drags undoes the down ones - see the constants.
+  """
+  if state.stop_event.is_set():
+    return
+  start = (constants.RACE_ROW_SCROLL_DOWN_FROM_MOUSE_POS if down
+           else constants.RACE_ROW_SCROLL_UP_FROM_MOUSE_POS)
+  control.moveTo(start, duration=0.1)
+  control.mouseDown()
+  control.moveRel(0, constants.RACE_ROW_SCROLL if down else -constants.RACE_ROW_SCROLL,
+                  duration=0.25)
+  control.mouseUp()
+  sleep(0.4)
+
+def select_race_by_row(name):
+  """Select a race by what its row says: track, surface, distance and fans.
+
+  Replaces the picture search against `assets/races/<name>.png`, which could
+  only ever find the 30 races that bank holds - every OP and Pre-OP race was
+  unclickable. See core/race_row.py for why those four fields identify a race
+  and what the one exception is.
+
+  The list is read to the bottom before anything is chosen, so the choice can
+  be refused when two rows read alike. That leaves the list at the bottom, so
+  the chosen row has to be scrolled back to - and it is read again on the frame
+  it is clicked from rather than clicked at a remembered position.
+  """
+  key = race_row.key_for(name)
+  if not key:
+    return False
+
+  stopped = state.stop_event.is_set
+  rows = race_row.scan_list(ImageGrab.grab, lambda: list_scroll(down=True), stopped)
+  if stopped():
+    return False
+  if not rows:
+    warning(f"RACE-ROW-W04: nothing on the race list could be read, so {name}"
+            " could not be looked for.")
+    return False
+
+  hit = race_row.find_row(rows, key, name)
+  if not hit:
+    info(f"{name} is not among the {len(rows)} races on this turn's list.")
+    return False
+
+  # Back to the top, then down to the screen the row was read on. The step is
+  # a hint, not a contract: if the row is not there the walk carries on down
+  # re-reading, because a rewind that drifts by one screen must cost an OCR
+  # pass, not the race. Anything above the current view is covered by starting
+  # from the top.
+  for _ in range(race_row.SCAN_STEPS + 1):
+    if stopped():
+      return False
+    list_scroll(down=False)
+  for _ in range(hit["step"]):
+    if stopped():
+      return False
+    list_scroll(down=True)
+
+  showing = None
+  for extra in range(race_row.SCAN_STEPS - hit["step"] + 1):
+    if stopped():
+      return False
+    showing = race_row.row_on_screen(ImageGrab.grab(), key, name)
+    if showing:
+      if extra:
+        debug(f"{name} was {extra} screen(s) below where the scan read it.")
+      break
+    list_scroll(down=True)
+  if not showing:
+    warning(f"RACE-ROW-W05: {name} was read on the race list but could not be"
+            " found again on any screen of it. Not racing this turn.")
+    return False
+  x, y = race_row.click_point(showing)
+  # click() refuses while the bot is stopped, and a refusal here must not read
+  # as "selected" - the caller would go on to press Race on whatever row the
+  # list happens to be showing.
+  return click(boxes=(x, y, 1, 1),
+               text=f"{name} found: {key['track']} {key['surface']}"
+                    f" {key['meters']}m, +{key['fans']} fans.")
+
 def race_select(prioritize_g1 = False, img = None):
   if state.stop_event.is_set():
     return False
@@ -844,19 +936,14 @@ def race_select(prioritize_g1 = False, img = None):
 
   if prioritize_g1:
     info(f"Looking for {img}.")
+    if not select_race_by_row(img):
+      return False
     for i in range(2):
       if state.stop_event.is_set():
         return False
-      if click(img=f"assets/races/{img}.png", minSearch=get_secs(0.7), text=f"{img} found.", region=constants.RACE_LIST_BOX_REGION):
-        for i in range(2):
-          if state.stop_event.is_set():
-            return False
-          click(img="assets/buttons/race_btn.png", minSearch=get_secs(2))
-          sleep(0.5)
-        return True
-      drag_scroll(constants.RACE_SCROLL_BOTTOM_MOUSE_POS, -270)
-
-    return False
+      click(img="assets/buttons/race_btn.png", minSearch=get_secs(2))
+      sleep(0.5)
+    return True
   else:
     info("Looking for race.")
     for i in range(4):

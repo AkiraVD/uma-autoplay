@@ -32,9 +32,10 @@ def ok(label, condition, detail=""):
     failures.append(label)
 
 
-def race(name, year="Classic Year", date="Early Apr", image=True):
+def race(name, year="Classic Year", date="Early Apr", ambiguous=False):
   return {"name": name, "year": year, "date": date, "grade": "G1",
-          "racetrack": "Tokyo", "terrain": "Turf", "has_image": image}
+          "racetrack": "Tokyo", "terrain": "Turf", "has_image": True,
+          "ambiguous": ambiguous}
 
 
 def main():
@@ -90,15 +91,29 @@ def main():
 
     print("\n-- listing")
     R.write(R.path_for("second"), R.normalise({
-      "title": "Second", "races": [race("Arima Kinen", image=False)]}))
+      "title": "Second", "races": [race("Arima Kinen", ambiguous=True)]}))
     rows = R.listing()
     ok("both lists are listed", len(rows) == 2, [r["name"] for r in rows])
     by_name = {r["name"]: r for r in rows}
     ok("counts are right", by_name["Turf miler"]["races"] == 2, by_name["Turf miler"])
-    ok("runnable counts only races with a picture",
+    # `runnable` is what the bot can enter. Before 2026-09-26 that meant "has
+    # a picture to click"; it now means "no other race on that turn reads the
+    # same", which is a far smaller exclusion - one pair in the whole game.
+    ok("runnable leaves out the races the bot can't tell apart",
        by_name["second"]["runnable"] == 0 and by_name["Turf miler"]["runnable"] == 2,
        (by_name["second"]["runnable"], by_name["Turf miler"]["runnable"]))
     ok("newest first", rows == sorted(rows, key=lambda r: r["saved_at"], reverse=True))
+
+    print("\n-- a list saved before races carried an `ambiguous` flag")
+    # Those lists were filtered to picture races, and the bot now enters the
+    # rest too, so every race in one counts. Absent must not read as "unknown,
+    # so skip it" - that would make an old list load nothing.
+    R.write(R.path_for("old"), {"title": "Old", "races": [
+      {"name": "Osaka Hai", "year": "Classic Year", "date": "Early Apr"},
+      {"name": "Arima Kinen", "year": "Senior Year", "date": "Late Dec"}]})
+    old_row = {r["name"]: r for r in R.listing()}["old"]
+    ok("every race in it still counts as runnable",
+       old_row["runnable"] == 2, old_row)
 
     print("\n-- an unreadable file is listed, not fatal")
     (tmp / "broken.json").write_text("{ not json", encoding="utf-8")
@@ -106,7 +121,7 @@ def main():
     broken = [r for r in rows if r["name"] == "broken"]
     ok("the broken file is listed", len(broken) == 1)
     ok("and marked unreadable", broken and broken[0]["unreadable"])
-    ok("the good lists are still there", len(rows) == 3, len(rows))
+    ok("the good lists are still there", len(rows) == 4, len(rows))
 
     print("\n-- a half-written file never appears")
     ok("write leaves no .tmp behind", not list(tmp.glob("*.tmp")),

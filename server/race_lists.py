@@ -31,7 +31,10 @@ LISTS_DIR = ROOT / "uma_race_lists"
 
 # One race as config.race_schedule wants it. Anything else the planner attached
 # (grade, racetrack, distance) is kept for display but never required.
-RACE_KEYS = ("name", "year", "date", "grade", "racetrack", "terrain", "has_image")
+# `ambiguous` is the one that is not decoration: it marks a race the bot refuses
+# to enter because another race on the same turn reads identically.
+RACE_KEYS = ("name", "year", "date", "grade", "racetrack", "terrain",
+             "has_image", "ambiguous")
 MAX_RACES = 200
 
 
@@ -98,7 +101,12 @@ def listing():
       "name": path.stem,
       "title": data.get("title") or path.stem,
       "races": len(races),
-      "runnable": sum(1 for r in races if isinstance(r, dict) and r.get("has_image")),
+      # Everything the bot can actually enter. A list saved before 2026-09-26
+      # has no `ambiguous` key and every race in it counts, which is right:
+      # those lists were filtered to picture races, and the bot now enters the
+      # rest too.
+      "runnable": sum(1 for r in races
+                      if isinstance(r, dict) and not r.get("ambiguous")),
       "epithets": len(data.get("epithets") or []),
       "saved_at": int(path.stat().st_mtime),
       "unreadable": False,

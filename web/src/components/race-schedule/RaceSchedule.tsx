@@ -30,8 +30,13 @@ type RaceType = {
     gained: number;
   };
   grade?: string;
-  // The bot picks a race by assets/races/<name>.png; without one it can't.
+  // Only the thumbnail in the Race Plan picker - the bot reads a race's row
+  // rather than matching its picture, so a race without one is still pickable.
   has_image?: boolean;
+  // Another race on the same turn reads identically off the screen (same
+  // track, surface, distance and fans), so the bot refuses to enter either.
+  // Exactly one pair in the game: Akamatsu Sho and Begonia Sho.
+  ambiguous?: boolean;
 };
 
 type RaceData = {
@@ -47,7 +52,9 @@ const YEARS = ["Junior Year", "Classic Year", "Senior Year"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DISTANCES = ["Sprint", "Mile", "Medium", "Long"];
 const TERRAINS = ["Turf", "Dirt"];
-const GRADES = ["G1", "G2", "G3"];
+// OP and Pre-OP joined the pool when the bot stopped needing a picture to
+// click a race (core/race_row.py, 2026-09-26). They are most of Junior year.
+const GRADES = ["G1", "G2", "G3", "OP", "Pre-OP"];
 
 // The server reads the game's master.mdb (server/master_data.py).
 // Throws on failure (an old server answers with the page, which isn't JSON), so
@@ -133,7 +140,7 @@ export default function RaceSchedule({
     queryFn: getRaceData,
   });
   const RACES = data.races;
-  const pickable = (detail: RaceType) => detail.has_image !== false;
+  const pickable = (detail: RaceType) => detail.ambiguous !== true;
 
   const [search, setSearch] = useState("");
   const [years, setYears] = useState<string[]>([]);
@@ -207,7 +214,7 @@ export default function RaceSchedule({
           <ChipGroup label="Surface" options={TERRAINS} selected={terrains} setSelected={setTerrains} />
           {unpickable > 0 && (
             <Chip active={pickableOnly} onClick={() => setPickableOnly(!pickableOnly)}>
-              Pickable only
+              Pickable only ({unpickable} hidden)
             </Chip>
           )}
           {filtering && (
@@ -240,7 +247,7 @@ export default function RaceSchedule({
                         type="button"
                         // Still clickable when scheduled, so an old entry can be removed.
                         disabled={!canPick && !selected}
-                        title={canPick ? undefined : `No assets/races/${name}.png, so the bot can't pick this race.`}
+                        title={canPick ? undefined : `Another race on this turn reads exactly the same off the screen, so the bot refuses to enter either rather than guess.`}
                         onClick={() => toggle(name, year, detail.date)}
                         className={`text-left rounded-md border-2 px-3 py-2 transition disabled:cursor-not-allowed disabled:opacity-50 ${
                           selected
@@ -268,7 +275,9 @@ export default function RaceSchedule({
                           Fans {detail.fans.required.toLocaleString()} req / +{detail.fans.gained.toLocaleString()}
                         </p>
                         {!canPick && (
-                          <p className="text-xs text-destructive mt-1">No race image, so the bot can't pick it</p>
+                          <p className="text-xs text-destructive mt-1">
+                            Reads the same as another race this turn, so the bot won't enter it
+                          </p>
                         )}
                       </button>
                     );
