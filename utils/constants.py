@@ -163,6 +163,12 @@ DIALOG_ADVANCE_MOUSE_POS = (553, 400)
 # now stops on the "game_nav" template before it can blind-tap there, so this
 # point is only ever used inside a career. Keep it that way: moving it is not
 # free, the Inspiration screen is what it was measured against.
+#
+# It also lands inside the LOBBY's Races button, whose centre is (760,970) -
+# see docs/screen-map.md. So it must never be tapped on a lobby frame: that
+# opens the race list, and the generic race handlers then enter a race the
+# turn never asked for (2026-09-30, Queen Cup). core/execute.py checks for the
+# Infirmary button before using this point.
 DIALOG_ADVANCE_ALT_MOUSE_POS = (756, 980)
 
 # The login bonus' Skip, measured on the reload after a date change (2026-09-12)

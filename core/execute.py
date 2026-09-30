@@ -644,6 +644,10 @@ def set_skip_x2(max_presses=3):
         found = name
         break
     if found == "x2":
+      # Logged, not silent: "no line at all" used to mean both "the button was
+      # already x2" and "this never ran", and telling those apart is the whole
+      # question when a career turns out to be tapping every story line.
+      debug("Story Skip already reads x2.")
       return True
     if found is None:
       debug("Story Skip button not on screen; leaving it alone.")
@@ -651,6 +655,11 @@ def set_skip_x2(max_presses=3):
     x, y = constants.SKIP_BUTTON_MOUSE_POS
     click(boxes=(x, y, 1, 1), text=f"Story Skip reads {found}; pressing for x2.")
     sleep(1)
+  # Falling out of the loop means the button never read x2, so the career is
+  # about to tap every story line by hand. Say so: it is a whole career's pace,
+  # and it used to leave nothing in the log at all.
+  warning(f"Story Skip still did not read x2 after {max_presses} presses;"
+          " story scenes will play at full length this career.")
   return False
 # Consecutive Recreation frames showing neither the confirmation nor a friend
 # row. Almost always the panel mid-animation rather than a friend-less deck.
@@ -1281,6 +1290,15 @@ def career_lobby():
   # is found or the lobby comes back, so each new unknown screen is probed
   # afresh before we start tapping at it.
   dialogue_tap = False
+  # Re-check the story Skip at the first lobby of every bot start. The flag it
+  # guards used to be cleared only where the bot pressed Complete Career, so a
+  # career begun any other way - toggled off and on, a career finished while
+  # the bot was stopped, a restart after a freeze - inherited a True from the
+  # career before it and never looked at the button again. That is what left
+  # the career of 2026-09-30 on Skip Off for its whole run: set at 04:00:28,
+  # never reset, and the career started at 08:13 tapped every story line by
+  # hand at ~10s each until it lost the lobby.
+  _career_start["skip_set"] = False
   outings.reset()
   lessons.resume()
   # Say who we are training and flag a config that disagrees with her. Advisory
@@ -1739,6 +1757,10 @@ def career_lobby():
           state.CAREER_END_FRAME = None
           SEEN_LOBBY = False
           RESUMING_CAREER = False
+          # A new career resets the story Skip to Off, so the first lobby has
+          # to set it again. Same reason as the Complete Career branch does it:
+          # the bot can reach a new career without ever pressing that button.
+          _career_start["skip_set"] = False
           state.apply_scenario(new_career=True)
           # The intro story is career_lobby's to drive from here, the same as
           # a career a person started by hand.
@@ -2015,6 +2037,23 @@ def career_lobby():
         # minutes. Alternating costs one extra cycle on the screens that were
         # already working and unsticks the ones that were not.
         alt = (not_in_lobby // 3) % 2 == 0
+        # The lower point (756,980) sits inside the lobby's Races button, whose
+        # centre is (760,970) - so a lobby the Tazuna hint failed to read is one
+        # blind tap away from the race list, and the generic race handlers below
+        # then enter whatever race is on it. That is how the career of
+        # 2026-09-30 ran Queen Cup on a turn it had decided not to race: three
+        # "tapping lower" lines, then "Race preview; starting the race".
+        #
+        # The Infirmary button is the check because it costs nothing: it is
+        # already in the dispatch dict, matched on this same frame, and it
+        # exists on no screen but the lobby. Seeing it means we ARE in the
+        # lobby and only the hint read failed, so the centre point - kept clear
+        # of every lobby control - is the one to use.
+        if alt and matches["infirmary"]:
+          warning("The Infirmary button is on screen, so this IS the lobby and"
+                  " the Tazuna hint went unread. Tapping centre instead of"
+                  " lower, which would press Races and enter a race.")
+          alt = False
         x, y = (constants.DIALOG_ADVANCE_ALT_MOUSE_POS if alt
                 else constants.DIALOG_ADVANCE_MOUSE_POS)
         click(boxes=(x, y, 1, 1),
