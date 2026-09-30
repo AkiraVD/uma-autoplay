@@ -99,6 +99,12 @@ templates = {
   # captures against a best negative of 0.704 (finish_confirm) over 21 frames,
   # most of them other green-titled dialogs.
   "race_playback": "assets/ui/race_playback.png",
+  # The race-playback skip buttons. Matched here so they cost nothing extra -
+  # this frame is already grabbed - but acted on ONLY where the loop has lost
+  # the screen, which is exactly what a race playing out looks like to it. The
+  # lobby must never click these.
+  "race_skip": "assets/buttons/skip_btn.png",
+  "race_skip_big": "assets/buttons/skip_btn_big.png",
   "cancel": "assets/buttons/cancel_btn.png",
   "tazuna": "assets/ui/tazuna_hint.png",
   "infirmary": "assets/buttons/infirmary_btn.png",
@@ -565,14 +571,34 @@ def do_recreation():
   elif recreation_summer_btn:
     click(boxes=recreation_summer_btn)
 
-def save_screen(tag):
+def first_in(boxes, region):
+  """The first match whose centre lies inside `region`, or None.
+
+  multi_match_templates has no per-template region, so a template that is only
+  ever meaningful in one corner is confined here instead. Region is the
+  (left, top, width, height) form, the same as the constants it is passed.
+  """
+  left, top, width, height = region
+  for x, y, w, h in boxes or []:
+    cx, cy = x + w // 2, y + h // 2
+    if left <= cx <= left + width and top <= cy <= top + height:
+      return (x, y, w, h)
+  return None
+
+def save_screen(tag, image=None):
   """Keep a full screenshot of a screen we could not name, for later template
   work. A run must never die for want of a debugging aid, so nothing here
-  raises."""
+  raises.
+
+  Pass `image` to keep the frame the decision was actually made on. A fresh
+  grab here photographs the screen a moment later, which on 2026-09-30 saved a
+  fully drawn lobby for a tap that was decided on a half-drawn one - evidence
+  for the opposite of what had happened.
+  """
   try:
     os.makedirs("shots", exist_ok=True)
     path = os.path.join("shots", f"{tag}_{time.strftime('%H%M%S')}.png")
-    ImageGrab.grab().save(path)
+    (image if image is not None else ImageGrab.grab()).save(path)
     info(f"Saved {path} for later.")
   except Exception as e:
     debug(f"Couldn't save a screenshot of {tag} ({e}).")
@@ -622,6 +648,12 @@ _career_end = {"skills_done": False, "any_skill_done": False, "reported": False}
 # The story Skip setting resets to Off with every new career, and nothing set
 # it, so the intro was tapped line by line at ~9 s each and read as a stall.
 _career_start = {"skip_set": False}
+# When the loop last tapped blind at the lower point, and whether this run of
+# lost frames has already been photographed. The lower point sits on the
+# lobby's Races button, so a race that starts right after one of these taps was
+# almost certainly walked into rather than chosen - and the frame is the only
+# way to find out which screen keeps leading there.
+_blind_tap = {"lower_at": 0.0, "shot": False}
 
 SKIP_STATES = {"off": "assets/buttons/skip_off.png",
                "x1": "assets/buttons/skip_x1.png",
@@ -1923,8 +1955,18 @@ def career_lobby():
               text="Race Details dialog: entering the race (by position).")
       sleep(1.5)
       continue
-    if click(boxes=matches["race_preview"], text="Race preview; starting the race."):
-      continue
+    if matches["race_preview"]:
+      # Say so loudly when a race opens within a minute of a blind lower tap:
+      # that point is on the lobby's Races button, so this is very likely a
+      # race nobody chose, costing a turn, energy and mood. Logged rather than
+      # refused, because the same handler is how a race the bot DID choose gets
+      # pushed through - and a refusal here would strand that one.
+      if time.time() - _blind_tap["lower_at"] < 60:
+        warning("A race screen opened within a minute of a blind lower tap -"
+                " this race was probably walked into, not chosen. The frame"
+                " from that tap is in shots/blind_tap_lower_*.png.")
+      if click(boxes=matches["race_preview"], text="Race preview; starting the race."):
+        continue
     if click(boxes=matches["race_lineup"], text="Runner lineup; confirming the race."):
       continue
     if click(boxes=matches["next"], text="Next."):
@@ -2001,6 +2043,20 @@ def career_lobby():
           return
       else:
         blank_panel = 0
+      # A race playing out is, to this loop, an unrecognised screen - and the
+      # skip button is only ever looked for inside race_prep(). So a race
+      # entered any other way (the generic preview/lineup handlers below, or
+      # one the game opened itself) used to be watched in full, three minutes
+      # of blind tapping at a time: 2026-09-30 did it twice in one career.
+      # Pressing it here rather than in the dispatch keeps the lobby, which
+      # carries no playback, from ever clicking at these coordinates.
+      skip_box = (first_in(matches["race_skip_big"], constants.SKIP_BTN_BIG_REGION_LANDSCAPE)
+                  or first_in(matches["race_skip"], constants.SCREEN_BOTTOM_REGION))
+      if skip_box:
+        click(boxes=skip_box,
+              text="A race is playing and nothing pressed skip; skipping it.")
+        sleep(2)
+        continue
       if not_in_lobby >= LOBBY_LOST_LIMIT:
         error(f"Not in the career lobby for {not_in_lobby} checks and backing"
               " out has not recovered it. Stopping rather than going on"
@@ -2038,24 +2094,33 @@ def career_lobby():
         # already working and unsticks the ones that were not.
         alt = (not_in_lobby // 3) % 2 == 0
         # The lower point (756,980) sits inside the lobby's Races button, whose
-        # centre is (760,970) - so a lobby the Tazuna hint failed to read is one
-        # blind tap away from the race list, and the generic race handlers below
-        # then enter whatever race is on it. That is how the career of
-        # 2026-09-30 ran Queen Cup on a turn it had decided not to race: three
-        # "tapping lower" lines, then "Race preview; starting the race".
+        # centre is (760,970) - so a lobby read as unknown is one blind tap
+        # away from the race list, and the generic race handlers below then
+        # enter whatever race is on it. That is how the career of 2026-09-30
+        # ran Queen Cup on a turn it had decided not to race: three "tapping
+        # lower" lines, then "Race preview; starting the race".
         #
-        # The Infirmary button is the check because it costs nothing: it is
-        # already in the dispatch dict, matched on this same frame, and it
-        # exists on no screen but the lobby. Seeing it means we ARE in the
-        # lobby and only the hint read failed, so the centre point - kept clear
-        # of every lobby control - is the one to use.
-        if alt and matches["infirmary"]:
-          warning("The Infirmary button is on screen, so this IS the lobby and"
-                  " the Tazuna hint went unread. Tapping centre instead of"
-                  " lower, which would press Races and enter a race.")
-          alt = False
+        # The defence is a FRESH read, not another template on this frame. The
+        # captured evidence showed the Tazuna hint matching that lobby at
+        # 1.000 - the frame this cycle was decided on was simply older than the
+        # click, taken while the lobby was still drawing itself after a race.
+        # Nothing matched on a stale frame can fix that; only looking again,
+        # at the last possible moment, can.
+        if alt and in_lobby():
+          warning("The lobby drew itself between the read and the tap. Not"
+                  " tapping lower - that point is the Races button, and"
+                  " pressing it enters a race this turn never chose.")
+          continue
         x, y = (constants.DIALOG_ADVANCE_ALT_MOUSE_POS if alt
                 else constants.DIALOG_ADVANCE_MOUSE_POS)
+        if alt:
+          # One frame per run of lost checks, not per tap: enough to name the
+          # screen, far short of the thousand-file floods shots/ has seen. The
+          # frame this was decided on, not a fresh grab - see save_screen.
+          if not _blind_tap["shot"]:
+            _blind_tap["shot"] = True
+            save_screen("blind_tap_lower", screen)
+          _blind_tap["lower_at"] = time.time()
         click(boxes=(x, y, 1, 1),
               text=f"No back button, tapping {'lower' if alt else 'centre'} to advance dialogue.")
       continue
@@ -2063,6 +2128,7 @@ def career_lobby():
     not_in_lobby = 0
     dialogue_tap = False
     session_errors = 0
+    _blind_tap["shot"] = False
     # Past here the lobby is on screen, so a later home screen means the game
     # left the career on its own (the daily reset), not that the career ended.
     SEEN_LOBBY = True
