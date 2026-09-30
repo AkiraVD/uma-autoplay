@@ -99,6 +99,11 @@ REROLL_SPARKS = True
 TP_BOTTLE_FLOOR = 50
 CAREER_START_ENABLED = False
 CAREER_START_BORROW_CARD = ""
+# The Specialty the borrow list is filtered to before it is read: one of the
+# words the game prints beside its checkboxes (speed/stamina/power/guts/wit/
+# pal/group), or "" to clear the filter and list every card. See
+# core/career_start.py::set_borrow_filter.
+CAREER_START_BORROW_TYPE = ""
 CAREER_START_MAX = 0
 RESTART_ON_FREEZE = False
 TELEGRAM_ENABLED = False
@@ -131,7 +136,8 @@ BOT_DEFAULTS = {
   "tp_bottle_floor": 50,
   "reroll_sparks": True,
   "restart_on_freeze": False,
-  "career_start": {"enabled": False, "borrow_card": "", "max_consecutive": 0},
+  "career_start": {"enabled": False, "borrow_card": "", "borrow_card_type": "",
+                   "max_consecutive": 0},
 }
 
 MIGRATED_KEYS = ("sleep_time_multiplier", "tp_bottle_floor", "reroll_sparks",
@@ -196,6 +202,7 @@ def load_bot():
   """
   global SLEEP_TIME_MULTIPLIER, TP_BOTTLE_FLOOR, RESTART_ON_FREEZE, REROLL_SPARKS
   global CAREER_START_ENABLED, CAREER_START_BORROW_CARD, CAREER_START_MAX
+  global CAREER_START_BORROW_TYPE
   data = None
   try:
     with open(BOT_FILE, "r", encoding="utf-8") as f:
@@ -214,6 +221,7 @@ def load_bot():
                   **(merged.get("career_start") or {})}
   CAREER_START_ENABLED = bool(career_start.get("enabled", False))
   CAREER_START_BORROW_CARD = career_start.get("borrow_card", "")
+  CAREER_START_BORROW_TYPE = career_start.get("borrow_card_type", "")
   CAREER_START_MAX = career_start.get("max_consecutive", 0)
   return bot_settings()
 
@@ -224,6 +232,7 @@ def bot_settings():
           "restart_on_freeze": RESTART_ON_FREEZE,
           "career_start": {"enabled": CAREER_START_ENABLED,
                            "borrow_card": CAREER_START_BORROW_CARD,
+                           "borrow_card_type": CAREER_START_BORROW_TYPE,
                            "max_consecutive": CAREER_START_MAX}}
 
 def save_bot(data):

@@ -375,6 +375,32 @@ BORROW_LIST_REGION = (270, 180, 570, 600)
 # "Light Hello" at 100; 85 leaves room for a mangled glyph without letting a
 # different card through.
 BORROW_NAME_MIN_RATIO = 85
+# The borrow list carries a *filter*, and it is remembered from whatever the
+# deck screens were last filtered to - so the list can hold four Wit cards and
+# no Pal one, and the card you asked for is not missing, it is filtered out.
+# That is what stopped two careers on 2026-10-01, looking for a Pal card
+# (Tazuna) against a list showing only Wit. These reach the filter.
+#
+# The sort pill right of the "Filters:" label opens "Display Settings", which
+# has a Sort tab and a Filter tab. Measured live 2026-10-01 at 1920x1080.
+BORROW_SORT_PILL_MOUSE_POS = (660, 911)
+DISPLAY_SETTINGS_FILTER_TAB_MOUSE_POS = (696, 114)
+DISPLAY_SETTINGS_RESET_MOUSE_POS = (747, 898)
+DISPLAY_SETTINGS_OK_MOUSE_POS = (686, 997)
+# The Specialty checkboxes on that Filter tab, keyed by the word the game
+# prints beside each one. "Pal" is the friend type - the one core/outings.py
+# calls a friend card - and "Group" is the group type.
+BORROW_SPECIALTY_MOUSE_POS = {
+  "speed": (308, 351), "stamina": (499, 351), "power": (689, 351),
+  "guts": (308, 416), "wit": (499, 416), "pal": (689, 416),
+  "group": (308, 480),
+}
+# A ticked box is solid green at its centre, a clear one is light grey:
+# measured on the live screen, wit ticked read (133,204,33) while the other six
+# read (202-213, 203-213, 206-216). Checking the tick rather than trusting the
+# press is what makes the filter verifiable instead of hopeful.
+BORROW_SPECIALTY_TICK_MIN_GREEN = 150
+BORROW_SPECIALTY_TICK_MIN_MARGIN = 40
 # Support Formation's Start Career! face, for telling enabled from disabled.
 # Brightness is the discriminator: measured 2026-09-19, a disabled button read
 # HSV value 0.512 against 0.822 for an enabled one, where their saturations

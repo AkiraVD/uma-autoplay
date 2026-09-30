@@ -55,6 +55,12 @@ TEMPLATES = {
   "legacy_select": "assets/career/legacy_select.png",
   "support_formation": "assets/career/support_formation.png",
   "borrow_card": "assets/career/borrow_card.png",
+  # "Display Settings", the Sort/Filter dialog the borrow list's sort pill
+  # opens. Title strip only, deliberately above the two tabs: the tabs carry a
+  # green highlight that moves between them, so a cut including them would
+  # score against itself. 1.000 on nine captures against a best negative of
+  # 0.706 over 600+ frames (2026-10-01).
+  "display_settings": "assets/career/display_settings.png",
   "final_confirmation": "assets/career/final_confirmation.png",
   # "Veteran Umamusume Max - You cannot add any more Veteran Umamusume.
   # 260/260. Please transfer a Veteran Umamusume before starting a Career
@@ -232,6 +238,54 @@ def start_button_enabled(screen):
         f" (disabled ~0.51, enabled ~0.82)")
   return mean >= constants.START_CAREER_ENABLED_VALUE
 
+def specialty_ticked(screen, card_type):
+  """Whether the Specialty box for `card_type` is ticked, by its own pixel."""
+  pos = constants.BORROW_SPECIALTY_MOUSE_POS.get(card_type)
+  if not pos:
+    return False
+  r, g, b = screen.convert("RGB").getpixel(pos)
+  return (g >= constants.BORROW_SPECIALTY_TICK_MIN_GREEN
+          and g - r >= constants.BORROW_SPECIALTY_TICK_MIN_MARGIN
+          and g - b >= constants.BORROW_SPECIALTY_TICK_MIN_MARGIN)
+
+def set_borrow_filter(card_type):
+  """On the borrow list's Display Settings, show only `card_type`.
+
+  Reset Filters first, always. The alternative is to read all seven boxes and
+  toggle the difference, which is more machinery and more ways to be wrong for
+  no gain - the end state wanted here is "exactly this one type", and a reset
+  reaches it in one press from any starting state, including the one nobody
+  anticipated. With no type configured the reset IS the whole fix: every
+  borrowable card is listed again, which is what unsticks a walk looking for a
+  Pal card against a list filtered to Wit.
+
+  Narrowing to one type is also the faster read: the list the OCR has to scan
+  is the cards of that type rather than every card every follower offers.
+  """
+  _click(constants.DISPLAY_SETTINGS_FILTER_TAB_MOUSE_POS,
+         "Display Settings: the Filter tab.")
+  sleep(1)
+  _click(constants.DISPLAY_SETTINGS_RESET_MOUSE_POS,
+         "Clearing the borrow list's card filters.")
+  sleep(1)
+  if card_type:
+    if card_type not in constants.BORROW_SPECIALTY_MOUSE_POS:
+      warning(f"career_start.borrow_card_type is '{card_type}', which is not"
+              f" one of {', '.join(sorted(constants.BORROW_SPECIALTY_MOUSE_POS))}."
+              " Leaving the list unfiltered.")
+    else:
+      _click(constants.BORROW_SPECIALTY_MOUSE_POS[card_type],
+             f"Filtering the borrow list to {card_type} cards.")
+      sleep(0.5)
+      # Verified rather than assumed: a press that missed leaves every type
+      # showing, which still works but reads slower - and a press that landed
+      # on the wrong box hides the card being looked for.
+      if not specialty_ticked(ImageGrab.grab(), card_type):
+        warning(f"The {card_type} box did not read as ticked after pressing"
+                " it; carrying on with whatever the filter now holds.")
+  _click(constants.DISPLAY_SETTINGS_OK_MOUSE_POS, "Display Settings: OK.")
+  sleep(1.5)
+
 def read_borrow_rows(screen):
   """Every card name on the Borrow Card list, with where to tap for it.
 
@@ -382,6 +436,11 @@ def start():
   takes = 0
   borrowed = False
   pressed_final = False
+  # The borrow list's filter is set once per walk, before the list is read.
+  # Set when the dialog is *asked* for, not when it is applied, so a sort pill
+  # that does not open it costs one step rather than looping on it.
+  filter_asked = False
+  card_type = (getattr(state, "CAREER_START_BORROW_TYPE", "") or "").strip().lower()
   last_digest = None
   frozen = 0
   for step in range(STEP_LIMIT):
@@ -428,7 +487,22 @@ def start():
         return False
       continue
 
+    if matches["display_settings"]:
+      set_borrow_filter(card_type)
+      continue
+
     if matches["borrow_card"]:
+      # Before reading a single row: the list remembers whatever the deck
+      # screens were last filtered to, and a card of another type simply is not
+      # on it. Two careers stopped on 2026-10-01 reporting Tazuna missing from
+      # a list holding four Wit cards - she is a Pal card, and the filter was
+      # set to Wit.
+      if not filter_asked:
+        filter_asked = True
+        _click(constants.BORROW_SORT_PILL_MOUSE_POS,
+               "Opening the borrow list's Display Settings to set the filter.")
+        sleep(1.5)
+        continue
       takes += 1
       if takes > BORROW_ATTEMPTS:
         # The row was tapped and the list is still up, so the tap is not

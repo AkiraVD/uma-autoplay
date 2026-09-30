@@ -3,9 +3,37 @@ import { Cog, RotateCcw } from "lucide-react";
 import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
 import { Input } from "../ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import { URL } from "@/constants";
 
-type CareerStart = { enabled: boolean; borrow_card: string; max_consecutive: number };
+type CareerStart = {
+  enabled: boolean;
+  borrow_card: string;
+  borrow_card_type: string;
+  max_consecutive: number;
+};
+
+// The words the game prints beside the Specialty checkboxes on the borrow
+// list's own filter, in the order it lays them out. "Pal" is the friend type.
+const CARD_TYPES: [value: string, label: string][] = [
+  ["", "Any (clear the filter)"],
+  ["speed", "Speed"],
+  ["stamina", "Stamina"],
+  ["power", "Power"],
+  ["guts", "Guts"],
+  ["wit", "Wit"],
+  ["pal", "Pal (friend)"],
+  ["group", "Group"],
+];
+// Radix Select has no empty-string item, so "any" travels as a sentinel and is
+// mapped back to "" on the way in and out.
+const ANY = "__any__";
 type Settings = {
   sleep_time_multiplier: number;
   tp_bottle_floor: number;
@@ -19,7 +47,7 @@ const EMPTY: Settings = {
   tp_bottle_floor: 50,
   reroll_sparks: true,
   restart_on_freeze: false,
-  career_start: { enabled: false, borrow_card: "", max_consecutive: 0 },
+  career_start: { enabled: false, borrow_card: "", borrow_card_type: "", max_consecutive: 0 },
 };
 const CARD = "bg-card p-6 rounded-xl shadow-lg border border-border/20";
 // Same as the Configuration tab's, and for the same reason: long enough that
@@ -250,6 +278,31 @@ export default function BotSettingsView() {
             <span className="block text-sm text-muted-foreground mt-1">
               The Friends slot is the one thing a new career forgets, and a deck without it will not start. After the
               first career the bot reuses whatever it borrowed last time; this is only the seed for the first one.
+            </span>
+          </div>
+
+          <div>
+            <label htmlFor="borrow-card-type" className="block text-lg font-medium">Card type</label>
+            <Select
+              value={settings.career_start.borrow_card_type || ANY}
+              onValueChange={(v) => setCareer({ borrow_card_type: v === ANY ? "" : v })}
+            >
+              <SelectTrigger id="borrow-card-type" className="w-64 mt-1">
+                <SelectValue placeholder="Any" />
+              </SelectTrigger>
+              <SelectContent>
+                {CARD_TYPES.map(([value, label]) => (
+                  <SelectItem key={value || ANY} value={value || ANY}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="block text-sm text-muted-foreground mt-1">
+              The borrow list keeps whatever filter the deck screens were last set to, so a card of another type is
+              not on it at all &mdash; that is a career that stops saying the card is missing when it is only hidden.
+              The bot clears that filter before reading, and narrows it to this type, which makes the list shorter to
+              read. <strong>Any</strong> just clears it. Tazuna and the other friend cards are <strong>Pal</strong>.
             </span>
           </div>
 

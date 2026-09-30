@@ -51,6 +51,7 @@ SCREENS = {
   "borrow_card": os.path.join(WALK, "borrow_card.png"),
   "final_confirmation": os.path.join(WALK, "final_confirmation.png"),
   "veteran_max": os.path.join(WALK, "veteran_max.png"),
+  "display_settings": os.path.join(WALK, "display_settings.png"),
 }
 HOME = os.path.join(FIXTURES, "out_of_career", "game_home.png")
 LOBBY = os.path.join(FIXTURES, "out_of_career", "in_career.png")
@@ -115,8 +116,14 @@ def test_no_lobby_template_fires_on_a_setup_screen():
   home = source.index('if matches["team_rank"] or matches["game_nav"]', loop)
   above = set(re.findall(r'matches\["(\w+)"\]', source[loop:home]))
   ok("the branches above the home screen are found", len(above) > 10, str(len(above)))
+  # Display Settings is the one screen here career_lobby cannot arrive at: the
+  # walk raises it and dismisses it inside one step. It carries an OK, which
+  # the loop's generic ok branch does match - and if the loop ever did meet it,
+  # pressing OK is the recovery anyway, since that commits the filter and
+  # closes the dialog. Exempt with the reason rather than weakened for all.
+  exempt = {SCREENS["display_settings"]}
   for path in SCREENS.values():
-    if not os.path.exists(path):
+    if not os.path.exists(path) or path in exempt:
       continue
     found = multi_match_templates(E.templates, screen=frame(path))
     hit = [k for k in sorted(above) if found.get(k)]
@@ -134,6 +141,44 @@ def test_the_borrow_list_reads():
   ok("and the card names are among them",
      sum(1 for t in texts if "Light Hello" in t) >= 3,
      ", ".join(t for t in texts if "Hello" in t))
+
+def test_the_borrow_filter_is_set_before_the_list_is_read():
+  """The list keeps whatever the deck screens were filtered to, so a card of
+  another type is not on it at all. Two careers stopped on 2026-10-01 looking
+  for Tazuna - a Pal card - against a list holding four Wit ones."""
+  source = open(os.path.join("core", "career_start.py"), encoding="utf-8").read()
+  asked = source.index("BORROW_SORT_PILL_MOUSE_POS")
+  taken = source.index("if take_borrow(screen, wanted):")
+  ok("the filter is opened before a row is taken", asked < taken)
+  # Asked once per walk, not once per pass: a sort pill that does not open the
+  # dialog has to cost one step, never a loop.
+  ok("and only once, behind a flag",
+     source.count("filter_asked = True") == 1 and "if not filter_asked:" in source)
+
+def test_every_specialty_has_a_position():
+  """Seven types, seven boxes. A name with no position cannot be filtered to,
+  and the config offers exactly these words."""
+  wanted = {"speed", "stamina", "power", "guts", "wit", "pal", "group"}
+  ok("every specialty is placed",
+     set(constants.BORROW_SPECIALTY_MOUSE_POS) == wanted,
+     sorted(constants.BORROW_SPECIALTY_MOUSE_POS))
+  for name, (x, y) in constants.BORROW_SPECIALTY_MOUSE_POS.items():
+    ok(f"{name} sits inside the dialog", 260 <= x <= 860 and 120 <= y <= 900, (x, y))
+
+def test_a_ticked_specialty_reads_as_ticked():
+  """Read off the live frame that caught the bug: Wit ticked, the rest clear."""
+  path = SCREENS["display_settings"]
+  if not os.path.exists(path):
+    print("skip  no display settings fixture")
+    return
+  screen = frame(path)
+  found = multi_match_templates(
+    {"display_settings": CS.TEMPLATES["display_settings"]}, screen=screen)
+  ok("the dialog is recognised", bool(found["display_settings"]))
+  ok("wit reads as ticked", CS.specialty_ticked(screen, "wit"))
+  for name in ("speed", "stamina", "power", "guts", "pal", "group"):
+    ok(f"{name} reads as clear", not CS.specialty_ticked(screen, name))
+  ok("an unknown type is not ticked", not CS.specialty_ticked(screen, "nonsense"))
 
 def test_the_right_row_is_chosen():
   """Three of the four rows offer Light Hello, so the tie-break matters: the
@@ -508,6 +553,9 @@ if __name__ == "__main__":
   test_the_home_screen_is_not_a_setup_screen()
   test_no_lobby_template_fires_on_a_setup_screen()
   test_the_borrow_list_reads()
+  test_the_borrow_filter_is_set_before_the_list_is_read()
+  test_every_specialty_has_a_position()
+  test_a_ticked_specialty_reads_as_ticked()
   test_the_right_row_is_chosen()
   test_a_card_that_is_not_on_the_list_is_refused()
   test_an_enabled_start_button_reads_as_enabled()
