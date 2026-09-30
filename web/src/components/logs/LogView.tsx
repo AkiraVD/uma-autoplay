@@ -22,6 +22,17 @@ type LogData = {
 };
 
 const POLL_MS = 3000;
+// Kept per browser, not in the config: which detail someone wants to read is a
+// property of the device they are reading on, and it must not ride along in a
+// preset. Wrapped because storage throws in a private window.
+const DEBUG_KEY = "uma-log-debug";
+function storedDebug() {
+  try {
+    return localStorage.getItem(DEBUG_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
 const LEVEL = /^(\d{2}:\d{2}:\d{2}) (DEBUG|INFO|WARNING|ERROR)(\s+)(.*)$/;
 const LEVEL_CLASS: Record<string, string> = {
   DEBUG: "text-muted-foreground",
@@ -123,13 +134,17 @@ export default function LogView() {
   // Every failure carries a code: plain words get read as a diagnosis.
   const [fault, setFault] = useState<string | null>(null);
   const [follow, setFollow] = useState(true);
+  const [debug, setDebug] = useState(storedDebug);
   const tailRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let alive = true;
     const tick = async () => {
       try {
-        const res = await fetch(`${URL}/logs/data`, { cache: "no-store" });
+        // Filtered on the server, so hiding DEBUG still returns a full window
+        // of the lines that are left rather than the few that survived a slice.
+        const res = await fetch(`${URL}/logs/data?debug=${debug ? "1" : "0"}`,
+                                { cache: "no-store" });
         if (!res.ok) throw new Error(`LOG-E02 the server answered HTTP ${res.status}`);
         let json: LogData;
         try {
@@ -153,7 +168,8 @@ export default function LogView() {
       alive = false;
       clearInterval(id);
     };
-  }, []);
+    // Re-runs on a toggle so the change shows on the next frame, not the next poll.
+  }, [debug]);
 
   useEffect(() => {
     if (follow && tailRef.current) tailRef.current.scrollTop = tailRef.current.scrollHeight;
@@ -228,10 +244,27 @@ export default function LogView() {
       <div className={CARD}>
         <div className="flex items-center justify-between mb-2">
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Log</div>
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
-            <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} />
-            Follow
-          </label>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={debug}
+                onChange={(e) => {
+                  setDebug(e.target.checked);
+                  try {
+                    localStorage.setItem(DEBUG_KEY, e.target.checked ? "1" : "0");
+                  } catch {
+                    // A private window keeps the toggle for this page only.
+                  }
+                }}
+              />
+              Debug
+            </label>
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} />
+              Follow
+            </label>
+          </div>
         </div>
         <div ref={tailRef} className="font-mono text-xs leading-relaxed break-words max-h-[60vh] overflow-y-auto">
           {(data?.recent ?? []).map((line, i) => <LogLine key={i} line={line} />)}

@@ -28,6 +28,7 @@ import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOG = os.path.join(REPO, "logs", "log.txt")
@@ -85,6 +86,16 @@ PREFIX = re.compile(r"^\d{2}:\d{2}:\d{2} +\w+ +")
 def bare(line):
   return PREFIX.sub("", line)
 
+
+# DEBUG is most of the log by volume - a lobby turn writes a line per facility
+# read - so a viewer showing the last N lines shows almost nothing else. The
+# filter runs BEFORE the window is taken, so hiding DEBUG gives N lines of the
+# rest rather than the two or three that survived the slice.
+DEBUG_LINE = re.compile(r"^\d{2}:\d{2}:\d{2} +DEBUG\b")
+
+def without_debug(lines):
+  return [l for l in lines if not DEBUG_LINE.match(l)]
+
 def last_match(lines, pattern):
   rx = re.compile(pattern)
   for line in reversed(lines):
@@ -122,7 +133,14 @@ def current_run(lines):
   return lines[start:]
 
 
-def snapshot(status_path):
+def snapshot(status_path, debug=True):
+  """The page's data. `debug=False` drops DEBUG lines from the log tail.
+
+  Only from `recent`: the state fields and `trouble` are matched over every
+  line whatever the toggle says, because half of what the page reports for a
+  turn - the training it picked, the friend chain step - is logged at DEBUG,
+  and hiding those lines must not blank the fields above them.
+  """
   lines = tail(LOG)
   run = current_run(lines) or lines
   out = {"lines": len(lines), "run_lines": len(run)}
@@ -136,7 +154,8 @@ def snapshot(status_path):
   # Scoped too: a warning from the career before this one is already over,
   # and surfacing it sends the reader after a fault that no longer exists.
   out["trouble"] = [l for l in run[-400:] if TROUBLE.search(l)][-8:]
-  out["recent"] = lines[-40:]
+  out["recent"] = (lines if debug else without_debug(lines))[-40:]
+  out["debug"] = bool(debug)
 
   try:
     with open(status_path, "r", encoding="utf-8") as f:
@@ -172,10 +191,20 @@ pre{margin:0;white-space:pre-wrap;word-break:break-word;font:12px/1.5 ui-monospa
 .lv-ERROR{color:#b23b3b}
 @media (prefers-color-scheme:dark){.lv-INFO{color:#6fb6ff}.lv-WARNING{color:#ffb765}.lv-ERROR{color:#ff8a8a}}
 .ok{background:#3fa34d}.stale{background:#c9a227}.dead{background:#b23b3b}
+.bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.tog{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dim);cursor:pointer;user-select:none}
 </style></head><body><div class="wrap">
 <h1><span id="hdr">uma-auto</span><span id="age" style="font-weight:400"></span></h1>
 <div id="app"></div></div>
 <script>
+// Kept per device rather than per run: which detail someone wants is a property
+// of the phone they are watching from, and the page is reloaded constantly.
+let DEBUG = localStorage.getItem('uma-log-debug') !== '0';
+function setDebug(on){
+  DEBUG = on;
+  try { localStorage.setItem('uma-log-debug', on ? '1' : '0'); } catch (e) {}
+  tick();
+}
 const E=(s)=>String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 // Escape first, then tint. The other order would let a log line inject markup.
 const LINE=(s)=>E(s).replace(
@@ -202,7 +231,7 @@ async function tick(){
     ? location.pathname.slice(0, -1) : location.pathname;
   let d;
   try {
-    const r = await fetch(base + '/data', {cache:'no-store'});
+    const r = await fetch(base + '/data?debug=' + (DEBUG ? '1' : '0'), {cache:'no-store'});
     if (!r.ok) { fail('DASH-E02', 'data endpoint returned HTTP ' + r.status); return; }
     try { d = await r.json(); }
     catch (e) { fail('DASH-E03', 'data was not valid JSON'); return; }
@@ -227,8 +256,13 @@ async function tick(){
       ${d.headroom?`<div class="k" style="margin-top:8px">Headroom</div><pre>${E(d.headroom)}</pre>`:''}</div>`;
   if(d.trouble&&d.trouble.length) h+=`<div class="card trouble"><div class="k">Recent trouble</div>
       <pre>${d.trouble.map(LINE).join('\\n')}</pre></div>`;
-  h+=`<div class="card"><div class="k">Log</div><pre>${d.recent.map(LINE).join('\\n')}</pre></div>`;
+  h+=`<div class="card"><div class="bar"><div class="k">Log</div>
+      <label class="tog"><input type="checkbox" id="dbg" ${DEBUG?'checked':''}>Debug</label></div>
+      <pre>${d.recent.map(LINE).join('\\n')}</pre></div>`;
   document.getElementById('app').innerHTML=h;
+  // The card is rebuilt every poll, so the handler is attached every poll too.
+  const box=document.getElementById('dbg');
+  if(box) box.onchange=(e)=>setDebug(e.target.checked);
 }
 tick(); setInterval(tick,3000);
 </script></body></html>"""
@@ -248,7 +282,11 @@ class Handler(BaseHTTPRequestHandler):
     self.wfile.write(raw)
 
   def do_GET(self):
-    path = self.path.split("?")[0].strip("/")
+    path, _, query = self.path.partition("?")
+    path = path.strip("/")
+    # Anything but debug=0 means "show everything", so a hand-typed URL and an
+    # older page that sends no parameter both behave the way they always did.
+    debug = parse_qs(query).get("debug", ["1"])[0] != "0"
     if path == "ping":
       # No token and no JavaScript on purpose: it exists to prove the network
       # path works. A blank result then means the connection failed, not that
@@ -270,7 +308,8 @@ class Handler(BaseHTTPRequestHandler):
     if path == self.token:
       self._send(200, PAGE, "text/html; charset=utf-8")
     elif path == f"{self.token}/data":
-      self._send(200, json.dumps(snapshot(self.status_path)), "application/json")
+      self._send(200, json.dumps(snapshot(self.status_path, debug=debug)),
+                 "application/json")
     else:
       self._send(404, "not found", "text/plain; charset=utf-8")
 

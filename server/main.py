@@ -216,16 +216,20 @@ def image(kind: str, item_id: str):
   return FileResponse(path, media_type="image/png", headers={"Cache-Control": "public, max-age=604800"})
 
 @app.get("/logs/data")
-def log_data():
+def log_data(debug: bool = True):
   """The log viewer's snapshot, for the config page's Live Log view.
 
   Same data as tools/logserver.py serves on its own port, but on this one, so
   a single address (a Tailscale proxy of port 8000, say) carries both pages.
   The bot's state comes from this process rather than a supervisor file.
+
+  `debug=false` drops the DEBUG lines from the log tail, which is most of it by
+  volume. Filtered before the window is taken, so the view still fills.
   """
-  data = logserver.snapshot("")
+  data = logserver.snapshot("", debug=debug)
   # The page scrolls, so it can carry more than the phone view's 40 lines.
-  data["recent"] = logserver.tail(logserver.LOG)[-150:]
+  lines = logserver.tail(logserver.LOG)
+  data["recent"] = (lines if debug else logserver.without_debug(lines))[-150:]
   try:
     since = int(time.time() - os.path.getmtime(logserver.LOG))
   except OSError:
