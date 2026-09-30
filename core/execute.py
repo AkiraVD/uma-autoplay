@@ -99,12 +99,6 @@ templates = {
   # captures against a best negative of 0.704 (finish_confirm) over 21 frames,
   # most of them other green-titled dialogs.
   "race_playback": "assets/ui/race_playback.png",
-  # The race-playback skip buttons. Matched here so they cost nothing extra -
-  # this frame is already grabbed - but acted on ONLY where the loop has lost
-  # the screen, which is exactly what a race playing out looks like to it. The
-  # lobby must never click these.
-  "race_skip": "assets/buttons/skip_btn.png",
-  "race_skip_big": "assets/buttons/skip_btn_big.png",
   "cancel": "assets/buttons/cancel_btn.png",
   "tazuna": "assets/ui/tazuna_hint.png",
   "infirmary": "assets/buttons/infirmary_btn.png",
@@ -571,18 +565,36 @@ def do_recreation():
   elif recreation_summer_btn:
     click(boxes=recreation_summer_btn)
 
-def first_in(boxes, region):
-  """The first match whose centre lies inside `region`, or None.
+# What must not be under the lower blind-tap point when it fires. The Tazuna
+# hint means the career lobby, where (756,980) is the Races button; the other
+# three mean one of the game's own outer screens, where the bottom navigation
+# bar puts its Scout tile there.
+BLIND_TAP_BLOCKERS = ("tazuna", "team_rank", "game_nav", "game_nav_alt")
 
-  multi_match_templates has no per-template region, so a template that is only
-  ever meaningful in one corner is confined here instead. Region is the
-  (left, top, width, height) form, the same as the constants it is passed.
+def blind_tap_blocked():
+  """The name of whatever makes the lower tap unsafe right now, read FRESH.
+
+  Both checks this replaces already existed and both were useless, for the same
+  reason: they were made on the frame the cycle opened with, and the game draws
+  a new screen in the seconds between that read and the click. On 2026-09-30 the
+  tap was decided on one screen and delivered to another twice over - onto Races
+  as a lobby finished drawing, and onto Scout as the home screen replaced a
+  loading frame, which left the run parked in the gacha's Trainee Exchange with
+  nothing the career-start walk could read. Only looking again, at the last
+  possible moment, can catch that.
+
+  A read that fails counts as blocked: not tapping costs one cycle, and tapping
+  blind into the gacha costs a run.
   """
-  left, top, width, height = region
-  for x, y, w, h in boxes or []:
-    cx, cy = x + w // 2, y + h // 2
-    if left <= cx <= left + width and top <= cy <= top + height:
-      return (x, y, w, h)
+  try:
+    found = multi_match_templates({k: templates[k] for k in BLIND_TAP_BLOCKERS},
+                                  screen=ImageGrab.grab())
+  except Exception as e:
+    debug(f"Could not re-read the screen before the lower tap ({e}).")
+    return "an unreadable screen"
+  for key in BLIND_TAP_BLOCKERS:
+    if found[key]:
+      return "the career lobby" if key == "tazuna" else "the game's navigation bar"
   return None
 
 def save_screen(tag, image=None):
@@ -2048,13 +2060,19 @@ def career_lobby():
       # entered any other way (the generic preview/lineup handlers below, or
       # one the game opened itself) used to be watched in full, three minutes
       # of blind tapping at a time: 2026-09-30 did it twice in one career.
-      # Pressing it here rather than in the dispatch keeps the lobby, which
-      # carries no playback, from ever clicking at these coordinates.
-      skip_box = (first_in(matches["race_skip_big"], constants.SKIP_BTN_BIG_REGION_LANDSCAPE)
-                  or first_in(matches["race_skip"], constants.SCREEN_BOTTOM_REGION))
-      if skip_box:
-        click(boxes=skip_box,
-              text="A race is playing and nothing pressed skip; skipping it.")
+      #
+      # Located here rather than keyed in the dispatch dict, the same way the
+      # login-bonus branch locates it: skip_btn.png must not be a dispatch key
+      # - tests/test_out_of_career.py holds that line, because keyed there it
+      # would match mid-career too. Each template is searched in the region it
+      # means anything in, and only on this branch, so the cost falls on the
+      # lost path and never on the hot one.
+      if (click(img="assets/buttons/skip_btn_big.png", minSearch=get_secs(1),
+                region=constants.SKIP_BTN_BIG_REGION_LANDSCAPE,
+                text="A race is playing and nothing pressed skip; skipping it.")
+          or click(img="assets/buttons/skip_btn.png", minSearch=get_secs(1),
+                   region=constants.SCREEN_BOTTOM_REGION,
+                   text="A race is playing and nothing pressed skip; skipping it.")):
         sleep(2)
         continue
       if not_in_lobby >= LOBBY_LOST_LIMIT:
@@ -2100,17 +2118,16 @@ def career_lobby():
         # ran Queen Cup on a turn it had decided not to race: three "tapping
         # lower" lines, then "Race preview; starting the race".
         #
-        # The defence is a FRESH read, not another template on this frame. The
-        # captured evidence showed the Tazuna hint matching that lobby at
-        # 1.000 - the frame this cycle was decided on was simply older than the
-        # click, taken while the lobby was still drawing itself after a race.
-        # Nothing matched on a stale frame can fix that; only looking again,
-        # at the last possible moment, can.
-        if alt and in_lobby():
-          warning("The lobby drew itself between the read and the tap. Not"
-                  " tapping lower - that point is the Races button, and"
-                  " pressing it enters a race this turn never chose.")
-          continue
+        # The defence is a FRESH read - see blind_tap_blocked(). The point is
+        # the lobby's Races button and the game's Scout tile, and the screen
+        # that was read is not always the screen that gets clicked.
+        if alt:
+          blocker = blind_tap_blocked()
+          if blocker:
+            warning(f"{blocker} drew itself between the read and the tap."
+                    " Not tapping lower: that point is the lobby's Races"
+                    " button and the game's Scout tile.")
+            continue
         x, y = (constants.DIALOG_ADVANCE_ALT_MOUSE_POS if alt
                 else constants.DIALOG_ADVANCE_MOUSE_POS)
         if alt:

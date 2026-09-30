@@ -102,6 +102,11 @@ INTERRUPTED = "interrupted"
 # pressing on. career_lobby stops the bot when this returns False, so it is the
 # last thing that happens before a person is needed.
 STEP_LIMIT = 40
+
+# Identical frames, in a row, that mean the client has stopped drawing rather
+# than that a screen is slow. The same evidence career_lobby uses: a live client
+# is never byte-identical twice, a frozen one always is. Eight steps is ~35s.
+FROZEN_STEPS = 8
 # Times the Friends slot may be opened before the disabled Start Career! is
 # taken to mean something else. Two, because the first borrow can fail on a
 # list that has not loaded, and the second tells the two causes apart: an empty
@@ -112,6 +117,11 @@ BORROW_ATTEMPTS = 2
 # what a real run did, not repo data.
 PROGRESS = os.path.join(os.environ.get("UMA_LOG_DIR", "logs"),
                         "career_start_progress.json")
+
+def _panel_digest(screen):
+  """core.execute's frozen-client fingerprint. Imported late, like _click."""
+  from core.execute import panel_digest
+  return panel_digest(screen)
 
 def _click(pos, text):
   """core.execute's click at a point. Imported late: execute imports this
@@ -372,10 +382,29 @@ def start():
   takes = 0
   borrowed = False
   pressed_final = False
+  last_digest = None
+  frozen = 0
   for step in range(STEP_LIMIT):
     if state.stop_event.is_set() or not state.is_bot_running:
       return False
     screen = ImageGrab.grab()
+
+    # A frozen client looks exactly like a walk that is not working: the press
+    # lands on nothing, the next frame is the screen before it, and the only
+    # thing in the log is this step pressing CAREER again. On 2026-09-30 at
+    # 15:22 that ran the whole STEP_LIMIT and stopped the bot, while
+    # restart_on_freeze sat there unused - because the check that would have
+    # caught it lives in career_lobby's loop, which this walk is blocking.
+    # Handing back lets that loop see the frozen panel and restart the game.
+    digest = _panel_digest(screen)
+    frozen = frozen + 1 if digest == last_digest else 0
+    last_digest = digest
+    if frozen >= FROZEN_STEPS:
+      warning(f"The game panel has been pixel-identical for {frozen} steps of"
+              " the career-start walk: the client has stopped drawing. Handing"
+              " back so the loop can deal with it.")
+      return INTERRUPTED
+
     matches = multi_match_templates(TEMPLATES, screen=screen)
 
     if matches["continue_career"]:
@@ -474,6 +503,19 @@ def start():
       # two functions that each think the other is making progress. Pressing
       # CAREER instead just walks the screens again, and STEP_LIMIT bounds it.
       if _home(screen):
+        # Read again before pressing. (712,930) is CAREER on the home screen
+        # and "Exchange Lineup" on the game's Scout page, and the home screen
+        # is often still drawing when this frame was taken - so the screen that
+        # was recognised is not always the screen that gets clicked. On
+        # 2026-09-30 at 14:18 a blind tap had already sent the game to Scout;
+        # home was matched on the frame still fading out, the press landed on
+        # Exchange Lineup, and the Trainee Exchange dialog it opened is the
+        # screen this walk then failed to read for all forty steps.
+        if not _home(ImageGrab.grab()):
+          debug("The home screen went away before CAREER could be pressed;"
+                " reading again rather than clicking where it used to be.")
+          sleep(1.5)
+          continue
         _click(constants.CAREER_BUTTON_MOUSE_POS,
                "Opening Career from the home screen.")
         sleep(4)
