@@ -37,6 +37,11 @@ bot_lock = threading.Lock()
 MINIMUM_MOOD = None
 PRIORITIZE_G1_RACE = None
 IS_AUTO_BUY_SKILL = None
+# Why the career is buying skills at all. "trials" is the default: skills that
+# will fire in Team Trials. "parent" is for a career run to farm a parent, where
+# a learned skill is worth one white spark whatever it does.
+SKILL_BUY_MODES = ("trials", "parent")
+SKILL_BUY_MODE = "trials"
 SKILL_PTS_CHECK = None
 SKILL_DISTANCE = None
 SKILL_RUN_STYLE = None
@@ -290,7 +295,7 @@ def load_config():
 
 def reload_config():
   global PRIORITY_STAT, PRIORITY_WEIGHT, MINIMUM_MOOD, MINIMUM_MOOD_JUNIOR_YEAR, MAX_FAILURE
-  global PRIORITIZE_G1_RACE, CANCEL_CONSECUTIVE_RACE, STAT_CAPS, IS_AUTO_BUY_SKILL, SKILL_PTS_CHECK, SKILL_DISTANCE, SKILL_RUN_STYLE
+  global PRIORITIZE_G1_RACE, CANCEL_CONSECUTIVE_RACE, STAT_CAPS, IS_AUTO_BUY_SKILL, SKILL_PTS_CHECK, SKILL_DISTANCE, SKILL_RUN_STYLE, SKILL_BUY_MODE
   global PRIORITY_EFFECTS_LIST, SKIP_TRAINING_ENERGY, NEVER_REST_ENERGY, SKIP_INFIRMARY_UNLESS_MISSING_ENERGY, PREFERRED_POSITION
   global ENABLE_POSITIONS_BY_RACE, POSITIONS_BY_RACE, POSITION_SELECTION_ENABLED
   global TRAINEE
@@ -316,6 +321,14 @@ def reload_config():
   load_telegram()
   STAT_CAPS = config["stat_caps"]
   IS_AUTO_BUY_SKILL = config["skill"]["is_auto_buy_skill"]
+  # What the points are being spent *for*. "trials" buys the skills that will
+  # fire in Team Trials; "parent" buys as many spark-paying skills as the budget
+  # allows, because a parent is judged by the sparks it hands down and every
+  # skill pays the same one. A preset saved before this setting means "trials".
+  SKILL_BUY_MODE = (config["skill"].get("buy_mode") or "trials").strip().lower()
+  if SKILL_BUY_MODE not in SKILL_BUY_MODES:
+    warning(f"Unknown skill buy_mode {SKILL_BUY_MODE!r}; using 'trials'.")
+    SKILL_BUY_MODE = "trials"
   SKILL_PTS_CHECK = config["skill"]["skill_pts_check"]
   # What this Uma will run in Team Trials. A skill gated on a running
   # style or distance it does not have can never fire, so these decide

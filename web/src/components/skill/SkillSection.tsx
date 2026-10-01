@@ -1,5 +1,6 @@
 import { BrainCircuit } from "lucide-react";
 import IsAutoBuy from "./IsAutoBuy";
+import BuyMode from "./BuyMode";
 import SkillPtsCheck from "./SkillPtsCheck";
 import { Checkbox } from "../ui/checkbox";
 import Tooltips from "../_c/Tooltips";
@@ -32,6 +33,12 @@ export default function SkillSection({ config, updateConfig }: Props) {
           isAutoBuySkill={skill.is_auto_buy_skill}
           setAutoBuySkill={(val) =>
             updateConfig("skill", { ...skill, is_auto_buy_skill: val })
+          }
+        />
+        <BuyMode
+          buyMode={skill.buy_mode ?? "trials"}
+          setBuyMode={(val) =>
+            updateConfig("skill", { ...skill, buy_mode: val as "trials" | "parent" })
           }
         />
         <SkillPtsCheck

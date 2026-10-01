@@ -188,6 +188,39 @@ left join single_mode_skill_need_point p
 where n.category = 47
 """
 
+# A learned skill leaves a white spark on the finished Uma only if it has an
+# inheritance factor, and most skills do not: of the 581 a career can buy, 221
+# carry one. The table draws no join to skill_data - the factor's group id is the
+# skill id with its trailing rank digit cut off - so the link is arithmetic:
+# factor_group_id * 10 + 1 is the skill. Checked against the whole set, 222 of
+# the 235 groups land on a real skill name that way.
+#
+# Only the top member of a tier group carries it: "Right-Handed ◎" does,
+# "Right-Handed ○" and "Right-Handed ×" do not. That is what makes the flag worth
+# reading rather than guessing from the glyph - the same fact for the golds, the
+# Racing Spirit skills and the scenario golds, from the game's own data.
+SUCCESSION_SKILL_FACTOR = 4
+
+def inheritable_skill_ids():
+  """Ids of the skills that pay a white spark when learned. set() if unreadable.
+
+  Separate from the skill query, and failing soft on its own, so a patch that
+  renames or drops succession_factor costs the spark flag rather than every
+  skill name the bot reads rows with.
+  """
+  path = local_copy()
+  if not path:
+    return set()
+  try:
+    with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as con:
+      groups = con.execute(
+        "select distinct factor_group_id from succession_factor where factor_type = ?",
+        (SUCCESSION_SKILL_FACTOR,)).fetchall()
+  except sqlite3.Error as e:
+    warning(f"Couldn't read the inheritance factors from master.mdb: {e}")
+    return set()
+  return {group[0] * 10 + 1 for group in groups}
+
 def skills():
   """Every named skill, as a list of dicts. [] when the database is unreadable.
 
@@ -195,6 +228,8 @@ def skills():
   than either (980 names, 718 with mechanics, 577 purchasable in a career), and
   a caller matching an OCR'd name needs the whole list. `cost is None` is the
   test for "cannot be bought in a career".
+
+  Each record carries `inheritable`: whether learning it leaves a white spark.
   """
   global _skills
   if _skills is not None:
@@ -214,6 +249,7 @@ def skills():
     _skills = []
     return _skills
 
+  inheritable = inheritable_skill_ids()
   seen = set()
   _skills = []
   for row in rows:
@@ -223,9 +259,11 @@ def skills():
       continue
     seen.add(name)
     record["name"] = name
+    record["inheritable"] = record["id"] in inheritable
     _skills.append(record)
 
-  info(f"Loaded {len(_skills)} skills from master.mdb.")
+  info(f"Loaded {len(_skills)} skills from master.mdb, "
+       f"{sum(1 for s in _skills if s['inheritable'])} of them inheritable.")
   return _skills
 
 def reset():

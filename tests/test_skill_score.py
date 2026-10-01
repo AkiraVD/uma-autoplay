@@ -197,6 +197,55 @@ def test_plan_respects_its_constraints():
      sum(S.expected_sv(c) for c in S.plan(SKILLS, 1200, style="front"))
      >= sum(S.expected_sv(c) for c in S.plan(SKILLS, 600, style="front")))
 
+def test_the_spark_flag_comes_from_the_game():
+  """What a parent-farming career can buy, and why it cannot be guessed.
+
+  `inheritable` is master.mdb's own answer to "does learning this leave a white
+  spark", and it is narrow: 221 of the 581 buyable skills pay one. Guessing it
+  from the glyph would be wrong in both directions - "Sympathy" and "Lone Wolf"
+  carry no rank mark and pay a spark, every × pays nothing.
+  """
+  if not SKILLS:
+    return
+  flagged = [s for s in SKILLS if S.inheritable(s)]
+  ok("the factor table is read", 200 < len(flagged) < 300, str(len(flagged)))
+  if not have("Sapporo Racecourse ◎", "Sapporo Racecourse ○", "Sapporo Racecourse ×",
+              "Professor of Curvature", "Corner Adept ○", "Racing Spirit: Mood"):
+    return
+  ok("the ◎ rank of a group pays a spark", S.inheritable(BY_NAME["Sapporo Racecourse ◎"]))
+  ok("the ○ rank does not", not S.inheritable(BY_NAME["Sapporo Racecourse ○"]))
+  ok("the × rank does not", not S.inheritable(BY_NAME["Sapporo Racecourse ×"]))
+  ok("a gold pays one", S.inheritable(BY_NAME["Professor of Curvature"]))
+  ok("its white base does not", not S.inheritable(BY_NAME["Corner Adept ○"]))
+  # The repo already knew this one from a live career: a Racing Spirit skill
+  # becomes a white spark only if it was bought. The database agrees.
+  ok("a Racing Spirit skill pays one", S.inheritable(BY_NAME["Racing Spirit: Mood"]))
+  ok("a missing flag means no", not S.inheritable({"name": "x"}))
+
+def test_one_spark_maximises_count():
+  """The parent-farming objective. Every skill is worth exactly one spark."""
+  if not have("Sapporo Racecourse ◎", "Hakodate Racecourse ◎", "Professor of Curvature"):
+    return
+  cheap = [BY_NAME["Sapporo Racecourse ◎"], BY_NAME["Hakodate Racecourse ◎"]]
+  gold = [BY_NAME["Professor of Curvature"]]
+  chosen = S.plan(cheap + gold, 200, value=S.one_spark, allow_volatile_greens=True)
+  ok("two cheap sparks beat one expensive skill", len(chosen) == 2,
+     str([c["name"] for c in chosen]))
+
+  # The same offer under the trials objective goes the other way, which is the
+  # point of having two: the gold is worth 12 SV an activation and a racecourse
+  # green is worth nothing nobody drew.
+  trials = S.plan(cheap + gold, 200)
+  ok("and the trials objective prefers the gold",
+     {c["name"] for c in trials} == {"Professor of Curvature"},
+     str([c["name"] for c in trials]))
+
+  # Count-maximising has to allow the greens the trials scorer excludes - they
+  # are most of the cheap spark-payers.
+  ok("greens are excluded by default", S.plan(cheap, 400, value=S.one_spark) == [])
+  ok("and allowed when asked for",
+     len(S.plan(cheap, 400, value=S.one_spark, allow_volatile_greens=True)) == 2)
+
 def test_no_budget_buys_nothing():
   ok("zero budget plans nothing", S.plan(SKILLS, 0) == [])
   ok("a negative budget plans nothing", S.plan(SKILLS, -50) == [])
@@ -207,7 +256,10 @@ for test in [test_database_present, test_debuffs_are_never_bought,
              test_the_objective_is_expected_sv_not_the_composite,
              test_aptitude_filter, test_condition_scoring,
              test_a_tier_chain_is_one_choice,
-             test_plan_respects_its_constraints, test_no_budget_buys_nothing]:
+             test_plan_respects_its_constraints,
+             test_the_spark_flag_comes_from_the_game,
+             test_one_spark_maximises_count,
+             test_no_budget_buys_nothing]:
   print(f"\n-- {test.__name__}")
   test()
 

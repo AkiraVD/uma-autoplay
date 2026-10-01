@@ -61,6 +61,7 @@
   },
   "skill": {
     "is_auto_buy_skill": true,
+    "buy_mode": "trials",
     "skill_pts_check": 400,
     "skill_distance": [
       "sprint",

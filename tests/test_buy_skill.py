@@ -129,7 +129,12 @@ def test_the_floor_is_mid_career_only():
     planned = source[source.index("def buy_planned"):source.index("def buy_anything_affordable")]
     ok("buy_planned does not consult the tier list", "worth_buying" not in planned)
     ok("but it still refuses debuffs", "beneficial" in planned)
-    ok("and still refuses what cannot fire", "applicable" in planned)
+    # Both filters it does keep now live in worth_points, which is also what
+    # mid-career buying starts from - the two jobs differ only by the tier floor.
+    ok("and still refuses what cannot fire", "worth_points" in planned)
+    ok("worth_points is where the debuff test lives",
+       not K.worth_points(BY_NAME["Fukushima Racecourse ×"]))
+    ok("and the aptitude test", not K.worth_points(BY_NAME["Speed Star"]))
 
     # An unranked skill has to be reachable by the end-of-career planner.
     offered = [dict(BY_NAME[n], cost=c) for n, c in
@@ -279,6 +284,97 @@ def test_reading_failures_are_safe():
   ok("a cost of zero is not a bargain", not K.at_max_discount(skill, 0, None))
   ok("an unknown record is never usable", not K.usable_here(None))
 
+def with_mode(mode):
+  """Swap the configured buy mode for one check."""
+  saved = state.SKILL_BUY_MODE
+  state.SKILL_BUY_MODE = mode
+  return saved
+
+def restore_mode(saved):
+  state.SKILL_BUY_MODE = saved
+
+def test_parent_mode_buys_sparks_not_performance():
+  """`skill.buy_mode = "parent"`: a career run to farm a parent.
+
+  Nothing about racing applies. A learned skill leaves one white spark whatever
+  it does, so the only question is how many spark-paying skills the points buy -
+  which makes three of the trials rules actively wrong, and each check below
+  pins one of them.
+  """
+  if not HAVE_DB:
+    print("skip  master.mdb not present")
+    return
+  saved_mode = with_mode("parent")
+  saved = with_aptitudes("front", ["sprint"])
+  try:
+    ok("the mode is read", K.parent_mode())
+
+    # 1. Only the top rank of a tier group pays a spark. The ○ is a trap: it is
+    #    cheaper than the ◎ and worth nothing to a parent.
+    ok("a ◎ rank is bought", K.worth_points(BY_NAME["Sapporo Racecourse ◎"]))
+    ok("its ○ rank is not", not K.worth_points(BY_NAME["Sapporo Racecourse ○"]))
+    ok("its × rank is not", not K.worth_points(BY_NAME["Sapporo Racecourse ×"]))
+
+    # 2. No golds. The same single spark for three to four times the points.
+    ok("a gold is refused", not K.worth_points(BY_NAME["Professor of Curvature"]))
+    ok("even though it pays a spark", S.inheritable(BY_NAME["Professor of Curvature"]))
+
+    # 3. Aptitude is irrelevant - a skill that can never fire still sparks.
+    ok("aptitudes are not filtered on", K.uma_aptitudes() == (None, None))
+    ok("and the tier floor is off", K.usable_here(BY_NAME["Sapporo Racecourse ◎"]))
+    ok("which the trials floor would have refused",
+       not T.worth_buying("Sapporo Racecourse ◎"))
+
+    # The plan maximises count, and the volatile greens it needs are exactly the
+    # ones the trials scorer throws out.
+    offered = [BY_NAME[n] for n in
+               ["Sapporo Racecourse ◎", "Hakodate Racecourse ◎", "Niigata Racecourse ◎",
+                "Professor of Curvature"]]
+    chosen = K.plan_purchases([c for c in offered if K.worth_points(c)], 300)
+    names = {c["name"] for c in chosen}
+    ok("three greens beat one gold", len(chosen) == 3, str(names))
+    ok("the gold is not in the plan", "Professor of Curvature" not in names)
+    ok("and the budget holds", sum(c["cost"] for c in chosen) <= 300)
+  finally:
+    restore(saved)
+    restore_mode(saved_mode)
+
+def test_trials_mode_is_unchanged_by_the_new_setting():
+  """The default has to behave exactly as it did before parent mode existed."""
+  if not HAVE_DB:
+    return
+  saved_mode = with_mode("trials")
+  saved = with_aptitudes("front", ["sprint", "mile"])
+  try:
+    ok("trials is the default", "trials" in state.SKILL_BUY_MODES
+       and state.SKILL_BUY_MODE == "trials")
+    ok("aptitudes are still filtered on", K.uma_aptitudes() == ("front", ["sprint", "mile"]))
+    ok("the tier floor is back on", not K.usable_here(BY_NAME["Sapporo Racecourse ◎"]))
+    ok("a gold is wanted again", K.worth_points(BY_NAME["Professor of Curvature"]))
+    ok("and a ○ rank is not refused for paying no spark",
+       K.worth_points(BY_NAME["Mile Corners ○"]))
+    plan = K.plan_purchases([BY_NAME["Professor of Curvature"],
+                             BY_NAME["Sapporo Racecourse ◎"]], 400)
+    ok("the volatile green is still thrown out",
+       {c["name"] for c in plan} == {"Professor of Curvature"},
+       str([c["name"] for c in plan]))
+  finally:
+    restore(saved)
+    restore_mode(saved_mode)
+
+def test_an_unknown_mode_falls_back():
+  """A typo in the config must not silently change what a career buys."""
+  saved = state.SKILL_BUY_MODE
+  try:
+    # reload_config refuses an unknown value when it reads the file; what this
+    # pins is the other half - that every path here asks "is it parent?" rather
+    # than "is it trials?", so anything unrecognised behaves as trials.
+    ok("the mode list is closed", state.SKILL_BUY_MODES == ("trials", "parent"))
+    state.SKILL_BUY_MODE = "nonsense"
+    ok("an unknown mode is not parent mode", not K.parent_mode())
+  finally:
+    state.SKILL_BUY_MODE = saved
+
 for test in [test_config_is_wired, test_only_usable_skills,
              test_only_A_tier_and_above_is_bought, test_the_floor_is_mid_career_only,
              test_the_configured_list_is_gone,
@@ -287,7 +383,10 @@ for test in [test_config_is_wired, test_only_usable_skills,
              test_screen_price_overrides_the_database,
              test_the_screen_price_wins,
              test_the_budget_comes_from_the_buy_screen,
-             test_reading_failures_are_safe]:
+             test_reading_failures_are_safe,
+             test_parent_mode_buys_sparks_not_performance,
+             test_trials_mode_is_unchanged_by_the_new_setting,
+             test_an_unknown_mode_falls_back]:
   print(f"\n-- {test.__name__}")
   test()
 

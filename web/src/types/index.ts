@@ -12,6 +12,8 @@ export const StatSchema = z.object({
 
 export const SkillSchema = z.object({
   is_auto_buy_skill: z.boolean(),
+  // Presets saved before the setting don't have it; absent means "trials".
+  buy_mode: z.enum(["trials", "parent"]).optional(),
   skill_pts_check: z.number(),
   skill_distance: z.array(z.string()),
   skill_run_style: z.string(),

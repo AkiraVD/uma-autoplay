@@ -55,7 +55,8 @@ VOLATILE_CONDITION = re.compile(
   r"(track_id|ground_condition|weather|season|rotation|post_number|time)\s*(==|!=|>=|<=|>|<)")
 GREEN_PASSIVE_PENALTY = 0.2
 
-RUNNING_STYLES = {"front": 1, "pace": 2, "late": 3, "end": 4}
+RUNNING_STYLES = {"front": 1, "pace": 2, "late": 3, "end": 4}
+
 DISTANCE_TYPES = {"sprint": 1, "mile": 2, "medium": 3, "long": 4}
 GROUND_TYPES = {"turf": 1, "dirt": 2}
 
@@ -285,7 +286,32 @@ def beneficial(skill):
   grade = skill.get("grade_value")
   return grade is None or grade >= 0
 
-def _codes(value, table):
+def inheritable(skill):
+  """True when learning this skill leaves a white spark on the finished Uma.
+
+  The flag is master.mdb's own (`masterdb.inheritable_skill_ids`), and it is
+  narrower than it looks: 221 of the 581 skills a career can buy pay a spark,
+  and only the top member of a tier group does. "Right-Handed ◎" pays one,
+  "Right-Handed ○" pays nothing - so a career run to farm a parent cannot just
+  buy whatever is cheapest.
+
+  Absent means "we could not read the factor table", which is treated as not
+  inheritable: a parent-farming plan with no flag at all would otherwise buy the
+  whole list on the strength of a missing join.
+  """
+  return bool(skill.get("inheritable"))
+
+def one_spark(skill):
+  """The parent-farming objective: every skill is worth exactly one spark.
+
+  A gold pays the same single white spark as a 90-point ◎ green and costs three
+  to four times as much, and a spark's own star count comes from how many copies
+  of it the career ends with, not from what the skill does. So the value of a
+  skill here is 1, and the plan that wins is simply the one that buys the most.
+  """
+  return 1.0
+
+def _codes(value, table):
   """Accept "mile", 2, or any collection of either, as a set of codes."""
   if value is None:
     return set()
@@ -357,13 +383,18 @@ def tier_group(skill):
   return re.sub(r"\s+[○◎×]$", "", skill["name"]).strip().lower()
 
 def plan(skills, budget, style=None, distance=None, surface=None,
-         exclusive=None, allow_volatile_greens=False):
+         exclusive=None, allow_volatile_greens=False, value=None):
   """Best affordable set of skills, as a list of records.
 
   Exact rather than greedy: this is a bounded knapsack and the budget is small,
   so there is no reason to approximate. Skills are grouped so at most one of a
   mutually exclusive family is taken - buying both ranks of one skill is wasted
   points, and `exclusive` defaults to grouping by name with the rank stripped.
+
+  `value` is what a skill is worth, and it is the whole difference between the
+  two things a career can be run for: `expected_sv` (the default) maximises
+  Team Trials payout, `one_spark` maximises how many skills are learned for a
+  parent. The knapsack is the same either way.
   """
   budget = max(0, int(budget or 0))
   if budget <= 0:
@@ -378,13 +409,15 @@ def plan(skills, budget, style=None, distance=None, surface=None,
 
   if exclusive is None:
     exclusive = tier_group
+  if value is None:
+    value = expected_sv
 
   families = {}
   for skill in usable:
     families.setdefault(exclusive(skill), []).append(skill)
 
   # Scores are floats; the DP works in integers so ties are stable.
-  scaled = {id(s): int(round(expected_sv(s) * 10000)) for s in usable}
+  scaled = {id(s): int(round(value(s) * 10000)) for s in usable}
 
   best = [0] * (budget + 1)
   taken = [None] * (budget + 1)
@@ -398,9 +431,9 @@ def plan(skills, budget, style=None, distance=None, surface=None,
         after = spent + member["cost"]
         if after > budget:
           continue
-        value = best[spent] + scaled[id(member)]
-        if value > nxt[after]:
-          nxt[after] = value
+        gain = best[spent] + scaled[id(member)]
+        if gain > nxt[after]:
+          nxt[after] = gain
           nxt_taken[after] = (spent, member, taken[spent])
     best, taken = nxt, nxt_taken
 
@@ -414,5 +447,5 @@ def plan(skills, budget, style=None, distance=None, surface=None,
   chosen.reverse()
   spend = sum(s["cost"] for s in chosen)
   debug(f"Skill plan: {len(chosen)} skills for {spend}/{budget} points, "
-        f"{best[end] / 10000:.1f} expected SV.")
+        f"{best[end] / 10000:.1f} by {getattr(value, '__name__', 'value')}.")
   return chosen

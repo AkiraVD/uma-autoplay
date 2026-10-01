@@ -34,6 +34,20 @@ rarity, and the server's pickers. Two uses are still open:
 
 ## Untested paths, each waiting on a screen that has not appeared
 
+- **Parent-farming skill mode** (`skill.buy_mode = "parent"`, 2026-10-01) against a
+  live buy screen. The decision side is settled and tested: 92 non-gold skills pay a
+  white spark, the plan maximises count instead of expected SV, and a 1,200-point
+  budget plans 13 of them against the trials plan's 9. Two things are only reasoned.
+  First, whether the screen charges a double-circle rank its own price or the pair's:
+  for a gold that was measured (306 = 126 + the white's 180, `screen-map.md`), and the
+  circle/double-circle pairs share a `group_id` the same way, so the listing is probably
+  110 + 90 rather than 110. If it is, each spark costs about 200 and the plan buys
+  roughly half as many as it thinks - which `plausible_cost` already handles, since the
+  plan runs on the price the row prints. Worth checking against a real list before
+  trusting a count. Second, that a single-circle rank really pays no spark. That is
+  master.mdb's own answer (`succession_factor`, `factor_type = 4`), not a reading of the
+  game, and it is the whole filter: if they do spark, parent mode is leaving the
+  cheapest ones out.
 - **`unity_begin_showdown`'s settle delay** against a live Team Zenith screen.
 - **The title-screen walk-back**, against a live dialog. Recognition is
   settled: keyed on the `Title Screen` button (`assets/ui/title_screen_btn.png`,

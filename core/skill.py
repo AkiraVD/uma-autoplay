@@ -144,32 +144,79 @@ def at_max_discount(record, shown_cost, hint=None):
     return False
   return shown_cost <= round(base * (1 - MAX_HINT_DISCOUNT)) + DISCOUNT_SLACK
 
+def parent_mode():
+  """True when this career is being run to farm a parent, not to race.
+
+  config `skill.buy_mode`. It changes what a skill is *for*, so it changes every
+  judgement below: which skills are even candidates, and what the plan maximises.
+  """
+  return getattr(state, "SKILL_BUY_MODE", "trials") == "parent"
+
 def uma_aptitudes():
-  """(style, distance) this Uma races, from config. Either may be None."""
+  """(style, distance) this Uma races, from config. Either may be None.
+
+  Both are None in parent mode. A skill that can never fire still leaves the
+  same white spark as one that fires every race, so filtering on aptitude there
+  would throw away candidates for no gain - and the cheapest spark-payers are
+  the course and condition greens, which no aptitude test has an opinion on.
+  """
+  if parent_mode():
+    return (None, None)
   return (getattr(state, "SKILL_RUN_STYLE", None),
           getattr(state, "SKILL_DISTANCE", None) or None)
 
-def usable_here(record):
-  """True when the skill can fire for this Uma at all.
+def worth_points(record):
+  """True when this skill is a candidate for the points at all.
 
-  Three things have to hold. It must do something useful (not a debuff), it
-  must be able to fire for this Uma, and it must be rated A tier or better.
+  Trials: it must do something useful (not a debuff) and be able to fire for
+  this Uma. The aptitude test is the one the old configured list got wrong - it
+  listed Speed Star, which is running_style==2, on a Front runner, 180 points
+  that could never pay out.
 
-  The aptitude test is the one the old configured list got wrong: it listed
-  Speed Star, which is running_style==2, on a Front runner - 180 points that
-  could never pay out.
-
-  The tier test is what replaced that list. skill_tiers is the drive now, so
-  "usable" means "worth having", not merely "able to fire".
+  Parent farming: it must leave a white spark, and it must not be a gold. A gold
+  pays exactly the same single spark as a 90-point ◎ and costs three to four
+  times as much, so taking one costs two or three sparks that the same points
+  would otherwise have bought.
   """
   if not record:
     return False
   if not skill_score.beneficial(record):
     return False
-  if not skill_tiers.worth_buying(record["name"]):
-    return False
+  if parent_mode():
+    return (skill_score.inheritable(record)
+            and record.get("rarity") != skill_score.GOLD_RARITY)
   style, distance = uma_aptitudes()
   return skill_score.applicable(record, style=style, distance=distance)
+
+def plan_purchases(offered, budget):
+  """What to buy out of `offered` with `budget`, by whatever the career is for.
+
+  Parent farming maximises the number of skills learned rather than Team Trials
+  payout, and it has to allow the volatile greens the trials scorer throws out:
+  "Fukushima Racecourse ◎" is worthless in a race whose venue nobody picked,
+  and it is one of the cheapest white sparks in the game.
+  """
+  offered = list(offered)
+  if parent_mode():
+    return skill_score.plan(offered, budget, value=skill_score.one_spark,
+                            allow_volatile_greens=True)
+  style, distance = uma_aptitudes()
+  return skill_score.plan(offered, budget, style=style, distance=distance)
+
+def usable_here(record):
+  """True when the skill is worth buying mid-career.
+
+  `worth_points` plus a tier floor, because mid-career there is a reason to be
+  picky: a point spent now cannot be spent on something better later. skill_tiers
+  is the drive for that in trials mode.
+
+  No tier floor in parent mode - the tier list ranks race performance, and a
+  parent is judged on sparks. The cheap greens it rejects are exactly what a
+  parent-farming career wants.
+  """
+  if not worth_points(record):
+    return False
+  return parent_mode() or skill_tiers.worth_buying(record["name"])
 
 # Which calibration this screen scrolls with. Everything about *how* the list
 # is dragged and walked now lives in core/menu_scan; only the skill-specific
@@ -252,7 +299,6 @@ def buy_skill(match_any=False):
   # Passing one over costs nothing. Max hint is max hint, so it will still be
   # this price at the end, when it can be weighed against everything on offer
   # instead of against only what happens to be discounted today.
-  style, distance = uma_aptitudes()
   offered = {}
   for box, text, record, cost, hint in scan_rows():
     if not usable_here(record):
@@ -271,8 +317,7 @@ def buy_skill(match_any=False):
   budget = check_skill_pts_for_plan()
   chosen = []
   if budget > 0:
-    chosen = skill_score.plan(list(offered.values()), budget,
-                              style=style, distance=distance)
+    chosen = plan_purchases(offered.values(), budget)
   if not chosen:
     info(f"{len(offered)} skill(s) at full discount, but the optimizer would not"
          f" spend {budget} points on any of them yet; leaving them for the end.")
@@ -346,16 +391,22 @@ def buy_planned():
   buy. Falls back to taking anything affordable if no plan can be made, since
   points left over are lost outright.
   """
-  style, distance = uma_aptitudes()
+  # Two pools. `offered` is what the optimizer may choose from; `on_screen` is
+  # every row that could be bought at all, which is what a forced buy is looked
+  # up in. They differ in parent mode, where the golds are kept out of the plan -
+  # and `grand_concert.always_buy_gold_skill` names a gold, so looking that up in
+  # the plan's pool would make the setting silently do nothing.
   offered = {}
+  on_screen = {}
   for box, text, record, cost, hint in scan_rows():
     if not record or not skill_score.beneficial(record):
       continue
-    if not skill_score.applicable(record, style=style, distance=distance):
-      continue
     # The price on screen beats the database: it includes the hint discount.
     price = plausible_cost(record, cost) or record["cost"]
-    offered.setdefault(base_name(record["name"]), dict(record, cost=price))
+    card = dict(record, cost=price)
+    on_screen.setdefault(base_name(record["name"]), card)
+    if worth_points(record):
+      offered.setdefault(base_name(record["name"]), card)
 
   budget = check_skill_pts_for_plan()
   # What the plan is measured against at the end. `budget` itself shrinks as
@@ -368,7 +419,7 @@ def buy_planned():
   # is the whole point of learning 18 songs, though, so it can be forced.
   forced = []
   if state.ALWAYS_BUY_GOLD_SKILL:
-    forced = [c for name, c in offered.items() if GOLD_SKILL_MATCH(name) and c["cost"] <= budget]
+    forced = [c for name, c in on_screen.items() if GOLD_SKILL_MATCH(name) and c["cost"] <= budget]
     for card in forced:
       info(f"Buying {card['name']} first: grand_concert.always_buy_gold_skill is on ({card['cost']} points).")
       budget -= card["cost"]
@@ -381,7 +432,7 @@ def buy_planned():
   # preference order, and taken off the top of the budget; one that no longer
   # fits is dropped rather than crowding out the rest of the plan.
   for wanted_name in state.URA_FORCE_BUY_SKILLS:
-    card = offered.get(base_name(wanted_name))
+    card = on_screen.get(base_name(wanted_name))
     if not card:
       # Silence here reads as "the force did nothing" when the truth is "the
       # duel that grants its hint was never won", which is the thing worth
@@ -399,11 +450,11 @@ def buy_planned():
     budget -= card["cost"]
     offered.pop(base_name(card["name"]), None)
   if offered and budget > 0:
-    chosen = skill_score.plan(list(offered.values()), budget,
-                              style=style, distance=distance)
+    chosen = plan_purchases(offered.values(), budget)
+    worth = (f"{len(chosen)} white sparks" if parent_mode()
+             else f"{sum(skill_score.expected_sv(c) for c in chosen):.1f} expected SV")
     info(f"Optimizer picked {len(chosen)} of {len(offered)} offered skills,"
-         f" {sum(c['cost'] for c in chosen)} of {budget} points,"
-         f" {sum(skill_score.expected_sv(c) for c in chosen):.1f} expected SV.")
+         f" {sum(c['cost'] for c in chosen)} of {budget} points, {worth}.")
 
   chosen = forced + chosen
   if not chosen:
