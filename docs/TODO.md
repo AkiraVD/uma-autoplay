@@ -49,6 +49,18 @@ rarity, and the server's pickers. Two uses are still open:
   game, and it is the whole filter: if they do spark, parent mode is leaving the
   cheapest ones out.
 - **`unity_begin_showdown`'s settle delay** against a live Team Zenith screen.
+- **The Data Download handler** (2026-10-07), against a live dialog.
+  Recognition is settled - `assets/ui/data_download.png`, 2 positives at 1.000
+  against a best negative of 0.591 over 1,212 frames, and the OK position is
+  the same on both captures (`screen-map.md`). What is unproven is everything
+  after the press, and only in the *bot's* hands: the dialog, the download, the
+  `Connection Error` that followed the first attempt and the clean run to the
+  home screen that followed the second were all walked by hand on 2026-10-07
+  (`screen-map.md`), but never by `career_lobby`. What is still guessed is the
+  600s cap - 5.55 MB took under a minute, a version patch is hundreds of
+  megabytes on whatever the connection gives - and whether a patch that shows
+  its own progress dialog still clears this one, which is what
+  `wait_for_data_download` waits on.
 - **The title-screen walk-back**, against a live dialog. Recognition is
   settled: keyed on the `Title Screen` button (`assets/ui/title_screen_btn.png`,
   5 positives at 1.000 against a best negative of 0.700 over 360 frames), which

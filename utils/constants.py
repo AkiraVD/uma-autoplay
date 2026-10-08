@@ -451,6 +451,13 @@ SESSION_ERROR_BUTTON_MOUSE_POS = (553, 704)
 # fixed point in the whole startup walk (see the uma-launch skill), and outside
 # GAME_SCREEN_REGION, so tapping it when the game is still loading is harmless.
 TITLE_SCREEN_TAP_MOUSE_POS = (960, 940)
+# "Data Download", raised on that same title screen before the game will load.
+# The title screen is drawn fullscreen landscape, not in the portrait panel the
+# in-career constants assume, so this dialog is centred on 960 and its buttons
+# sit well right of the in-career pair: OK x 976-1209 / y 672-732, Cancel
+# centred at (827,702). A fixed-width shell - the megabytes in the message
+# change, the layout does not, on captures 22 days apart.
+DATA_DOWNLOAD_OK_MOUSE_POS = (1092, 703)
 # The Lessons button carries a pink "!" when something on the board is
 # learnable, and a "Scheduled" tag or a note badge otherwise. The same "!"
 # artwork appears elsewhere in the lobby (0.93 on a Unity lobby), so it is only

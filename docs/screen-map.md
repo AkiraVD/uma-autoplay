@@ -2284,3 +2284,66 @@ scores 1.000 on it, so the existing gate is right; nothing needed re-cutting.
 It was raised by the *first* press after the bot had sat at the home screen
 for five and a half hours, which is also why it landed inside the career-start
 walk rather than in `career_lobby`.
+
+## Data Download (captured 2026-09-15 and 2026-10-07)
+
+Green header `Data Download` over "Additional data (N MB) needs to be
+downloaded.", `Cancel` / `OK`. The game raises it on the **title screen**,
+after a patch, before it will load anything - so it is drawn fullscreen
+landscape, centred on 960, not in the portrait panel every in-career constant
+assumes.
+
+Measured identically on two captures 22 days and two sizes apart
+(`shots/relaunch_1.png`, 11.27 MB; `tests/fixtures/out_of_career/
+data_download.png`, 5.55 MB) - a fixed-width shell, the megabytes change and
+the layout does not:
+
+| thing | where |
+| --- | --- |
+| header text | centred (960, 348) |
+| `OK` | x 976-1209, y 672-732, centre **(1092, 702)** |
+| `Cancel` | centre (827, 702) |
+
+`assets/ui/data_download.png` is the header text, 176x32 cut at
+(872,332)-(1048,364). 2 positives at 1.000 against a **best negative of
+0.591** - `date_changed`, the next green-headed dialog - over 1,212 frames.
+
+**Why it needed its own gate.** `ok_btn.png` scores 0.967 here and
+`cancel_btn.png` 0.937, so the frame reached the generic dismisser and was
+*cancelled* - a call that passes no text and logs nothing. The game cannot
+load past the dialog, so Cancel only means being asked again. On 2026-10-07
+the client raised it after a Session Error reload at Senior Late Feb; the run
+blind-tapped the title screen from 15:02 to 15:52 and `LOBBY_LOST_LIMIT`
+stopped it.
+
+The pair with `Session Error` is worth keeping in mind: both live on the
+title screen, both are reached only when the game has already dropped out of
+the career, and both end the same way - tap `TITLE_SCREEN_TAP_MOUSE_POS` and
+walk back in through the login bonus with `RESUMING_CAREER` set.
+
+### What follows `OK` (walked by hand, 2026-10-07)
+
+Two endings, both of which clear the dialog:
+
+1. **`Connection Error` - "There was a connection error. Error code: 394"**,
+   one button, `Title Screen`. The same one-button shell as `Session Error`,
+   but drawn on the **landscape** title screen, so its button is centred at
+   **(960, 703)** - not the portrait panel's (553, 704).
+   `assets/ui/title_screen_btn.png` scores **0.966** on it, so the existing
+   `session_error` gate already sees it; what did not work was the press,
+   which used `SESSION_ERROR_BUTTON_MOUSE_POS` and would have landed on dialog
+   body. That branch now clicks the box the template found and keeps the
+   constant as the fallback. Frame:
+   `tests/fixtures/out_of_career/connection_error_394.png`.
+   Pressing `Title Screen` restarts the game from its splash and comes back to
+   `TAP TO START`; tapping that raises `Data Download` again, so a failing
+   download is a **loop**, bounded by `DATA_DOWNLOAD_LIMIT` x
+   `SESSION_ERROR_LIMIT`.
+2. **It works.** The second attempt, a minute later, downloaded and went
+   straight on to the game's **home screen** - no second title tap, career
+   intact behind `Career`. So the handler's title tap is a no-op in the good
+   case; it is kept because (960,940) is outside `GAME_SCREEN_REGION` and
+   costs nothing there.
+
+Error 394 was transient here and the host's own network was fine throughout
+(curl 200, ping 58ms), so do not read it as the machine being offline.

@@ -214,6 +214,16 @@ templates = {
   # y 672-735. 5 positives at 1.000 against a best negative of 0.700 over 360
   # frames. It *is* the click target, unlike the message it replaced.
   "session_error": "assets/ui/title_screen_btn.png",
+  # "Data Download - Additional data (N MB) needs to be downloaded." The game
+  # raises it on the title screen after a patch, before it will go any further.
+  # It pairs OK with a Cancel that cancel_btn matches at 0.937, so without this
+  # the generic dismisser pressed Cancel - silently, as that call passes no
+  # text - and the game simply asked again. Cut from the header text, because
+  # the body carries a size that changes with every patch and the two buttons
+  # are the same pair a dozen other dialogs use. 2 positives at 1.000 against
+  # a best negative of 0.591 (date_changed, the next green header) over 1,212
+  # frames.
+  "data_download": "assets/ui/data_download.png",
   # Grand Concert. The concert screen replaces the lobby after each half-year's
   # last turn and has no Tazuna hint and no Back, so the lobby recovery used to
   # be all that saw it - and its alternate blind tap, DIALOG_ADVANCE_ALT, lands
@@ -1082,6 +1092,33 @@ def wait_for_race_load(timeout=RACE_LOAD_TIMEOUT):
   warning(f"Race screen still had not loaded after {timeout}s.")
   return None
 
+DATA_DOWNLOAD_TIMEOUT = 600
+
+def wait_for_data_download(timeout=DATA_DOWNLOAD_TIMEOUT):
+  """Wait out the download that OK on the Data Download dialog starts.
+
+  What follows OK is a progress bar with no buttons on it, which is a screen
+  the main loop cannot read - so left to `continue` it would blind-tap at the
+  title screen for the whole download. The sizes are the game's, not ours: the
+  one that caught this was 5.55 MB, and a version patch is hundreds.
+
+  "Gone" is the end condition rather than any screen that follows, because the
+  download has two endings. On 2026-10-07 the first attempt died on
+  "Connection Error - Error code: 394" and the second went straight through to
+  the home screen; both clear the dialog, and the loop can read either.
+
+  Returns True when the dialog has gone, False on timeout or stop.
+  """
+  deadline = time.time() + timeout
+  while time.time() < deadline:
+    if state.stop_event.is_set():
+      return False
+    if not multi_match_templates({"dl": templates["data_download"]})["dl"]:
+      return True
+    sleep(2)
+  warning(f"The Data Download dialog was still up after {timeout}s.")
+  return False
+
 def race_prep():
   global PREFERRED_POSITION_SET
 
@@ -1299,6 +1336,11 @@ FREEZE_RESTART_LIMIT = 5
 # slow reload to finish and few enough that a dialog the press cannot clear is
 # handed straight back to a person.
 SESSION_ERROR_LIMIT = 3
+# Data Download dialogs accepted in one run. Each one is a real patch the game
+# will not start without, and a run can legitimately meet two - the client asks
+# again for the next chunk - but a dialog that keeps coming back after OK is
+# something OK cannot fix.
+DATA_DOWNLOAD_LIMIT = 4
 # Alarm Clocks spent on retries this career (see the Retry handler below).
 RACE_RETRIES = 0
 # One lost-goal message per race, not per frame: the result screen stays up
@@ -1317,6 +1359,7 @@ def career_lobby():
   not_in_lobby = 0
   blank_panel = 0
   session_errors = 0
+  data_downloads = 0
   resume_taps = 0
   frozen_panel = 0
   last_digest = None
@@ -1634,6 +1677,53 @@ def career_lobby():
       sleep(3)
       continue
 
+    # "Data Download - Additional data (5.55 MB) needs to be downloaded.",
+    # raised on the title screen after a patch. Above the generic cancel for
+    # the usual reason - its Cancel is a 0.937 match - and above the whole
+    # out-of-career block, because the title screen behind it carries neither
+    # a nav bar to stop on nor anything else this loop can read.
+    #
+    # Declining is not an option the bot has: the game will not load past this,
+    # so Cancel only means being asked again. On 2026-10-07 the client raised
+    # it after a Session Error reload, the generic handler pressed Cancel -
+    # silently, as that call passes no text - and the run spent 50 minutes
+    # blind-tapping a title screen before the stall guard stopped it.
+    if matches["data_download"]:
+      data_downloads += 1
+      if data_downloads > DATA_DOWNLOAD_LIMIT:
+        error(f"The Data Download dialog has come back {data_downloads} times"
+              " after pressing OK. Stopping rather than pressing at it; the"
+              " career is saved and the download needs a person.")
+        return
+      # The dialog is a fixed-width shell - two captures 22 days and two sizes
+      # apart (11.27 MB, 5.55 MB) put OK on the same pixels, x 976-1209 /
+      # y 672-732 - so the constant is sound. OK is still looked for first,
+      # because the found box is free here: it comes off the frame this cycle
+      # already matched.
+      if not click(boxes=matches["ok"],
+                   text="Data Download: accepting the download."):
+        x, y = constants.DATA_DOWNLOAD_OK_MOUSE_POS
+        click(boxes=(x, y, 1, 1),
+              text="Data Download: accepting the download (by position).")
+      if not wait_for_data_download():
+        if state.stop_event.is_set():
+          return
+        continue
+      # Watched live on 2026-10-07: the download ran to completion and the game
+      # carried straight on to its home screen, no second title tap needed.
+      # The tap is kept anyway, for the case where it does drop back - it is
+      # free, because (960,940) is outside GAME_SCREEN_REGION and presses
+      # nothing on a home screen.
+      tx, ty = constants.TITLE_SCREEN_TAP_MOUSE_POS
+      click(boxes=(tx, ty, 1, 1), text="Tapping the title screen to start.")
+      RESUMING_CAREER = SEEN_LOBBY
+      resume_taps = 0
+      # However long the download took, it was progress, so it must not count
+      # towards the stall that stops the run.
+      not_in_lobby = 0
+      sleep(12)
+      continue
+
     # "Session Error - Returning to Title screen due to inactivity." Raised by
     # any long idle gap: after the game sat on dialogs for ~2.5h (2026-09-20),
     # and after it sat at the home screen for ~3h between careers, where the
@@ -1651,10 +1741,22 @@ def career_lobby():
               " attempts to walk back in. Stopping rather than pressing at it."
               " The career is saved - restart the game and resume it.")
         return
-      warning("Session Error: the game went back to its title screen after an"
-              " idle spell. Pressing Title Screen and walking back in.")
-      x, y = constants.SESSION_ERROR_BUTTON_MOUSE_POS
-      click(boxes=(x, y, 1, 1), text="Returning to the title screen.")
+      warning("A one-button title-screen dialog is up - Session Error after an"
+              " idle spell, or a Connection Error after a download. Pressing"
+              " Title Screen and walking back in.")
+      # Click the box the template found, not the remembered point. The gate is
+      # cut from the button itself, so the found box IS the target - and the
+      # constant is only right for the dialog drawn in the portrait panel. The
+      # same one-button shell is also used on the *title screen*, which is
+      # landscape: "Connection Error - Error code: 394" (2026-10-07, straight
+      # after a Data Download) puts its Title Screen at (960,703), where the
+      # constant's (553,704) is dialog body and presses nothing - three dead
+      # cycles and then a stop.
+      if not click(boxes=matches["session_error"],
+                   text="Returning to the title screen."):
+        x, y = constants.SESSION_ERROR_BUTTON_MOUSE_POS
+        click(boxes=(x, y, 1, 1),
+              text="Returning to the title screen (by position).")
       # The reload is the longest wait in this loop, so give F1 somewhere to
       # land in the middle of it rather than holding the thread for 22s.
       sleep(10)
@@ -2145,6 +2247,7 @@ def career_lobby():
     not_in_lobby = 0
     dialogue_tap = False
     session_errors = 0
+    data_downloads = 0
     _blind_tap["shot"] = False
     # Past here the lobby is on screen, so a later home screen means the game
     # left the career on its own (the daily reset), not that the career ended.
