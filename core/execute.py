@@ -871,13 +871,19 @@ def report_career_end(screen):
               f"Stats: {_stat_line(state.LAST_STATS)}\n"
               f"Sparks: {state.LAST_SPARKS or 'not read'}"
               + (f"\nuuid: {state.CAREER_UUID}" if state.CAREER_UUID else ""),
-              # The Complete Career screen, kept when it was on screen. A bot
-              # that joined the career after it never saw one, so whatever is
-              # on screen now stands in.
-              photo=state.CAREER_END_FRAME
-              or notify.save_frame(screen, "career_end_"))
+              # Two pictures, in this order: the Complete Career screen -
+              # kept when it was on screen, and a bot that joined the career
+              # after it never saw one, so whatever is on screen now stands in
+              # - then the Spark Selection screen as it was when the set was
+              # kept. The words only summarise the sparks; which ones they
+              # were is the thing worth looking at, and that screen is long
+              # gone by the time this sends.
+              photo=[state.CAREER_END_FRAME
+                     or notify.save_frame(screen, "career_end_"),
+                     state.LAST_SPARKS_FRAME])
   state.CAREER_END_FRAME = None
   state.LAST_SPARKS = None
+  state.LAST_SPARKS_FRAME = None
 
 def panel_digest(screen):
   """A fingerprint of the game panel, for spotting a client that has frozen.
@@ -1920,6 +1926,23 @@ def career_lobby():
           debug("Stopped during the career-start walk.")
           return
         error("Could not start the next career; stopping. The reason is above.")
+        # Worth a message, unlike the other stops: this one ends an unattended
+        # run on something outside the bot - a borrow list another player
+        # changed, a full Veteran roster, no TP bottles - and the game sits on
+        # a setup screen until somebody looks. career_start carries the reason
+        # because start() hands back a bare False.
+        notify.send("Could not start the next career; the bot has stopped.\n"
+                    f"{career_start.LAST_FAILURE or 'The log says why.'}",
+                    # The frame the walk kept, when it kept one - the borrow
+                    # list, for the failures that are about the borrow list.
+                    # Grabbing here instead photographs Support Formation,
+                    # because closing the list is the last thing those do, and
+                    # that screen says nothing about why. This cycle's
+                    # `screen` is no better: it is the home screen the walk
+                    # started from.
+                    photo=(career_start.LAST_FAILURE_FRAME
+                           or notify.save_frame(ImageGrab.grab(),
+                                                "career_start_failed_")))
         return
       info("The game is on its own screens, so the career is over."
            " Stopping the bot rather than tapping at a screen it cannot drive."

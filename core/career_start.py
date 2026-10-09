@@ -124,6 +124,32 @@ BORROW_ATTEMPTS = 2
 PROGRESS = os.path.join(os.environ.get("UMA_LOG_DIR", "logs"),
                         "career_start_progress.json")
 
+# Why the last walk gave up, in one line fit to send to a phone. The log
+# already says it, but a run that stops at 03:00 on a borrow list somebody
+# else changed is only worth knowing about if it reaches whoever can fix it -
+# and `start()` hands back a bare False, so the reason has to be carried here.
+# Set at every return that means a person is needed, and only there: a stop, a
+# freeze and an already-running career are not failures.
+LAST_FAILURE = ""
+# The frame to send with it, when the screen the walk gave up on is not the one
+# it leaves behind. The borrow failures are the case that matters: they close
+# the list before handing back, so a frame grabbed at the stop shows Support
+# Formation - the one screen that says nothing about why. Keep the list.
+LAST_FAILURE_FRAME = None
+
+def _fail(reason, screen=None):
+  """Record why the walk is giving up, and hand back the failure.
+
+  Pass `screen` when the frame in hand is worth looking at; it is saved the
+  same way every other Telegram picture is, so it gets pruned with them.
+  """
+  global LAST_FAILURE, LAST_FAILURE_FRAME
+  LAST_FAILURE = reason
+  if screen is not None:
+    from core import notify
+    LAST_FAILURE_FRAME = notify.save_frame(screen, "career_start_failed_")
+  return False
+
 def _panel_digest(screen):
   """core.execute's frozen-client fingerprint. Imported late, like _click."""
   from core.execute import panel_digest
@@ -316,7 +342,7 @@ def take_borrow(screen, wanted):
   rows = read_borrow_rows(screen)
   if not rows:
     warning("The Borrow Card list would not read; leaving it alone.")
-    return False
+    return _fail("The Borrow Card list would not read.", screen)
   # Several lenders can offer the same card - three of the four rows on the
   # captured list are Light Hello - so ties go to the first, and read_boxes
   # returns reading order, which makes that the topmost row. With the list
@@ -341,7 +367,7 @@ def take_borrow(screen, wanted):
     warning(f"No row on the Borrow Card list reads as '{wanted}'"
             f" (best {best_score}). The list held: {names}."
             " Not taking a different card.")
-    return False
+    return _fail(f"No lender offers '{wanted}' any more.", screen)
   text, pos = best
   info(f"Borrowing '{wanted}' from the row reading '{text}'.")
   _click(pos, "Taking the borrowed card.")
@@ -360,26 +386,31 @@ def restore_tp():
   """
   from core.execute import click
   if not state.TP_BOTTLE_FLOOR >= 0:
-    return False
+    return _fail("Short of TP to start a career, and tp_bottle_floor is"
+                 " negative, so no bottle may be spent.")
   if not click(img=TEMPLATES["restore_tp"], minSearch=2,
                region=constants.GAME_SCREEN_REGION,
                text="Short of TP to start a career; opening Recover TP."):
     debug("No Restore button on the TP prompt.")
-    return False
+    return _fail("Short of TP to start a career and the TP prompt had no"
+                 " Restore button.")
   sleep(1.5)
   row = _find(constants.TP_TOUGHNESS_ROW_ASSET)
   if not row:
     warning("No TP bottle on the restore list; not starting a career.")
-    return False
+    return _fail("Short of TP to start a career and no Toughness 30 bottle is"
+                 " left.")
   x, y, w, h = row
   held = _number(x + 90, y + 20, 100, 36)
   if held < 0:
     warning("Couldn't read how many TP bottles are left; not spending one.")
-    return False
+    return _fail("Short of TP to start a career and the bottle count would"
+                 " not read.")
   if held <= state.TP_BOTTLE_FLOOR:
     info(f"{held} TP bottles left, at or under the floor of"
          f" {state.TP_BOTTLE_FLOOR}; not spending one to start a career.")
-    return False
+    return _fail(f"Short of TP to start a career: {held} bottles left, at or"
+                 f" under the floor of {state.TP_BOTTLE_FLOOR}.")
   info(f"Spending 1 of {held} TP bottles to start a career.")
   _click((constants.TP_RESTORE_USE_X, y + h // 2), "Using the bottle.")
   sleep(1.5)
@@ -425,12 +456,16 @@ def start():
   the card could not be borrowed, or `Start Career!` stayed disabled for a
   reason a borrow does not fix.
   """
+  global LAST_FAILURE, LAST_FAILURE_FRAME
+  LAST_FAILURE = ""
+  LAST_FAILURE_FRAME = None
   wanted = remembered_card()
   if not wanted:
     warning("No borrowed card is remembered and none is configured"
             " (career_start.borrow_card), so the Friends slot cannot be"
             " filled and a career cannot start.")
-    return False
+    return _fail("No borrow card is remembered or configured"
+                 " (career_start.borrow_card).")
   info(f"Starting a career: last config, borrowing '{wanted}'.")
   borrows = 0
   takes = 0
@@ -480,7 +515,7 @@ def start():
       error("The Veteran Umamusume roster is full (260/260), so the game will"
             " not start a career. Transfer a veteran and start the bot again;"
             " tools/veteran_scan.py reads the roster.")
-      return False
+      return _fail("The Veteran Umamusume roster is full (260/260).", screen)
 
     if matches["restore_tp"]:
       if not restore_tp():
@@ -511,11 +546,14 @@ def start():
         warning("The Borrow Card list is still open after"
                 f" {BORROW_ATTEMPTS} attempts; closing it and stopping.")
         _click(constants.BORROW_CLOSE_MOUSE_POS, "Closing the Borrow Card list.")
-        return False
+        return _fail("The Borrow Card list would not close on a tapped row"
+                     f" after {BORROW_ATTEMPTS} attempts.", screen)
       if take_borrow(screen, wanted):
         borrowed = True
         sleep(2)
       else:
+        # take_borrow has already recorded why - the list would not read, or
+        # it does not hold the card - so leave LAST_FAILURE alone here.
         _click(constants.BORROW_CLOSE_MOUSE_POS, "Closing the Borrow Card list.")
         return False
       continue
@@ -548,7 +586,9 @@ def start():
               " The other cause is a support card of the same character as the"
               " trainee, which wears an orange Trainee banner with a red '!' -"
               " swap it out. Not starting a career.")
-        return False
+        return _fail("Start Career! stayed disabled with the Friends slot"
+                     " filled - most likely a support card of the same"
+                     " character as the trainee.", screen)
       borrows += 1
       _click(constants.SUPPORT_FRIENDS_SLOT_MOUSE_POS,
              "Opening the Friends slot to borrow.")
@@ -612,7 +652,7 @@ def start():
 
   error(f"Gave up starting a career after {STEP_LIMIT} steps. The game is"
         " parked on whatever the last step reached.")
-  return False
+  return _fail(f"Gave up after {STEP_LIMIT} steps of the career-start walk.")
 
 def _home(screen):
   """The game's own home screen, where CAREER lives. The setup screens carry the

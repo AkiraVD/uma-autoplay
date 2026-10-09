@@ -373,6 +373,12 @@ def _keep(why):
   # The end-of-career notification reports what was kept, and this is the only
   # place that knows it.
   state.LAST_SPARKS = why
+  # And the only moment the set is still on screen. By the time that message
+  # goes out the career has walked through Confirm, a keep dialog and the To
+  # Home screen, so a frame grabbed there shows none of it. Taken before the
+  # press, so the rows are unobscured by the dialog that follows.
+  from core import notify
+  state.LAST_SPARKS_FRAME = notify.save_frame(ImageGrab.grab(), "sparks_kept_")
   if not _press(CONFIRM_BTN, region=constants.SCREEN_BOTTOM_REGION,
                 text=f"Keeping the sparks ({why})."):
     warning("On the spark screen but could not find Confirm; leaving it alone"

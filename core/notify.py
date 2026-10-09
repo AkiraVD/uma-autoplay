@@ -107,20 +107,37 @@ def _post(text, token=None, chat_id=None):
   except Exception as e:
     return _redact(f"{type(e).__name__}: {e}", token)
 
+def _photos(photo):
+  """`photo` as a list of paths. One, several, or none - callers pass whichever
+  they have, and a None in a list is a frame that could not be kept."""
+  if not photo:
+    return []
+  if isinstance(photo, (list, tuple)):
+    return [p for p in photo if p]
+  return [photo]
+
 def _deliver(text, photo, token=None, chat_id=None):
   """One message when the picture and the words fit together, else both.
 
   Shared by the queue and the command listener so a notification and an answer
   to /health arrive the same way.
+
+  Several pictures arrive as several messages, the first carrying the words.
+  Not an album: sendMediaGroup is a different call with its own multipart
+  shape, and the one caller that sends two - the end of a career - wants them
+  in a fixed order anyway, which an album does not promise.
   """
   token, chat_id = _creds(token, chat_id)
-  if photo and text and len(text) <= CAPTION_LEN:
-    if _send_photo(photo, text, token, chat_id) is None:
+  photos = _photos(photo)
+  if photos and text and len(text) <= CAPTION_LEN:
+    if _send_photo(photos[0], text, token, chat_id) is None:
+      for extra in photos[1:]:
+        _send_photo(extra, None, token, chat_id)
       return None
     # The photo failed; the words still have to arrive.
   reason = _post(text, token, chat_id) if text else None
-  if photo:
-    _send_photo(photo, None, token, chat_id)
+  for one in photos:
+    _send_photo(one, None, token, chat_id)
   return reason
 
 def _run():
@@ -160,7 +177,7 @@ def _ensure_worker():
       _worker.start()
 
 def send(text, photo=None):
-  """Queue a message, with a picture when there is one to send.
+  """Queue a message, with a picture - or a list of them - when there is one.
 
   True when it was queued, False when it was not. False is the ordinary case
   for an unconfigured or switched-off notifier, not an error - every caller

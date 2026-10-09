@@ -118,6 +118,12 @@ TELEGRAM_CHAT_ID = ""
 # report them without re-reading a screen that has already gone.
 LAST_STATS = None
 LAST_SPARKS = None
+# The Spark Selection screen as it stood when the set was kept. The words in
+# LAST_SPARKS are a summary - "blue 2*, 4 white spark(s)" - and the whole point
+# of a spark is which ones, so the message carries the screen too. Grabbed at
+# the keep rather than at the end of the career, because by then the screen is
+# three dialogs gone.
+LAST_SPARKS_FRAME = None
 # The career the bot is playing, when it started that career itself.
 CAREER_UUID = None
 # The Final Confirmation frame of that career, for the message announcing it.
