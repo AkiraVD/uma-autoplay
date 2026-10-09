@@ -23,6 +23,12 @@ update_config()
 
 import core.state as state                 # noqa: E402
 state.reload_config()
+# The baseline is the *default* mode, not whatever this machine is configured
+# for. reload_config() reads the real config.json, so a user who had switched
+# skill.buy_mode to "parent" failed four of these on their own settings, with
+# nothing in the output to say the config was the reason. The parent-mode
+# tests opt in with with_mode("parent") and restore it afterwards.
+state.SKILL_BUY_MODE = "trials"
 
 import core.masterdb as masterdb           # noqa: E402
 import core.skill as K                     # noqa: E402
@@ -339,6 +345,53 @@ def test_parent_mode_buys_sparks_not_performance():
     restore(saved)
     restore_mode(saved_mode)
 
+def test_parent_mode_spends_nothing_on_a_skill_that_cannot_spark():
+  """The two paths that reach the buy button without going through the plan.
+
+  `worth_points` guards the optimizer, and the tests above pin it. These two do
+  not go through it: the end-of-career *fallback* buys whatever is affordable
+  when no plan could be made, and a *forced* skill is looked up in the
+  unfiltered `on_screen` pool so a parent career can reach the scenario golds.
+  Both used to be able to spend the whole budget on skills that leave no spark.
+  """
+  if not HAVE_DB:
+    print("skip  master.mdb not present")
+    return
+  saved_mode = with_mode("parent")
+  try:
+    sparks = BY_NAME["Sapporo Racecourse ◎"]
+    no_spark = BY_NAME["Sapporo Racecourse ○"]
+    ok("the fixture sparks", S.inheritable(sparks))
+    ok("and its ○ does not", not S.inheritable(no_spark))
+
+    # The fallback's rule, as the loop applies it: parent mode keeps only rows
+    # that both read and spark. An unread row has no name to judge, and this is
+    # the path that once bought Lone Wolf and Triple 7s.
+    def kept(record):
+      return bool(record and S.inheritable(record))
+    ok("the fallback keeps a sparking skill", kept(sparks))
+    ok("the fallback drops a non-sparking one", not kept(no_spark))
+    ok("the fallback drops an unreadable row", not kept(None))
+
+    # The forced guard. A gold is the case worth having: parent mode keeps
+    # golds out of the plan, so forcing one is legitimate - but only when it
+    # sparks.
+    gold_spark = BY_NAME["It's On!"]
+    ok("a forced gold that sparks is allowed",
+       S.inheritable(gold_spark) and gold_spark.get("rarity") == S.GOLD_RARITY)
+    ok("a forced skill that cannot spark is refused by the same test",
+       not S.inheritable(BY_NAME["Ignited Spirit SPD"]))
+
+    # Every name the shipped config forces has to survive that guard, or the
+    # list quietly shrinks the first time a parent career runs.
+    forced = list(getattr(state, "URA_FORCE_BUY_SKILLS", []))
+    unknown = [n for n in forced if n not in BY_NAME]
+    ok("every forced name is in master.mdb", not unknown, str(unknown))
+    dead = [n for n in forced if n in BY_NAME and not S.inheritable(BY_NAME[n])]
+    ok("and every forced name pays a spark", not dead, str(dead))
+  finally:
+    restore_mode(saved_mode)
+
 def test_trials_mode_is_unchanged_by_the_new_setting():
   """The default has to behave exactly as it did before parent mode existed."""
   if not HAVE_DB:
@@ -385,6 +438,7 @@ for test in [test_config_is_wired, test_only_usable_skills,
              test_the_budget_comes_from_the_buy_screen,
              test_reading_failures_are_safe,
              test_parent_mode_buys_sparks_not_performance,
+             test_parent_mode_spends_nothing_on_a_skill_that_cannot_spark,
              test_trials_mode_is_unchanged_by_the_new_setting,
              test_an_unknown_mode_falls_back]:
   print(f"\n-- {test.__name__}")

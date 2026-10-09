@@ -444,6 +444,16 @@ def buy_planned():
       info(f"{card['name']} is wanted for its spark but costs {card['cost']}"
            f" with {budget} left; skipping it.")
       continue
+    # The forced list is looked up in `on_screen`, which is deliberately
+    # unfiltered - that is how a parent career reaches the scenario golds the
+    # plan's own rules keep out. Unfiltered is not unchecked, though: the one
+    # thing a forced buy must not do in parent mode is spend 200 points on a
+    # skill that leaves no spark, which is the whole objective.
+    if parent_mode() and not skill_score.inheritable(card):
+      warning(f"{card['name']} is in ura.force_buy_skills but leaves no white"
+              " spark, and this career is being run for a parent; not buying"
+              " it. Drop it from the list, or switch skill.buy_mode.")
+      continue
     info(f"Buying {card['name']} first: ura.force_buy_skills wants it for the spark"
          f" ({card['cost']} points).")
     forced.append(card)
@@ -498,12 +508,30 @@ def buy_planned():
   return found
 
 def buy_anything_affordable():
-  """The old end-of-career behaviour, kept as the fallback."""
+  """The old end-of-career behaviour, kept as the fallback.
+
+  "Anything" is narrower in parent mode: a skill that leaves no white spark is
+  worth nothing to a parent, so the fallback holds to the same `inheritable`
+  rule the plan does rather than emptying the points into whatever is on
+  screen. A row whose name would not read is skipped there for the same
+  reason - there is no way to tell whether it sparks, and this is the path
+  that once bought Lone Wolf and Triple 7s.
+
+  The points that go unspent are a real cost: leftovers are lost at career
+  end, and even a non-sparking skill adds `grade_value`, which raises the
+  career's rank and so the star table every white spark rolls on. Spending
+  them on nothing is the deliberate trade - see docs/parenting.md.
+  """
   bought = set()
   found = False
+  parent = parent_mode()
+  skipped = 0
   for box, text, record, cost, hint in scan_rows():
     x, y, w, h = box
     if record and not skill_score.beneficial(record):
+      continue
+    if parent and not (record and skill_score.inheritable(record)):
+      skipped += 1
       continue
     # Rows repeat within a scan now - see buy_skill. An unrecognised row has no
     # name to key on, so it is guarded by position instead, which is the best
@@ -517,6 +545,9 @@ def buy_anything_affordable():
     control.click(x=x + 5, y=y + 5, duration=0.15)
     bought.add(name)
     found = True
+  if parent and skipped:
+    info(f"Fallback buy: skipped {skipped} row(s) that leave no white spark,"
+         " because this career is being run for a parent.")
   return found
 
 def check_skill_pts_for_plan():
