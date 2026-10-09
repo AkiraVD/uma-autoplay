@@ -573,3 +573,68 @@ DATE_ARRAY = [
     "Early Sep", "Late Sep", "Early Oct", "Late Oct",
     "Early Nov", "Late Nov", "Early Dec", "Late Dec"
 ]
+
+# ---------------------------------------------------------------------------
+# Veteran Roster (Enhance -> Veteran Umamusume -> List), read by core/veteran.py
+# and walked by tools/veteran_list.py. Measured on a live 1920x1080 roster on
+# 2026-10-09; docs/screen-map.md carries the frames and the separation numbers.
+#
+# The game draws its portrait UI in x 150..960 of the landscape window, so
+# every number here is left of 960 even though the screen is 1920 wide.
+VETERAN_HOME_ENHANCE_MOUSE_POS = (311, 1040)   # bottom nav, left-most tab
+VETERAN_ENHANCE_MENU_MOUSE_POS = (552, 877)    # Enhance -> Veteran Umamusume
+VETERAN_LIST_MOUSE_POS = (552, 686)            # Veteran Umamusume -> List
+VETERAN_ROSTER_BACK_MOUSE_POS = (211, 911)
+
+# The roster's footer. "Registered 191/260" is the only statement of how many
+# cards there are, and the walk needs it: the Details dialog's next arrow wraps
+# around at the end of the list rather than greying out (checked 2026-10-09 by
+# pressing the previous arrow on the first card, which landed on the last one),
+# so nothing on the dialog itself says when a lap is done.
+VETERAN_ROSTER_REGISTERED_REGION = (266, 822, 176, 32)
+VETERAN_ROSTER_SORT_KEY_REGION = (596, 820, 150, 36)
+VETERAN_ROSTER_SORT_ORDER_REGION = (750, 820, 84, 36)
+VETERAN_ROSTER_SORT_ORDER_MOUSE_POS = (789, 837)
+VETERAN_ROSTER_FIRST_CARD_MOUSE_POS = (327, 150)
+
+# Umamusume Details, opened by tapping a card. Everything below is fixed on the
+# dialog, which is why the walk never touches the grid again once it is open.
+VETERAN_DETAILS_TEMPLATE = "assets/roster/details_title.png"
+VETERAN_NEXT_MOUSE_POS = (838, 385)            # > beside the aptitude block
+VETERAN_PREV_MOUSE_POS = (267, 385)
+VETERAN_CLOSE_MOUSE_POS = (552, 997)
+VETERAN_NAME_REGION = (500, 86, 262, 76)       # "[variant]" over the name
+VETERAN_RANK_REGION = (450, 95, 80, 50)        # the letter above "RANK"
+VETERAN_RATING_REGION = (318, 220, 112, 30)
+VETERAN_EPITHET_REGION = (533, 166, 190, 30)
+VETERAN_MEMO_REGION = (556, 210, 236, 36)      # "-" when no memo is set
+VETERAN_MEMO_PENCIL_MOUSE_POS = (818, 228)
+VETERAN_STATS_REGION = (265, 255, 580, 70)
+VETERAN_APTITUDE_REGION = (258, 335, 592, 106)
+VETERAN_TAB_SKILLS_MOUSE_POS = (362, 466)
+VETERAN_TAB_INSPIRATION_MOUSE_POS = (552, 466)
+VETERAN_TAB_CAREER_MOUSE_POS = (741, 466)
+
+# The scrolling panel under the tabs, shared by Skills and Inspiration.
+VETERAN_PANEL_BBOX = (265, 505, 845, 940)
+# Symmetric about the panel's middle (y 722) for the reason SKILL_SCROLL_* is:
+# a drag that targets a point off-screen is clamped and travels short, so the
+# rewind would never undo the scan.
+VETERAN_PANEL_SCROLL_UP_FROM_MOUSE_POS = (400, 592)
+VETERAN_PANEL_SCROLL_DOWN_FROM_MOUSE_POS = (400, 852)
+VETERAN_PANEL_SCROLL_DISTANCE = 260
+
+# Memo, opened by the pencil. The game states the 9-character limit on the
+# dialog itself, which is what caps the generated ids at V001..V999.
+VETERAN_MEMO_TEMPLATE = "assets/roster/memo_title.png"
+VETERAN_MEMO_FIELD_MOUSE_POS = (552, 508)
+# Tapping the field puts the caret where the tap landed, and a triple click
+# does NOT select the text (checked 2026-10-09: it left the caret mid-word and
+# the new id was typed into the middle of the old one, giving "V0090101").
+# So the caret is put past the end of the text first - the box runs to x 810
+# and nine characters reach about x 630 - and the field is cleared from there.
+VETERAN_MEMO_FIELD_END_MOUSE_POS = (730, 508)
+VETERAN_MEMO_FIELD_REGION = (320, 487, 450, 42)
+VETERAN_MEMO_OK_MOUSE_POS = (686, 704)
+VETERAN_MEMO_CANCEL_MOUSE_POS = (418, 704)
+VETERAN_MEMO_MAX_CHARS = 9

@@ -2347,3 +2347,122 @@ Two endings, both of which clear the dialog:
 
 Error 394 was transient here and the host's own network was fine throughout
 (curl 200, ping 58ms), so do not read it as the machine being offline.
+
+
+## Veteran Roster: the whole list, card by card (measured 2026-10-09)
+
+`core/veteran.py` and `tools/veteran_list.py`. Route from Home:
+**Enhance** (bottom nav, left-most, `(311,1040)`) -> **Veteran Umamusume**
+`(552,877)` -> **List** `(552,686)`.
+
+### The roster grid
+
+Five columns at x 327/439/551/663/775, rating text at y 215/347/479/611/743,
+row pitch 132 - the same numbers `tools/veteran_scan.py` has had since
+2026-09-12, re-checked here. The footer carries everything the walk needs:
+
+| what | where | read as |
+|---|---|---|
+| `Registered 191/260` | `(266,822,176,32)` | the count the walk trusts |
+| sort key, `Date Acquired` | `(596,820,150,36)` | OCR adds a stray capital for the icon; `tidy_button` drops it |
+| sort order, `Asc` / `Desc` | `(750,820,84,36)` | tapped at `(789,837)` to flip |
+| first card | `(327,150)` | the only grid tap the walk makes |
+
+**The order matters.** The ids written into the memos are positional, so the
+scan forces **Date Acquired / Asc**: oldest first is the only order where a
+career finishing later *appends* instead of renumbering every card a memo has
+already been written for.
+
+### Umamusume Details
+
+Opened by tapping a card. Recognised by `assets/roster/details_title.png`
+(the title bar text), which separated +0.337 over five positives and five
+negatives - and scores 0.663 when the Memo dialog is over it, so one template
+tells "details" and "memo on top of details" apart.
+
+| what | where |
+|---|---|
+| `[variant]` over the name | region `(500,86,262,76)` |
+| rank badge letter | region `(450,95,80,50)` |
+| rating | region `(318,220,112,30)` |
+| epithet | region `(533,166,190,30)` |
+| memo text (`-` when unset) | region `(556,210,236,36)` |
+| memo pencil | `(818,228)` |
+| five stats | region `(265,255,580,70)` |
+| aptitude block | region `(258,335,592,106)` |
+| tabs Skills / Inspiration / Career Info | `(362,466)` / `(552,466)` / `(741,466)` |
+| the scrolling panel | bbox `(265,505,845,940)` |
+| previous / next uma | `(267,385)` / `(838,385)` |
+| Close | `(552,997)` |
+
+**The next arrow is what makes a full scan cheap** - the grid is never
+scrolled or re-found after the first card - and it has two properties worth
+writing down:
+
+- **It wraps.** Pressing the previous arrow on the first card landed on the
+  last one ([Starlight Beat] Oguri Cap, 10,904, in Desc order). Nothing on the
+  dialog says a lap is finished, so the footer's count is the stop.
+- **The selected tab persists** across a step, so a card costs one tab switch,
+  not two.
+
+### Reading the panel
+
+Rows are found by OCR, not by a template, so there is no anchor asset. Per
+frame, in panel-local coordinates:
+
+- **Columns** split at x 330. Pill colour is sampled at x 320 (left) and 555
+  (right), 15px above the top of the row's stars: blue stat, pink aptitude,
+  green unique, white skill-or-race.
+- **Sparks** are found by their **filled stars** - 14-16px gold blobs of
+  55-150px at x 188/208/228 (left) and 421/441/461 (right), rows 49.75px
+  apart. The portrait's own rank badge is gold too, hence the x > 150 filter.
+  The name is the OCR text in the band 42px above to 4px below the stars; it
+  reaches below them because a long name wraps onto a line level with them.
+- **`Legacy Origin`** is the boundary. Everything under that header belongs to
+  the career's parents and is skipped.
+- **Clipping.** A row cut off by the panel edge reads as a different row -
+  Mayano Top Gun's `Flashy☆Landing` came back as `Tasi} Landing` - so a row
+  whose group touches an edge is dropped and picked up on the overlapping
+  pass. The **top** margin is only applied from the second pass on: on the
+  first the list is rewound, nothing is clipped, and any top margin at all
+  costs the right-hand column's first row, which starts 8px in.
+
+### What would not read, and what was done instead
+
+- **The aptitude grades** (`Turf A`, `Long S`) are stylised coloured glyphs.
+  easyocr returns nothing for them. Not read; the strip's region is recorded
+  above for whoever wants a template bank.
+- **The stat grade badges** merge into the number beside them - Symboli
+  Rudolf's 1005 Speed read as `81005` - so the left 42px of each cell is
+  painted white before the strip is read. 42 and not more: the numbers start
+  44-50px into their cell, and at 46 the Wit column's `1013` read as `13`.
+- **The rank badge's `+`** is dropped by OCR about half the time. The letter
+  reads at 0.99 with LANCZOS upscaling (bicubic gave 0.41), and the plus is
+  taken from how wide the ink is: three plain badges measured 0.91, 1.03 and
+  1.07 of their height, the one `+` measured 1.60. Between 1.20 and 1.35 the
+  card is reported as unsure rather than guessed - about one in fourteen.
+- **A skill's ○ / ◎ rank** is still not readable. OCR
+  renders it as @, U, o or 0; template matching the two rings was tried on
+  2026-10-09 and dropped, because they differ only by a 4px inner ring and
+  scored within 0.06 of each other on real rows, close enough that the winner
+  flipped with the pixel the match landed on. Names are stored with the glyph
+  stripped rather than with a guess attached.
+
+### Memo
+
+The pencil opens it. `assets/roster/memo_title.png` separated +0.369.
+
+| what | where |
+|---|---|
+| input field | `(552,508)`, text region `(320,487,450,42)` |
+| a point past the end of the text | `(730,508)` |
+| Cancel / OK | `(418,704)` / `(686,704)` |
+| limit | the dialog states **9 characters** |
+
+**A triple click does not select the text.** It puts the caret where it
+landed, so backspacing from there cleared only half of it and the new id was
+typed into the middle of the old one: writing `V009` over `V0V00101` gave
+`V0090101`. The caret is now put past the end of the text, `End` is pressed,
+and the field is cleared from the right. The field is read back **before** OK
+is pressed, while Cancel is still on screen - a memo that went in wrong is a
+wrong label on a real card.

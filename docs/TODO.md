@@ -190,6 +190,36 @@ Still open from the same log:
   cannot be told from a miss without re-running it. One debug line listing the
   rows would make the next one of these diagnosable from the log alone.
 
+## Veteran Roster scan (2026-10-09)
+
+`tools/veteran_list.py scan` walks all 191 cards into `logs/veterans.json` at
+about 21 s a card, so a full roster is a little over an hour. Verified over 14
+cards; the whole roster has not been run yet. What is still open:
+
+- **The rank badge's `+`** is inferred from the width of the ink, and about
+  one card in fourteen lands in the undecided band and is reported as
+  `"rank": null`. A template bank per rank, cut the way `assets/digits/` was,
+  would settle it - there are only fifteen grades.
+- **The aptitude grades are not read at all.** easyocr returns nothing for the
+  stylised letters, so a veteran's Turf/Long/Pace grades are missing from the
+  file even though the strip is right there. Same answer as above: a template
+  per grade. That is the one field a parent is picked on that the scan does
+  not have, since the pink spark is drawn from exactly the A+ aptitudes.
+- **A skill's ○ / ◎ rank is still unknown** (see `screen-map.md` for the two
+  attempts). It matters for parent farming - only the top of a tier group pays
+  a spark - so names are stored stripped rather than guessed.
+- **One unique in fourteen will not read.** Mihono Bourbon's `G00 1st. F∞;`
+  came off a card as `GOO Ist: Fo;`, which is 58 against the real name and 57
+  against the runner-up, so it is refused and flagged. The green spark and the
+  first row of the Skills tab already repair each other; this one fails both.
+- **Nothing consumes the file yet.** It exists so a parent can be chosen from
+  what the roster actually holds rather than from memory. The obvious next
+  step is a picker, or a ranking against the rules in `docs/parenting.md`.
+- **The ids are positional.** They hold as long as the roster stays in
+  Date Acquired / Asc order and nothing is transferred out from the middle; a
+  rescan warns when a card carries an id that is not its own, which is the
+  signal to renumber.
+
 ## Smaller open items
 
 - ~~**A frozen client is invisible to `game_panel_blank()`.**~~ **Detected

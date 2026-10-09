@@ -22,6 +22,7 @@ BUTTONS = {"left": 1, "middle": 2, "right": 3}
 # characters are keysyms under their own names.
 KEYSYMS = {
   "esc": "Escape", "escape": "Escape", "enter": "Return", "return": "Return",
+  "shift": "Shift_L", "home": "Home", "end": "End", "delete": "Delete",
   "space": "space", "tab": "Tab", "backspace": "BackSpace",
   "up": "Up", "down": "Down", "left": "Left", "right": "Right",
 }

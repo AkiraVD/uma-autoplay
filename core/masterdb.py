@@ -37,6 +37,9 @@ SKILL_NAMES = 47
 SKILL_DESCRIPTIONS = 48
 EVENT_NAMES = 181
 RACE_NAMES = 28
+# The short name, which is what the game prints on a Spark pill:
+# "Japanese Derby" where RACE_NAMES has "Tokyo Yushun (Japanese Derby)".
+RACE_SHORT_NAMES = 29
 
 _cache = {}
 _copy_of = {}

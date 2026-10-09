@@ -217,3 +217,32 @@ def press(keys, presses=1, interval=0.0):
       keyboard.tap(_devices().keycode(name), HOLD)
       time.sleep(interval)
   time.sleep(PAUSE)
+
+# Characters a memo id can be made of, and the key each one is typed with. The
+# backends tap keys by name, so a capital is the unshifted key held under
+# shift; nothing here needs a symbol that is not on an en-US layout.
+SHIFTED = {c.upper(): c for c in "abcdefghijklmnopqrstuvwxyz"}
+
+def write(text, interval=0.04):
+  """Type `text` into whatever has keyboard focus.
+
+  pyautogui has `write`; the uinput and XTEST backends tap keycodes by name and
+  know nothing about case, so a capital is sent as shift + the plain key. Only
+  the characters in SHIFTED and the plain printable keys are supported, which
+  covers the memo ids and is checked by the caller rather than guessed at here.
+  """
+  if backend() == "pyautogui":
+    return pyautogui.write(text, interval=interval)
+  keyboard = _get_keyboard()
+  devices = _devices()
+  shift = devices.keycode("shift")
+  for char in text:
+    plain = SHIFTED.get(char)
+    if plain is not None:
+      keyboard.key(shift, True)
+      keyboard.tap(devices.keycode(plain), HOLD)
+      keyboard.key(shift, False)
+    else:
+      keyboard.tap(devices.keycode(char), HOLD)
+    time.sleep(interval)
+  time.sleep(PAUSE)
