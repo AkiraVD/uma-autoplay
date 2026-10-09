@@ -310,6 +310,23 @@ def on_error():
   return bool(match_template(constants.VETERAN_ERROR_TEMPLATE, threshold=0.79))
 
 
+def on_skill_details():
+  """The Skill Details popup a tap on a skill row opens. See the note in
+  utils/constants.py - the scan opens it by accident at each end of the
+  list, and it hides everything the walk needs to press next."""
+  return bool(match_template(constants.VETERAN_SKILL_DETAILS_TEMPLATE, threshold=0.85))
+
+
+def dismiss_popup():
+  """Close whatever is sitting over the Details dialog. Returns what it was."""
+  for name, present in (("error", on_error), ("skill details", on_skill_details)):
+    if present():
+      tap(constants.VETERAN_ERROR_CLOSE_MOUSE_POS, settle=1.2)
+      debug(f"Closed the {name} popup.")
+      return name
+  return None
+
+
 def dismiss_error():
   """Close the error dialog if it is up. Returns whether one was there."""
   if not on_error():
@@ -486,7 +503,31 @@ def tab_selected(bbox, screen=None):
   return float(green.mean()) > TAB_GREEN
 
 
-def select_tab(point, bbox, tries=4):
+def tap_until(point, check, tries=5, label="screen"):
+  """Tap until `check` holds, giving the game longer each time.
+
+  Every retry after the first releases the mouse button first. A drag whose
+  release the game missed leaves the pointer logically down, and the next
+  click is then swallowed as the end of that drag rather than taken as a
+  click - which is the shape of the failure this exists for: 11 cards of a
+  191-card run lost their Inspiration tab, and 14 lost their memo, scattered
+  through the run and always straight after the Skills panel had been
+  dragged through several screens.
+  """
+  for attempt in range(tries):
+    if check():
+      return True
+    if attempt:
+      control.mouseUp()
+      sleep(0.2)
+    tap(point, settle=0.8 + 0.7 * attempt)
+  if check():
+    return True
+  warning(f"The {label} at {point} would not come up after {tries} taps.")
+  return False
+
+
+def select_tab(point, bbox, tries=5):
   """Tap a tab and make sure it actually came up.
 
   Nothing downstream can tell a tab that did not switch from a card with
@@ -494,14 +535,7 @@ def select_tab(point, bbox, tries=4):
   because the Inspiration tap was swallowed while the game was stalled, and
   the Skills panel was read as if it were the sparks panel.
   """
-  for attempt in range(tries):
-    if tab_selected(bbox):
-      return True
-    tap(point, settle=0.8 + 0.6 * attempt)
-  if tab_selected(bbox):
-    return True
-  warning(f"The tab at {point} would not come up after {tries} taps.")
-  return False
+  return tap_until(point, lambda: tab_selected(bbox), tries=tries, label="tab")
 
 
 def read_sparks_frame(screen, top_edge=PANEL_EDGE):
@@ -598,6 +632,27 @@ def tap(point, settle=0.6):
   sleep(settle)
 
 
+def rewind_panel():
+  """Scroll the panel back to the top, closing the popup each end-stop opens.
+
+  menu_scan.scroll_to_top cannot be used as it stands: it compares frames to
+  find the top, and the drag that reaches the top is also the drag that opens
+  Skill Details, so from that point on it is comparing frames of a popup.
+  """
+  previous = None
+  for step in range(PANEL["rewind_limit"]):
+    if state.stop_event.is_set():
+      return
+    dismiss_popup()
+    now = menu_scan.frame(PANEL)
+    if previous is not None and menu_scan.still(PANEL, previous, now):
+      sleep(PANEL["rewind_settle"])
+      return
+    previous = now
+    menu_scan.scroll(PANEL, up=True)
+  debug(f"Details panel still moving after {PANEL['rewind_limit']} drags.")
+
+
 def scan_panel(read_frame, stop_when=None, keep=None):
   """Scroll the panel top to bottom, collecting what `read_frame` reads.
 
@@ -614,7 +669,7 @@ def scan_panel(read_frame, stop_when=None, keep=None):
   fully on screen across several passes, so one screenshot could not show
   what the record was read from.
   """
-  menu_scan.scroll_to_top(PANEL)
+  rewind_panel()
   collected = []
   for pass_no in range(PANEL["passes"]):
     if state.stop_event.is_set():
@@ -632,6 +687,11 @@ def scan_panel(read_frame, stop_when=None, keep=None):
     before = menu_scan.frame(PANEL)
     menu_scan.scroll(PANEL, up=False)
     menu_scan.wait_for_list(PANEL)
+    # Before the stillness check, not after: the drag that fails to move the
+    # list is the drag that opens the popup, so the frame being compared
+    # would otherwise be a picture of the popup.
+    if dismiss_popup():
+      menu_scan.wait_for_list(PANEL)
     if menu_scan.still(PANEL, before, menu_scan.frame(PANEL)):
       return collected
   warning(f"Details panel still scrolling after {PANEL['passes']} passes.")
@@ -824,9 +884,7 @@ def write_memo(text):
   if len(text) > constants.VETERAN_MEMO_MAX_CHARS:
     raise ValueError(f"The game caps a memo at {constants.VETERAN_MEMO_MAX_CHARS} characters;"
                      f" {text!r} is {len(text)}.")
-  tap(constants.VETERAN_MEMO_PENCIL_MOUSE_POS, settle=1.0)
-  if not wait_for(on_memo):
-    warning("The memo dialog did not open; leaving the card as it was.")
+  if not tap_until(constants.VETERAN_MEMO_PENCIL_MOUSE_POS, on_memo, label="memo dialog"):
     return False
 
   # **OK is disabled while the text is unchanged.** It is drawn dark olive

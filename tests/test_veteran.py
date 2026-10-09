@@ -23,6 +23,10 @@ knowing why they are in the file:
   is drawn over the memo dialog and hides its title - so a run that only asked
   "did the memo close?" read the refusal as a success and then walked into the
   dialog it had left on screen.
+- `skill_details_popup` is what a drag the list cannot act on opens: the
+  scan taps a skill row by accident at each end of the list, and the popup
+  then hides the tab row, the pencil and the next arrow. It cost 11 of 191
+  cards their sparks, twice, before it was caught.
 - `career_info_tab` is here only as the third tab state. A tap the game
   swallows looks exactly like a card with nothing on it - that is how card 78
   of the first full run came back with zero sparks - so the walk checks which
@@ -193,6 +197,28 @@ def check_memo():
   ok("memo error: recognised", V.on_error.__doc__ is not None)
 
 
+def check_popups():
+  # Both of these cover the Details dialog, and the walk has to tell them
+  # apart from it rather than carrying on into a screen that is not there.
+  popup = frame("skill_details_popup")
+  error = frame("memo_error")
+  clean = frame("rudolf_splus_skills")
+  import core.recognizer as R
+  def scores(shot, template):
+    import cv2, numpy as np
+    a = cv2.cvtColor(np.asarray(shot.convert("RGB")), cv2.COLOR_RGB2BGR)
+    t = cv2.imread(template, cv2.IMREAD_COLOR)
+    return float(cv2.matchTemplate(a, t, cv2.TM_CCOEFF_NORMED).max())
+  for name, template, shot, want in (
+      ("skill details", V.constants.VETERAN_SKILL_DETAILS_TEMPLATE, popup, True),
+      ("skill details", V.constants.VETERAN_SKILL_DETAILS_TEMPLATE, clean, False),
+      ("memo error", V.constants.VETERAN_ERROR_TEMPLATE, error, True),
+      ("memo error", V.constants.VETERAN_ERROR_TEMPLATE, clean, False),
+      ("memo error", V.constants.VETERAN_ERROR_TEMPLATE, popup, False)):
+    got = scores(shot, template) >= 0.85
+    ok(f"{name} on {'its own frame' if want else 'another frame'}: {want}", got == want)
+
+
 def main():
   check_headers()
   check_stats()
@@ -201,6 +227,7 @@ def main():
   check_roster()
   check_tabs()
   check_memo()
+  check_popups()
   print()
   if failures:
     print(f"{len(failures)} FAILED: {failures}")

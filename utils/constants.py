@@ -638,8 +638,21 @@ VETERAN_PANEL_BBOX = (265, 505, 845, 940)
 # Symmetric about the panel's middle (y 722) for the reason SKILL_SCROLL_* is:
 # a drag that targets a point off-screen is clamped and travels short, so the
 # rewind would never undo the scan.
-VETERAN_PANEL_SCROLL_UP_FROM_MOUSE_POS = (400, 592)
-VETERAN_PANEL_SCROLL_DOWN_FROM_MOUSE_POS = (400, 852)
+#
+# x=269, the panel's left margin, and NOT x=400 where this started. A drag
+# that cannot move the list - the one at the bottom, which is how the scan
+# knows it has reached the end - is a press and release in the same place,
+# and the game reads that as a tap. At x=400 that tap lands on a skill pill
+# and opens its **Skill Details** popup over the whole dialog, which then
+# swallows the Inspiration tap, the pencil and the next arrow. It cost 11 of
+# 191 cards their sparks, twice, on exactly the cards whose list ends where
+# the last drag has nowhere to go.
+#
+# 265-274 is the only strip clear of pills on BOTH panels: the skills gutter
+# at x=551 is inside a sparks pill, because the sparks rows are indented past
+# the ancestor portrait.
+VETERAN_PANEL_SCROLL_UP_FROM_MOUSE_POS = (269, 592)
+VETERAN_PANEL_SCROLL_DOWN_FROM_MOUSE_POS = (269, 852)
 VETERAN_PANEL_SCROLL_DISTANCE = 260
 
 # Memo, opened by the pencil. The game states the 9-character limit on the
@@ -666,3 +679,13 @@ VETERAN_MEMO_MAX_CHARS = 9
 # memo cancelled, and the card carries on without its id.
 VETERAN_ERROR_TEMPLATE = "assets/roster/error_title.png"
 VETERAN_ERROR_CLOSE_MOUSE_POS = (550, 702)
+# Tapping a skill row opens **Skill Details** over the whole dialog, and a
+# drag the list cannot act on - the one at each end, which is how the scan
+# knows it has reached the top or the bottom - is delivered to the row as a
+# tap. Moving the drag to the panel's left margin does not help: the row's
+# hit area is the full width of the panel, not just the pill drawn inside it.
+# So the popup is expected, recognised and closed rather than avoided. It
+# cost 11 of 191 cards their sparks, twice, before it was found - it hides
+# the tab row, the pencil and the next arrow behind it. Same Close position
+# as the error dialog; both are centred.
+VETERAN_SKILL_DETAILS_TEMPLATE = "assets/roster/skill_details_title.png"
