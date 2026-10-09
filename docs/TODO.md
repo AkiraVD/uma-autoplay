@@ -196,10 +196,17 @@ Still open from the same log:
 about 21 s a card, so a full roster is a little over an hour. Verified over 14
 cards; the whole roster has not been run yet. What is still open:
 
-- **The rank badge's `+`** is inferred from the width of the ink, and about
-  one card in fourteen lands in the undecided band and is reported as
-  `"rank": null`. A template bank per rank, cut the way `assets/digits/` was,
-  would settle it - there are only fifteen grades.
+- **The rank is now derived from the rating** through master.mdb's
+  `single_mode_rank` (see `screen-map.md`), which replaced reading the badge
+  - that could not tell SS from S+ and had 26 of 191 cards wrong. Two bands
+  are still extrapolation rather than observation: **SS+** (19,200-19,599,
+  V090 and V146) and **UG+** (20,000-20,399, V147). If a card is ever seen
+  whose badge contradicts one of those, the ladder in
+  `masterdb.CAREER_RANKS` is what to fix.
+- **One rating in 191 misread** - V153's 1,066 came back as 66, with the
+  leading digits dropped. It was caught by the badge disagreeing with the
+  rating's band, which is now a warning, but nothing re-reads a rating that
+  only *looks* plausible.
 - **The aptitude grades are not read at all.** easyocr returns nothing for the
   stylised letters, so a veteran's Turf/Long/Pace grades are missing from the
   file even though the strip is right there. Same answer as above: a template

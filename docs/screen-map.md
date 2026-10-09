@@ -2525,3 +2525,40 @@ when it refuses - so the write now checks for that error, checks the dialog
 closed, and checks the field's *length* before committing (which still
 catches the failure that matters, a clear that did not clear and left the new
 id appended to the old).
+
+
+### The career rank comes from the rating, not the badge (2026-10-10)
+
+**The badge cannot be read.** "SS" and "S+" are two glyphs of the same width
+in the same font, and the ink-width test that preceded this recorded **26 of
+191 cards as S+ when they were SS**, plus two SS+ as S+, while leaving 21
+unreadable. It survived a 14-card sample only because that sample happened to
+contain no SS.
+
+`master.mdb` settles it. `single_mode_rank` holds 98 (min_value, max_value)
+bands, and the rank a finished career shows is a pure function of its rating.
+The band NAMES are not in the database - the badge is an image - so they were
+pinned by lining the bands up against 191 real veterans. Every band whose
+badge could be read came out unanimous:
+
+| band | rating | rank | cards |
+|---|---|---|---|
+| 4 | 900 - 1,299 | F+ | 2 |
+| 12 | 8,200 - 9,999 | B+ | 2 |
+| 13 | 10,000 - 12,099 | A | 12 |
+| 14 | 12,100 - 14,499 | A+ | 45 |
+| 15 | 14,500 - 15,899 | S | 50 |
+| 16 | 15,900 - 17,499 | S+ | 49 |
+| 17 | 17,500 - 19,199 | SS | 28 |
+| 18 | 19,200 - 19,599 | SS+ | 2 |
+| 20 | 20,000 - 20,399 | UG+ | 1 |
+
+That is two tiers per letter - G, G+, F, F+, E, E+, ... A, A+, S, S+, SS,
+SS+, UG, UG+, ... - which band 4 and band 12 fix at both ends. Bands 18 and
+20 are the pattern extended, not something read off a card.
+
+**The badge is still read, as a check on the rating.** A disagreement on the
+LETTER means one of the two is wrong and the rating is the suspect - which is
+how V153 was caught: the card said 1,066, the scan read 66, and the badge's
+F+ against the rating's G is what gave it away. A disagreement on the "+"
+says nothing, because the badge cannot settle it.

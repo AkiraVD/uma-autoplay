@@ -388,7 +388,8 @@ def read_header(screen):
   return {
     "name": name,
     "variant": variant.strip(),
-    "rank": read_rank(screen),
+    "rank": None,                      # filled from the rating in read_card
+    "rank_badge": read_rank(screen),
     "rating": read_rating(screen),
     "epithet": epithet.strip(),
     # An unset memo is drawn as a dash, which is not a memo.
@@ -770,6 +771,21 @@ def read_card(keep=None):
     keep["top"] = screen.crop(constants.VETERAN_DIALOG_TOP_BBOX)
     keep["skills"], keep["sparks"] = [], []
   card = read_header(screen)
+  # The rank comes from the RATING, not from the badge. The badge cannot be
+  # read: "SS" and "S+" are the same two glyphs wide in the same font, and
+  # the width test this used to rely on recorded 16 SS cards as S+ before a
+  # spot-check caught it. master.mdb's single_mode_rank holds the thresholds,
+  # and the rank a finished career shows is a pure function of its rating.
+  #
+  # The badge is still read, as a check on the RATING rather than as the
+  # source of the rank: if the two disagree on the letter, the rating is the
+  # suspect one. That is exactly how V153's rating came out - the card said
+  # 1,066, the scan read 66, and the badge said F+ against the rating's G.
+  from_rating = masterdb.career_rank(card["rating"])
+  if from_rating:
+    card["rank"] = from_rating
+  badge = card.get("rank_badge") or read_rank(screen)
+  card["rank_badge"] = badge
   card["stats"] = read_stats(screen)
   card["skills"], unmatched = read_skills(keep=None if keep is None else keep["skills"])
 
@@ -786,7 +802,13 @@ def read_card(keep=None):
   if card["rating"] < 0:
     warnings.append("rating did not read")
   if card["rank"] is None:
-    warnings.append("rank badge unclear")
+    warnings.append(f"rating {card['rating']} is outside every rank band")
+  elif badge and badge.rstrip("+")[:1] != card["rank"].rstrip("+")[:1]:
+    # Letters only: the badge genuinely cannot settle the "+", so a
+    # disagreement there says nothing, while a different LETTER means one of
+    # the two reads is wrong and the rating is the one worth doubting.
+    warnings.append(f"the badge reads {badge} but the rating {card['rating']}"
+                    f" is {card['rank']}; the rating may have misread")
   missing = [stat for stat, value in card["stats"].items() if value < 0]
   if missing:
     warnings.append(f"stats did not read: {', '.join(missing)}")

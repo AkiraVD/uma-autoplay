@@ -224,6 +224,60 @@ def inheritable_skill_ids():
     return set()
   return {group[0] * 10 + 1 for group in groups}
 
+_career_ranks = None
+
+CAREER_RANK_QUERY = "SELECT id, min_value, max_value FROM single_mode_rank ORDER BY id"
+
+# The ladder the 98 `single_mode_rank` bands are the thresholds for. The game
+# draws the badge as an image, so the NAMES are nowhere in master.mdb - only
+# the numbers are. These were pinned by lining the bands up against 191 real
+# veterans on 2026-10-09: every band whose badge could be read came out
+# unanimous (band 4 F+ x2, 12 B+ x2, 13 A x12, 14 A+ x45, 15 S x50,
+# 16 S+ x43, 17 SS x16), which is what makes the two-per-letter pattern below
+# safe to extend in both directions. Anything past SS+ is extrapolation and
+# has not been seen on a card here.
+CAREER_RANKS = [grade + suffix
+                for grade in ("G", "F", "E", "D", "C", "B", "A", "S", "SS",
+                              "UG", "UF", "UE", "UD", "UC", "UB", "UA", "US", "USS")
+                for suffix in ("", "+")]
+
+
+def career_ranks():
+  """[(band id, min rating, max rating, name)] for the career rank ladder.
+
+  The rank a finished career shows is a pure function of its rating, so this
+  is how core/veteran.py gets it - reading the badge off the screen cannot
+  tell SS from S+, which are the same width in the same font.
+  """
+  global _career_ranks
+  if _career_ranks is not None:
+    return _career_ranks
+  path = local_copy()
+  if not path:
+    _career_ranks = []
+    return _career_ranks
+  try:
+    with sqlite3.connect(f"file:{path}?mode=ro", uri=True) as con:
+      rows = con.execute(CAREER_RANK_QUERY).fetchall()
+  except sqlite3.Error as e:
+    warning(f"Couldn't read single_mode_rank from master.mdb: {e}")
+    _career_ranks = []
+    return _career_ranks
+  _career_ranks = [(i, lo, hi, CAREER_RANKS[i - 1] if i <= len(CAREER_RANKS) else f"band {i}")
+                   for i, lo, hi in rows]
+  return _career_ranks
+
+
+def career_rank(rating):
+  """The rank a career of this rating shows, or None if it cannot be placed."""
+  if rating is None or rating < 0:
+    return None
+  for _, low, high, name in career_ranks():
+    if low <= rating <= high:
+      return name
+  return None
+
+
 def skills():
   """Every named skill, as a list of dicts. [] when the database is unreadable.
 

@@ -6,9 +6,11 @@ easyocr Reader, so it starts slowly and takes a few minutes.
 Every expected value here was read off the frame by eye. The ones worth
 knowing why they are in the file:
 
-- `rudolf_splus_skills` is the "+" case. The rank badge's plus is inferred
-  from how wide the ink is, not read, so a frame with one and frames without
-  have to stay on opposite sides of the threshold.
+- The rank is NOT read off the badge any more. "SS" and "S+" are two glyphs
+  of the same width in the same font, and the width test that preceded this
+  recorded 16 SS cards as S+. It now comes from the rating through
+  master.mdb's `single_mode_rank`, and the badge is kept only as a check on
+  the rating - a disagreement on the LETTER means the rating misread.
 - `oguri_a_skills` and `condor_sparks` carry four-digit Wit values (1013)
   behind their grade badge. The badge is painted out before the read, and a
   mask 4px too wide turned 1013 into 13.
@@ -58,6 +60,15 @@ def ok(label, condition, detail=""):
 def frame(name):
   return Image.open(os.path.join(FIXTURES, name + ".png")).convert("RGB")
 
+
+# The rank a card shows is a function of its rating, via master.mdb's
+# single_mode_rank bands. The badge itself is NOT readable - "SS" and "S+"
+# are the same width in the same font - so these are the rating-derived
+# values, and the badge is only kept as a check on the rating.
+RANK_FROM_RATING = {
+  1066: "F+", 9877: "B+", 10904: "A", 11064: "A", 12450: "A+",
+  15641: "S", 16002: "S+", 17490: "S+", 17814: "SS",
+}
 
 HEADERS = {
   "rudolf_splus_skills": ("[Emperor's Path]", "Symboli Rudolf", "S+", 16563, "Witness to Legend"),
@@ -118,10 +129,25 @@ def check_headers():
     read = V.read_header(frame(name))
     ok(f"{name}: name", (read["variant"], read["name"]) == (variant, uma),
        f"{read['variant']} {read['name']}")
-    ok(f"{name}: rank {rank}", read["rank"] == rank, read["rank"])
+    ok(f"{name}: badge letter {rank[0]}", (read["rank_badge"] or "?")[0] == rank[0],
+       read["rank_badge"])
     ok(f"{name}: rating {rating}", read["rating"] == rating, read["rating"])
     ok(f"{name}: epithet", read["epithet"] == epithet, read["epithet"])
     ok(f"{name}: no memo", read["memo"] == "", read["memo"])
+
+
+def check_rank_bands():
+  """Every rating whose badge has been read off a real card by eye."""
+  import core.masterdb as masterdb
+  for rating, rank in RANK_FROM_RATING.items():
+    got = masterdb.career_rank(rating)
+    ok(f"rating {rating:,} is rank {rank}", got == rank, got)
+  # The band edges matter more than the middles: A ends at 12,099 and A+
+  # starts at 12,100, measured against 57 cards either side.
+  for rating, rank in ((12099, "A"), (12100, "A+"), (14499, "A+"), (14500, "S"),
+                       (15899, "S"), (15900, "S+"), (17499, "S+"), (17500, "SS")):
+    got = masterdb.career_rank(rating)
+    ok(f"band edge {rating:,} is {rank}", got == rank, got)
 
 
 def check_stats():
@@ -221,6 +247,7 @@ def check_popups():
 
 def main():
   check_headers()
+  check_rank_bands()
   check_stats()
   check_sparks()
   check_skills()
