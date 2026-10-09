@@ -3,6 +3,7 @@
   python tools/veteran_list.py scan                 # read every card
   python tools/veteran_list.py scan --write-memo    # and stamp each with its id
   python tools/veteran_list.py scan --limit 5       # a short run, to check it
+  python tools/veteran_list.py scan --no-frames     # skip the contact sheets
   python tools/veteran_list.py card                 # read the card already open
   python tools/veteran_list.py nav                  # just get to the roster
 
@@ -19,16 +20,25 @@ so the roster is put in **oldest-first** order before the walk starts: that is
 the only order where a career finishing later appends rather than renumbering
 everything a memo has already been written for.
 
+Every card also gets a **contact sheet** at `logs/veterans/<id>.jpg`: the
+dialog's own header stacked above every pass of the Skills and Inspiration
+panels, captioned with the id. That is the cross-check - a row in the JSON can
+be argued with against the pixels it came from, without walking the roster
+again - and it is why the sheet is several panels rather than one screenshot:
+a long skill list is never all on screen at once. `--no-frames` turns it off.
+
 A full 191-card roster takes something over an hour - every card is several
 easyocr reads on a CPU - so it is meant to be left alone, like a career.
 """
 import argparse
 import json
-import re
 import os
+import re
 import sys
 import time
 from datetime import datetime
+
+from PIL import Image, ImageDraw, ImageFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -37,8 +47,18 @@ os.chdir(ROOT)
 import core.veteran as veteran                      # noqa: E402
 import utils.constants as constants                 # noqa: E402
 from utils.log import info, warning, error          # noqa: E402
+from utils.tools import sleep                       # noqa: E402
 
 OUT = os.path.join(os.environ.get("UMA_LOG_DIR", "logs"), "veterans.json")
+# One contact sheet per card, named for its id, beside the file it belongs to.
+FRAMES = os.path.join(os.environ.get("UMA_LOG_DIR", "logs"), "veterans")
+# JPEG, not PNG: a sheet is around 2,000px tall and there are 191 of them, so
+# PNG would be about 150 MB of screenshots against 20.
+FRAME_QUALITY = 82
+CAPTION_HEIGHT = 34
+FONTS = ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+         "/usr/share/fonts/TTF/DejaVuSans-Bold.ttf",
+         "C:/Windows/Fonts/arialbd.ttf")
 # The memo caps at 9 characters, so the id is a prefix and three digits.
 ID_FORMAT = "V{:03d}"
 # An id as it comes back off the card. easyocr reads the zeros as letter O
@@ -63,25 +83,99 @@ def save(path, data):
   os.replace(temporary, path)
 
 
-def to_roster():
-  """Get to the Veteran Roster from wherever the game is, or return False."""
+def caption_font():
+  for path in FONTS:
+    if os.path.exists(path):
+      return ImageFont.truetype(path, 22)
+  return ImageFont.load_default()
+
+
+def contact_sheet(card, parts, path):
+  """Stack what the card was read from into one image, captioned with its id.
+
+  The point is that a row in the JSON can be argued with. The sheet carries
+  the dialog's own header - name, rank, rating, memo, stats, aptitudes - and
+  then every pass of the Skills and Inspiration panels, because a long skill
+  list is never all on screen at once.
+
+  The caption repeats the id in the picture as well as in the filename, so a
+  sheet that gets copied somewhere on its own still says which card it is.
+  """
+  panels = [parts.get("top")] + list(parts.get("skills") or []) + list(parts.get("sparks") or [])
+  panels = [panel for panel in panels if panel is not None]
+  if not panels:
+    return None
+  width = max(panel.width for panel in panels)
+  sheet = Image.new("RGB", (width, CAPTION_HEIGHT + sum(p.height for p in panels)), "white")
+  draw = ImageDraw.Draw(sheet)
+  draw.rectangle([0, 0, width, CAPTION_HEIGHT], fill=(40, 44, 48))
+  label = (f"{card['id']}  #{card['index']}  {card['variant']} {card['name']}"
+           f"  {card['rank'] or '?'}  {card['rating']}")
+  draw.text((8, 6), label[:72], fill="white", font=caption_font())
+  y = CAPTION_HEIGHT
+  for panel in panels:
+    sheet.paste(panel, ((width - panel.width) // 2, y))
+    y += panel.height
+  os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+  sheet.save(path, quality=FRAME_QUALITY, optimize=True)
+  return path
+
+
+def on_roster(tries=4):
+  """Whether the roster is up, allowing for the grid fading in.
+
+  Polled rather than read once. The footer is drawn with the grid, and a
+  single read taken during the fade comes back empty - which used to send the
+  walk below down the from-Home path while it was *already* on the roster,
+  where its taps land on the grid and open a card.
+  """
+  for attempt in range(tries):
+    if veteran.read_registered(veteran.grab())[0] > 0:
+      return True
+    sleep(0.8)
+  return False
+
+
+def leave_dialogs():
+  """Close anything stacked over the roster, and say whether it worked."""
   if veteran.on_memo():
     warning("A memo dialog is open; cancelling out of it.")
     veteran.tap(constants.VETERAN_MEMO_CANCEL_MOUSE_POS, settle=1.0)
-  if veteran.on_details():
-    veteran.tap(constants.VETERAN_CLOSE_MOUSE_POS, settle=1.5)
-  if veteran.read_registered(veteran.grab())[0] > 0:
+  for attempt in range(3):
+    if not veteran.on_details():
+      return True
+    veteran.tap(constants.VETERAN_CLOSE_MOUSE_POS, settle=1.5 + attempt)
+  return not veteran.on_details()
+
+
+def to_roster():
+  """Get to the Veteran Roster from wherever the game is, or return False."""
+  leave_dialogs()
+  if on_roster():
     return True
-  # Not there, so walk in from the bottom nav. Each step is checked rather than
-  # assumed: Enhance and the Veteran Umamusume menu look nothing alike, and a
-  # blind third tap on a screen that never changed would land on the artwork.
-  veteran.tap(constants.VETERAN_HOME_ENHANCE_MOUSE_POS, settle=2.0)
-  veteran.tap(constants.VETERAN_ENHANCE_MENU_MOUSE_POS, settle=2.0)
+
+  # Not there, so walk in from the bottom nav. **Every step is checked before
+  # the next one is pressed.** These three positions are only meaningful on
+  # the screens they belong to: `(552,686)` is List on the Veteran Umamusume
+  # menu and a card in the fourth row of the roster grid, so pressing it
+  # blindly is how an aborted run left a card open instead of recovering.
+  steps = ((constants.VETERAN_HOME_ENHANCE_MOUSE_POS, constants.VETERAN_ENHANCE_MENU_MOUSE_POS,
+            "veteran"),
+           (constants.VETERAN_ENHANCE_MENU_MOUSE_POS, constants.VETERAN_LIST_MOUSE_POS, "list"))
+  for press, next_button, expected in steps:
+    for attempt in range(3):
+      veteran.tap(press, settle=2.0)
+      if expected in veteran.label_near(veteran.grab(), next_button):
+        break
+    else:
+      error(f"After pressing {press}, the screen never showed {expected!r}."
+            " Is the game on the Home screen?")
+      return False
   veteran.tap(constants.VETERAN_LIST_MOUSE_POS, settle=2.5)
-  registered, capacity = veteran.read_registered(veteran.grab())
-  if registered <= 0:
-    error("Could not reach the Veteran Roster; is the game on the Home screen?")
+  if not on_roster():
+    error("Could not reach the Veteran Roster.")
     return False
+  registered, capacity = veteran.read_registered(veteran.grab())
   info(f"Veteran Roster: {registered}/{capacity} registered.")
   return True
 
@@ -126,7 +220,8 @@ def scan(args):
     if index in done:
       continue
 
-    card = veteran.read_card()
+    parts = None if args.no_frames else {}
+    card = veteran.read_card(keep=parts)
     card["index"] = index
     card["id"] = ID_FORMAT.format(index)
 
@@ -152,9 +247,23 @@ def scan(args):
       break
 
     if args.write_memo:
-      card["memo_written"] = veteran.write_memo(card["id"])
-      if card["memo_written"]:
-        card["memo"] = card["id"]
+      # Already stamped - by an earlier run, or by this one if it is being
+      # resumed - so the dialog is not opened at all.
+      if veteran.same_memo(card["memo"], card["id"]):
+        card["memo"], card["memo_written"] = card["id"], True
+      else:
+        card["memo_written"] = veteran.write_memo(card["id"])
+        if card["memo_written"]:
+          card["memo"] = card["id"]
+
+    if parts is not None:
+      # After the memo, so a sheet from a --write-memo run shows the id the
+      # game is now carrying rather than the dash it had a moment earlier.
+      if args.write_memo:
+        parts["top"] = veteran.grab().crop(constants.VETERAN_DIALOG_TOP_BBOX)
+      sheet = contact_sheet(card, parts, os.path.join(FRAMES, card["id"] + ".jpg"))
+      if sheet:
+        card["frame"] = os.path.relpath(sheet, os.path.dirname(OUT) or ".")
 
     data["umas"].append(card)
     data["scanned_at"] = datetime.now().isoformat(timespec="seconds")
@@ -175,6 +284,8 @@ def scan(args):
     veteran.tap(constants.VETERAN_CLOSE_MOUSE_POS, settle=2.0)
   flagged = [c for c in data["umas"] if c.get("warnings")]
   info(f"Wrote {len(data['umas'])} veterans to {OUT}; {len(flagged)} with warnings.")
+  if not args.no_frames:
+    info(f"Contact sheets, one per card, are in {FRAMES}/.")
   return 0
 
 
@@ -200,6 +311,8 @@ def main():
                    help="keep what is already in the file and read only what is missing")
   run.add_argument("--any-order", action="store_true",
                    help="scan even when the roster is not oldest-first")
+  run.add_argument("--no-frames", action="store_true",
+                   help=f"skip the per-card contact sheets in {FRAMES}/")
   run.set_defaults(func=scan)
 
   sub.add_parser("card", help="read the card already on screen").set_defaults(func=card)

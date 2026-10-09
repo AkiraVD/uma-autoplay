@@ -624,6 +624,11 @@ VETERAN_TAB_CAREER_MOUSE_POS = (741, 466)
 VETERAN_TAB_SKILLS_BBOX = (275, 452, 450, 481)
 VETERAN_TAB_INSPIRATION_BBOX = (462, 452, 645, 481)
 VETERAN_TAB_CAREER_BBOX = (655, 452, 835, 481)
+# The dialog above the panel - portrait, name, rank, rating, memo, stats,
+# aptitudes and the tab row. Saved per card as the top of the contact sheet,
+# so a record in the file can be checked against what was on screen. It
+# deliberately includes the memo line, so a run that wrote memos shows them.
+VETERAN_DIALOG_TOP_BBOX = (258, 30, 850, 500)
 # The strip that says which card is open: portrait, name, rating and stats.
 # Compared as pixels to tell "the next arrow worked" from "the tap was eaten".
 VETERAN_CARD_FINGERPRINT_BBOX = (258, 80, 850, 330)

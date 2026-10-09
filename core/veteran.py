@@ -583,7 +583,7 @@ def tap(point, settle=0.6):
   sleep(settle)
 
 
-def scan_panel(read_frame, stop_when=None):
+def scan_panel(read_frame, stop_when=None, keep=None):
   """Scroll the panel top to bottom, collecting what `read_frame` reads.
 
   The panel is rewound first for the reason core/menu_scan.py rewinds: the
@@ -593,6 +593,11 @@ def scan_panel(read_frame, stop_when=None):
 
   `stop_when(result)` ends the scan early - the Inspiration tab uses it to stop
   as soon as the ancestors' block is in view, since nothing below it is wanted.
+
+  `keep`, when given a list, collects the panel crop of every pass. That is
+  what the saved contact sheet is made of: a long skill list is only ever
+  fully on screen across several passes, so one screenshot could not show
+  what the record was read from.
   """
   menu_scan.scroll_to_top(PANEL)
   collected = []
@@ -602,7 +607,10 @@ def scan_panel(read_frame, stop_when=None):
     # See PANEL_TOP_EDGE: the first pass is at the top of the list, so nothing
     # is cut off there and ANY top margin costs a real row - the first row of
     # the right-hand column starts 8px into the panel.
-    result = read_frame(grab(), 0 if pass_no == 0 else PANEL_TOP_EDGE)
+    screen = grab()
+    if keep is not None:
+      keep.append(crop(screen, region_of(constants.VETERAN_PANEL_BBOX)))
+    result = read_frame(screen, 0 if pass_no == 0 else PANEL_TOP_EDGE)
     collected.append(result)
     if stop_when and stop_when(result):
       return collected
@@ -615,7 +623,7 @@ def scan_panel(read_frame, stop_when=None):
   return collected
 
 
-def read_skills():
+def read_skills(keep=None):
   """Every skill on the open card, in list order, duplicates folded.
 
   Names are canonicalised against master.mdb and then stripped of their ○ / ◎
@@ -633,7 +641,7 @@ def read_skills():
   because a dropped skill looks the same as a career that never learned it.
   """
   seen, skills, unmatched = set(), [], []
-  for names in scan_panel(read_skills_frame):
+  for names in scan_panel(read_skills_frame, keep=keep):
     for name in names:
       if not name.strip():
         continue
@@ -650,14 +658,14 @@ def read_skills():
   return skills, unmatched
 
 
-def read_sparks():
+def read_sparks(keep=None):
   """The Uma's own sparks, as [{name, kind, stars}].
 
   A white pill is a skill spark or a race spark; master.mdb's race names say
   which, so the kind is reported as "race" or "skill" rather than "white".
   """
   seen, sparks = set(), []
-  frames = scan_panel(read_sparks_frame, stop_when=lambda result: result[1])
+  frames = scan_panel(read_sparks_frame, stop_when=lambda result: result[1], keep=keep)
   for found, _ in frames:
     for spark in found:
       named = name_spark(spark)
@@ -669,23 +677,30 @@ def read_sparks():
   return sparks
 
 
-def read_card():
+def read_card(keep=None):
   """Everything on the open Details dialog, with what would not read flagged.
 
   The Skills tab is left selected, because the next arrow keeps the tab and
   the next card is read Skills-first.
+
+  `keep`, when given a dict, is filled with the crops the read was made from:
+  "top" (the dialog above the panel) and the per-pass panel crops under
+  "skills" and "sparks". The caller turns those into the card's contact sheet.
   """
   warnings = []
   if not select_tab(constants.VETERAN_TAB_SKILLS_MOUSE_POS, constants.VETERAN_TAB_SKILLS_BBOX):
     warnings.append("the Skills tab would not open; its skills are missing")
   screen = grab()
+  if keep is not None:
+    keep["top"] = screen.crop(constants.VETERAN_DIALOG_TOP_BBOX)
+    keep["skills"], keep["sparks"] = [], []
   card = read_header(screen)
   card["stats"] = read_stats(screen)
-  card["skills"], unmatched = read_skills()
+  card["skills"], unmatched = read_skills(keep=None if keep is None else keep["skills"])
 
   if select_tab(constants.VETERAN_TAB_INSPIRATION_MOUSE_POS,
                 constants.VETERAN_TAB_INSPIRATION_BBOX):
-    card["sparks"] = read_sparks()
+    card["sparks"] = read_sparks(keep=None if keep is None else keep["sparks"])
   else:
     warnings.append("the Inspiration tab would not open; its sparks are missing")
     card["sparks"] = []
@@ -795,9 +810,19 @@ def write_memo(text):
     raise ValueError(f"The game caps a memo at {constants.VETERAN_MEMO_MAX_CHARS} characters;"
                      f" {text!r} is {len(text)}.")
   tap(constants.VETERAN_MEMO_PENCIL_MOUSE_POS, settle=1.0)
-  if not on_memo():
+  if not wait_for(on_memo):
     warning("The memo dialog did not open; leaving the card as it was.")
     return False
+
+  # **OK is disabled while the text is unchanged.** It is drawn dark olive
+  # with grey lettering rather than the usual bright green, it does nothing
+  # when pressed, and the dialog simply stays up - which a rescan of a roster
+  # that has already been stamped would hit on every single card. There is
+  # nothing to save, so back out and call it done.
+  if same_memo(read_memo_field(grab()), text):
+    debug(f"The memo already reads {text}; leaving it alone.")
+    tap(constants.VETERAN_MEMO_CANCEL_MOUSE_POS, settle=1.0)
+    return True
 
   # Caret past the end of whatever is there, then clear it from the right.
   control.click(*constants.VETERAN_MEMO_FIELD_END_MOUSE_POS)
@@ -816,8 +841,11 @@ def write_memo(text):
     tap(constants.VETERAN_MEMO_CANCEL_MOUSE_POS, settle=1.0)
     return False
 
-  tap(constants.VETERAN_MEMO_OK_MOUSE_POS, settle=1.2)
-  if on_memo():
+  tap(constants.VETERAN_MEMO_OK_MOUSE_POS, settle=1.0)
+  # Polled, not read once. The dialog fades out, and a single look 1.2s after
+  # the press caught it mid-fade and reported every write as a failure - which
+  # then cancelled a memo that had in fact gone in.
+  if not wait_for(lambda: not on_memo(), limit=5.0):
     warning(f"The memo dialog is still up after OK; cancelling out of {text!r}.")
     tap(constants.VETERAN_MEMO_CANCEL_MOUSE_POS, settle=1.0)
     return False
@@ -826,6 +854,19 @@ def write_memo(text):
     warning(f"Memo reads {written!r} after writing {text!r}.")
     return False
   return True
+
+
+def wait_for(condition, limit=5.0, poll=0.4):
+  """Poll a screen condition until it holds, or give up. Returns whether it
+  held. Used wherever the game animates: a dialog fading in or out is a second
+  of frames that are neither one state nor the other."""
+  deadline = time.time() + limit
+  while True:
+    if condition():
+      return True
+    if time.time() >= deadline or state.stop_event.is_set():
+      return False
+    sleep(poll)
 
 
 def read_memo_field(screen):
@@ -853,6 +894,18 @@ def read_registered(screen):
   text = " ".join(t for t, _, _ in read_boxes(crop(screen, constants.VETERAN_ROSTER_REGISTERED_REGION)))
   found = re.search(r"(\d+)\s*/\s*(\d+)", text.replace(" ", ""))
   return (int(found.group(1)), int(found.group(2))) if found else (-1, -1)
+
+
+def label_near(screen, point, half=(150, 26)):
+  """The text around a point, for checking a menu came up before pressing on.
+
+  The Enhance menu and the Veteran Umamusume menu have no template, and they
+  do not need one: each is identified by the words on the button about to be
+  pressed.
+  """
+  x, y = point
+  region = (x - half[0], y - half[1], half[0] * 2, half[1] * 2)
+  return " ".join(t for t, _, _ in read_boxes(crop(screen, region))).strip().lower()
 
 
 def read_sort(screen):

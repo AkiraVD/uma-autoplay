@@ -2466,3 +2466,29 @@ typed into the middle of the old one: writing `V009` over `V0V00101` gave
 and the field is cleared from the right. The field is read back **before** OK
 is pressed, while Cancel is still on screen - a memo that went in wrong is a
 wrong label on a real card.
+
+
+### Memo, continued: OK is disabled when nothing changed (2026-10-09)
+
+Pressing OK with the field holding exactly what the card already carries does
+nothing and the dialog stays up. The button is drawn **dark olive with grey
+lettering** instead of the usual bright green, which is this game's disabled
+style - the Cancel beside it stays crisp white either way.
+
+It is not an edge case: a rescan of a roster that has already been stamped
+hits it on every single card, which is how a five-card test reported two
+failed writes while the memos were in fact correct. So the write reads the
+field as soon as the dialog opens and, when it already matches, cancels out
+and reports success rather than pressing a button that cannot do anything.
+
+### Per-card contact sheets
+
+`tools/veteran_list.py` saves `logs/veterans/<id>.jpg` for every card: the
+dialog above the panel (`(258,30,850,500)` - portrait, name, rank, rating,
+**memo**, stats, aptitudes, tabs) stacked over every pass of the Skills and
+Inspiration panels, captioned with the id. Several panels and not one
+screenshot, because a long skill list is never all on screen at once. About
+150 KB each as JPEG, so roughly 28 MB for a full roster. The header crop is
+re-taken after the memo is written, so a sheet from a `--write-memo` run
+shows the id the card is now carrying rather than the dash it had a moment
+earlier.
