@@ -30,6 +30,7 @@ Nothing here taps Transfer, Change or any confirmation. The only thing it can
 write is the memo, and only when the caller asks for it.
 """
 import re
+import time
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageGrab
@@ -111,6 +112,8 @@ STAR_GOLD = lambda a: (a[:, :, 0] > 200) & (a[:, :, 1] > 150) & (a[:, :, 2] < 12
 STAR_MIN_X = 150
 STAR_SIZE = (11, 20)
 STAR_AREA = (55, 150)
+# How green a tab is when it is the selected one. See VETERAN_TAB_*_BBOX.
+TAB_GREEN = 0.5
 # Panel-local x that separates the left column of pills from the right one.
 PANEL_COLUMN_SPLIT = 330
 # A row cut off by the top or bottom of the panel reads as a different row:
@@ -159,13 +162,21 @@ PINK_NAMES = ("Turf", "Dirt", "Sprint", "Mile", "Medium", "Long",
 # "Japanese Derby" came back as "Japan Dirt Derby" until the margin was added.
 SPARK_MIN_SCORE = 70
 SPARK_MIN_MARGIN = 8
+# A very close match is evidence on its own, and the margin rule was throwing
+# those away: the race list holds "NHK Mile C." and "NHK Mile Cup", so a read
+# of "NHK Mile C" scored 95.2 and 90.9 and was refused six times over. Above
+# this score a small margin is enough - but not no margin, so the three
+# "TS Climax Race N" entries, which are one character apart, still refuse.
+SPARK_STRONG_SCORE = 92
+SPARK_STRONG_MARGIN = 3
 # The race-name list carries the practice and hard-mode copies of every race
 # under their own names, and a Spark never names one of those.
 NOT_A_RACE = ("practice:", "(hard)")
 # A career's last white spark is its scenario's final, which is neither a race
 # nor a skill and is in no table this reads. Without them here "URA Finale"
 # fell through to the skill list and came back as "Rational" at 67.
-SCENARIO_SPARKS = ("URA Finale", "Unity Cup", "Grand Concert", "Trackblazer")
+SCENARIO_SPARKS = ("URA Finale", "Unity Cup", "Grand Concert", "Trackblazer",
+                   "TS Climax Scenario")
 
 _race_names = None
 _trainee_names = None
@@ -207,7 +218,8 @@ def closest(text, names, minimum=SPARK_MIN_SCORE):
   hits = process.extract(text, names, scorer=fuzz.ratio, limit=2)
   if not hits or hits[0][1] < minimum:
     return None
-  if len(hits) > 1 and hits[0][1] - hits[1][1] < SPARK_MIN_MARGIN:
+  margin = SPARK_STRONG_MARGIN if hits[0][1] >= SPARK_STRONG_SCORE else SPARK_MIN_MARGIN
+  if len(hits) > 1 and hits[0][1] - hits[1][1] < margin:
     debug(f"Spark {text!r} is {hits[0][1]:.0f} like {hits[0][0]!r} but"
           f" {hits[1][1]:.0f} like {hits[1][0]!r}; leaving it as read.")
     return None
@@ -451,6 +463,32 @@ def pill_kind(panel, column, star_y):
   return "white"
 
 
+def tab_selected(bbox, screen=None):
+  """Whether the tab in `bbox` is the one currently showing."""
+  image = np.asarray((screen or grab()).crop(bbox).convert("RGB")).astype(int)
+  green = ((image[:, :, 1] > 150) & (image[:, :, 1] - image[:, :, 2] > 80)
+           & (image[:, :, 1] - image[:, :, 0] > 40))
+  return float(green.mean()) > TAB_GREEN
+
+
+def select_tab(point, bbox, tries=4):
+  """Tap a tab and make sure it actually came up.
+
+  Nothing downstream can tell a tab that did not switch from a card with
+  nothing on it: card 78 of the first full run was recorded with zero sparks
+  because the Inspiration tap was swallowed while the game was stalled, and
+  the Skills panel was read as if it were the sparks panel.
+  """
+  for attempt in range(tries):
+    if tab_selected(bbox):
+      return True
+    tap(point, settle=0.8 + 0.6 * attempt)
+  if tab_selected(bbox):
+    return True
+  warning(f"The tab at {point} would not come up after {tries} taps.")
+  return False
+
+
 def read_sparks_frame(screen, top_edge=PANEL_EDGE):
   """The spark rows visible on one frame, and whether the ancestors' block has
   come into view.
@@ -597,13 +635,15 @@ def read_skills():
   seen, skills, unmatched = set(), [], []
   for names in scan_panel(read_skills_frame):
     for name in names:
+      if not name.strip():
+        continue
       canonical = canonical_skill(name)
       if canonical is None:
         if name.lower() not in seen:
           unmatched.append(name)
         canonical = name
       canonical = RANK_GLYPH.sub("", canonical).strip()
-      if canonical.lower() in seen:
+      if not canonical or canonical.lower() in seen:
         continue
       seen.add(canonical.lower())
       skills.append(canonical)
@@ -636,14 +676,19 @@ def read_card():
   the next card is read Skills-first.
   """
   warnings = []
-  tap(constants.VETERAN_TAB_SKILLS_MOUSE_POS, settle=0.8)
+  if not select_tab(constants.VETERAN_TAB_SKILLS_MOUSE_POS, constants.VETERAN_TAB_SKILLS_BBOX):
+    warnings.append("the Skills tab would not open; its skills are missing")
   screen = grab()
   card = read_header(screen)
   card["stats"] = read_stats(screen)
   card["skills"], unmatched = read_skills()
 
-  tap(constants.VETERAN_TAB_INSPIRATION_MOUSE_POS, settle=0.8)
-  card["sparks"] = read_sparks()
+  if select_tab(constants.VETERAN_TAB_INSPIRATION_MOUSE_POS,
+                constants.VETERAN_TAB_INSPIRATION_BBOX):
+    card["sparks"] = read_sparks()
+  else:
+    warnings.append("the Inspiration tab would not open; its sparks are missing")
+    card["sparks"] = []
   repair_unique(card)
 
   if not card["name"]:
@@ -661,10 +706,11 @@ def read_card():
   # of those missing means the panel was read short rather than that the career
   # did not produce one. A green is only generated for a 3-star uma, so its
   # absence is reported without being called wrong.
-  for kind in ("blue", "pink"):
-    if not any(spark["kind"] == kind for spark in card["sparks"]):
-      warnings.append(f"no {kind} spark found; the sparks panel read short")
-  if not any(spark["kind"] == "green" for spark in card["sparks"]):
+  if card["sparks"]:
+    for kind in ("blue", "pink"):
+      if not any(spark["kind"] == kind for spark in card["sparks"]):
+        warnings.append(f"no {kind} spark found; the sparks panel read short")
+  if card["sparks"] and not any(spark["kind"] == "green" for spark in card["sparks"]):
     warnings.append("no green spark (expected for a 1- or 2-star uma)")
   unread = [spark["name"] for spark in card["sparks"] if not spark.get("matched")]
   if unread:
@@ -697,10 +743,44 @@ def repair_unique(card):
     card["skills"][0] = green["name"]
 
 
-def next_card():
-  """Step to the next card. The arrow wraps, so the caller counts."""
-  tap(constants.VETERAN_NEXT_MOUSE_POS, settle=1.0)
-  return on_details()
+def fingerprint(screen=None):
+  """The bytes of the strip that identifies the open card.
+
+  Compared as pixels rather than read, because this is asked once per step and
+  an OCR pass per step over 191 cards is minutes of nothing.
+  """
+  patch = (screen or grab()).crop(constants.VETERAN_CARD_FINGERPRINT_BBOX).convert("L")
+  return np.asarray(patch, dtype=np.uint8).tobytes()
+
+
+def next_card(previous=None, tries=2, settle=8.0):
+  """Step to the next card, and confirm it really stepped.
+
+  `previous` is the fingerprint of the card that was just read. Without it
+  this can only check that a dialog is on screen, which is what it did on the
+  first full run - and the one time the game stalled, the check ran during the
+  stall, came back False and ended the run at card 78 of 191 with the dialog
+  still perfectly open behind it.
+
+  So the wait is a poll, not a sleep, and the tap is repeated only after the
+  whole wait has gone by with the card unchanged. Tapping twice could skip a
+  card, but only if the two cards either side are identical over the portrait,
+  the name, the rating and all five stats.
+  """
+  for attempt in range(tries):
+    tap(constants.VETERAN_NEXT_MOUSE_POS, settle=0.8)
+    deadline = time.time() + settle
+    while time.time() < deadline:
+      if state.stop_event.is_set():
+        return False
+      screen = grab()
+      if on_details() and (previous is None or fingerprint(screen) != previous):
+        return True
+      sleep(0.5)
+    debug(f"The next arrow did not change the card within {settle}s"
+          f" (try {attempt + 1} of {tries}); tapping again.")
+  warning("The next arrow is not advancing the roster.")
+  return False
 
 
 def write_memo(text):

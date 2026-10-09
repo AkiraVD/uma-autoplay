@@ -116,10 +116,13 @@ def scan(args):
 
   started = time.time()
   first = None
+  seen = None                    # the fingerprint of the card last read
   for index in range(1, total + 1):
-    if index > 1 and not veteran.next_card():
-      error(f"Lost the Details dialog stepping to card {index}; stopping.")
+    if index > 1 and not veteran.next_card(previous=seen):
+      error(f"The roster stopped advancing at card {index}; stopping with"
+            f" {len(data['umas'])} read. Re-run with --resume to carry on.")
       break
+    seen = veteran.fingerprint()
     if index in done:
       continue
 
@@ -166,6 +169,10 @@ def scan(args):
          f"  (~{left} min left)")
 
   veteran.tap(constants.VETERAN_CLOSE_MOUSE_POS, settle=1.5)
+  if veteran.on_details():
+    # Worth one more go rather than leaving the game on a dialog: the close
+    # tap is the one press here with nothing after it to notice it failed.
+    veteran.tap(constants.VETERAN_CLOSE_MOUSE_POS, settle=2.0)
   flagged = [c for c in data["umas"] if c.get("warnings")]
   info(f"Wrote {len(data['umas'])} veterans to {OUT}; {len(flagged)} with warnings.")
   return 0

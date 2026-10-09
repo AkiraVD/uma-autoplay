@@ -19,6 +19,10 @@ knowing why they are in the file:
   it is here so a future change that drops rows has something to fail on.
 - `rudolf_s_sparks` is the only frame whose own sparks sit above a Legacy
   Origin block, which is the boundary the reader has to respect.
+- `career_info_tab` is here only as the third tab state. A tap the game
+  swallows looks exactly like a card with nothing on it - that is how card 78
+  of the first full run came back with zero sparks - so the walk checks which
+  tab is lit before it reads, and that check needs all three cases.
 """
 import os
 import sys
@@ -154,6 +158,23 @@ def check_roster():
     ok(f"{name}: sorted {order}", (key, read) == ("Date Acquired", order), f"{key!r} {read!r}")
 
 
+def check_tabs():
+  # A tab that did not come up is indistinguishable downstream from a card
+  # with nothing on it, so the check is on the tab, not on what it shows.
+  selected = {
+    "oguri_a_skills": "SKILLS",
+    "rudolf_s_sparks": "INSPIRATION",
+    "career_info_tab": "CAREER",
+  }
+  for name, active in selected.items():
+    shot = frame(name)
+    for tab in ("SKILLS", "INSPIRATION", "CAREER"):
+      bbox = getattr(V.constants, f"VETERAN_TAB_{tab}_BBOX")
+      want = tab == active
+      ok(f"{name}: {tab.lower()} tab {'selected' if want else 'not selected'}",
+         V.tab_selected(bbox, shot) == want)
+
+
 def check_memo():
   # The field is read before OK is pressed, so an empty one has to read empty
   # rather than picking up the dialog's own wording.
@@ -170,6 +191,7 @@ def main():
   check_sparks()
   check_skills()
   check_roster()
+  check_tabs()
   check_memo()
   print()
   if failures:

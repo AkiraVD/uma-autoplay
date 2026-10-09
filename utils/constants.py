@@ -614,6 +614,19 @@ VETERAN_APTITUDE_REGION = (258, 335, 592, 106)
 VETERAN_TAB_SKILLS_MOUSE_POS = (362, 466)
 VETERAN_TAB_INSPIRATION_MOUSE_POS = (552, 466)
 VETERAN_TAB_CAREER_MOUSE_POS = (741, 466)
+# The selected tab is filled green and the others are white, so whether a tap
+# landed is a question about colour, not about OCR. Measured over three frames:
+# the selected one is 0.92-0.95 green by area and the others are 0.000.
+# Worth having, because a tap the game swallows is not hypothetical - on
+# 2026-10-09 the game stalled for a few seconds at card 78 of 191 and ate the
+# Inspiration tap, the next-arrow tap and the Close tap in a row, and the card
+# was recorded with no sparks at all rather than as a failure.
+VETERAN_TAB_SKILLS_BBOX = (275, 452, 450, 481)
+VETERAN_TAB_INSPIRATION_BBOX = (462, 452, 645, 481)
+VETERAN_TAB_CAREER_BBOX = (655, 452, 835, 481)
+# The strip that says which card is open: portrait, name, rating and stats.
+# Compared as pixels to tell "the next arrow worked" from "the tap was eaten".
+VETERAN_CARD_FINGERPRINT_BBOX = (258, 80, 850, 330)
 
 # The scrolling panel under the tabs, shared by Skills and Inspiration.
 VETERAN_PANEL_BBOX = (265, 505, 845, 940)
