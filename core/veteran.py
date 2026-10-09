@@ -840,14 +840,26 @@ def repair_unique(card):
   Skills tab clean and off the spark pill as "U-maz", which is 60 against the
   real name and below the bar.
 
-  The unique is always the first row of the Skills tab - it is the one pill
-  with the rainbow background and a level on it - so that is the row this
-  trusts. Nothing is overwritten: a name is only copied onto a read that
-  failed to match anything at all.
+  The unique is **usually** the first row of the Skills tab - it is the one
+  pill with the rainbow background and a level on it - but not always: four
+  cards in a 191-card roster list an *inherited* unique above their own, so
+  position alone is not evidence. The two names also have to look like each
+  other before one is copied onto the other, or a card whose green would not
+  read would be handed the name of somebody else's unique.
+
+  Nothing is overwritten: a name is only copied onto a read that failed to
+  match anything at all.
   """
   green = next((spark for spark in card["sparks"] if spark["kind"] == "green"), None)
   first = card["skills"][0] if card["skills"] else None
   if not green or not first:
+    return
+  # Same string read twice, badly, in two different fonts - so they should
+  # still resemble each other. 55, measured: the pair this exists for scores
+  # 60.0 ("U-maz" against "U=ma2") and the wrong pairs score 41.2 and 38.9
+  # ("Shooting for Victory!" against "Condor's Fury" and "Operation Cacao"),
+  # so the line goes in the gap rather than on top of the case it must keep.
+  if fuzz.ratio(base_name(green["name"]), base_name(first)) < 55:
     return
   if not green.get("matched") and skill_spark(first):
     green["name"], green["matched"] = skill_spark(first), True
