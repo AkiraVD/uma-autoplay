@@ -966,14 +966,21 @@ def read_memo_field(screen):
 def same_memo(shown, wanted):
   """Whether a read of a memo is the memo that was asked for.
 
-  Case and spacing are ignored, and so are O against 0 and S against 5.
+  Case and spacing are ignored, and so is every glyph pair this field's font
+  makes indistinguishable at OCR size: O/0, S/5, I/l/1, G/6, z/7, B/8. All of
+  them have been seen - "V050" read back as "VosO", "V070X" as "VOzOX",
+  "V068B" as "VOG8B" and "V111" as nothing at all. The ids are V + digits, so
+  collapsing letters into digits cannot merge two real ids.
   """
   # O/0 and S/5 both: the ids are V001-style, easyocr reads a zero as either
   # and a five as either ("V050" came back as "VosO"), and failing a write
   # over the glyph the font chose would be absurd.
   def flatten(text):
     text = text.replace(" ", "").lower()
-    return text.replace("o", "0").replace("s", "5")
+    for group, into in (("o", "0"), ("s", "5"), ("il|", "1"), ("g", "6"), ("z", "7"), ("b", "8")):
+      for char in group:
+        text = text.replace(char, into)
+    return text
   return flatten(shown) == flatten(wanted)
 
 

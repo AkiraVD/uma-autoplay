@@ -215,6 +215,15 @@ cards; the whole roster has not been run yet. What is still open:
 - **Nothing consumes the file yet.** It exists so a parent can be chosen from
   what the roster actually holds rather than from memory. The obvious next
   step is a picker, or a ranking against the rules in `docs/parenting.md`.
+- **Nine names in 4,521 still match nothing**, all flagged per card rather
+  than dropped: `JD. Derby` (the pill abbreviates past master.mdb's own short
+  name for Japan Dirt Derby - `server/master_data.py` keeps an alias table for
+  exactly this and should be shared), `Ignited Spirit: Stamina` (the pill
+  writes the stat out where the database abbreviates it, `Ignited Spirit STA`,
+  and it loses on margin to `Racing Spirit: Stamina` at 87.8 against 80),
+  `NHK Mile C.` read as `NHK Mile €`, and Mihono Bourbon's `G00 1st. F∞;`,
+  which no OCR pass has ever got. Two cards also merged a pair of skills into
+  one string, which is a grouping bug in `read_skills_frame` worth a look.
 - **The memo's profanity filter is known by one entry.** `69` is refused and
   `tools/veteran_list.py` dodges it (`V069` -> `V06X9`); whatever else the
   filter holds will show up as a refused write with a warning naming the id,
