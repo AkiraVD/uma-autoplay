@@ -23,6 +23,8 @@ BUTTONS = {"left": 1, "middle": 2, "right": 3}
 KEYSYMS = {
   "esc": "Escape", "escape": "Escape", "enter": "Return", "return": "Return",
   "shift": "Shift_L", "home": "Home", "end": "End", "delete": "Delete",
+  "-": "minus", "=": "equal", ".": "period", ",": "comma", "/": "slash",
+  " ": "space",
   "space": "space", "tab": "Tab", "backspace": "BackSpace",
   "up": "Up", "down": "Down", "left": "Left", "right": "Right",
 }
@@ -53,6 +55,10 @@ def check():
   return None
 
 def keycode(name):
+  # Looked up before stripping: " " is a real key name and strip() turns it
+  # into the empty string, which resolves to no keysym at all.
+  if name in KEYSYMS:
+    return _connection().keysym_to_keycode(XK.string_to_keysym(KEYSYMS[name]))
   key = name.strip().lower()
   sym = KEYSYMS.get(key) or (key.upper() if re.fullmatch(r"f\d{1,2}", key) else key)
   code = _connection().keysym_to_keycode(XK.string_to_keysym(sym))

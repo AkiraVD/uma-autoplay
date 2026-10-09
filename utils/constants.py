@@ -656,3 +656,13 @@ VETERAN_MEMO_FIELD_REGION = (320, 487, 450, 42)
 VETERAN_MEMO_OK_MOUSE_POS = (686, 704)
 VETERAN_MEMO_CANCEL_MOUSE_POS = (418, 704)
 VETERAN_MEMO_MAX_CHARS = 9
+# "Contains invalid characters." - the game's own rejection of a memo, raised
+# on OK and drawn OVER the memo dialog, so it hides the memo title and a check
+# for "did the memo close?" reads it as success. First seen on card 69 of 191
+# on 2026-10-09, on a field that looked exactly like "V069" and that the same
+# code had just written to 67 other cards; retyping it as "069" was rejected
+# too, so whatever the game objected to is not visible in the field. Unsolved.
+# It is handled rather than understood: the error is recognised, closed, the
+# memo cancelled, and the card carries on without its id.
+VETERAN_ERROR_TEMPLATE = "assets/roster/error_title.png"
+VETERAN_ERROR_CLOSE_MOUSE_POS = (550, 702)

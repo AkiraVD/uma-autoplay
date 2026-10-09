@@ -303,6 +303,21 @@ def on_memo():
   return bool(match_template(constants.VETERAN_MEMO_TEMPLATE, threshold=0.82))
 
 
+def on_error():
+  """The game's own "Contains invalid characters." dialog. See the note in
+  utils/constants.py - it sits OVER the memo dialog, so it has to be asked
+  about before anything concludes that the memo closed cleanly."""
+  return bool(match_template(constants.VETERAN_ERROR_TEMPLATE, threshold=0.79))
+
+
+def dismiss_error():
+  """Close the error dialog if it is up. Returns whether one was there."""
+  if not on_error():
+    return False
+  tap(constants.VETERAN_ERROR_CLOSE_MOUSE_POS, settle=1.2)
+  return True
+
+
 def read_rank(screen):
   """The rank badge, as "S+" / "A" / None.
 
@@ -832,16 +847,27 @@ def write_memo(text):
   control.write(text)
   sleep(0.5)
 
-  # Read the field before pressing OK, not after. A memo that went in wrong is
-  # a wrong label on a real card, and the only cheap moment to refuse it is
-  # while Cancel is still on screen.
+  # Checked on LENGTH, not on the characters. The field's font is not
+  # separable by OCR at this size - "V070X" read back as "VOzOX" and "V068B"
+  # as "VOG8B" - so comparing the text refused writes the game had in fact
+  # accepted. What a length check still catches is the failure that matters:
+  # a clear that did not clear, which leaves the new id appended to the old.
   typed = read_memo_field(grab())
-  if not same_memo(typed, text):
-    warning(f"The memo field reads {typed!r}, not {text!r}; cancelling.")
+  if len(typed.replace(" ", "")) != len(text.replace(" ", "")):
+    warning(f"The memo field reads {typed!r}, which is not {len(text)}"
+            f" characters like {text!r}; cancelling.")
     tap(constants.VETERAN_MEMO_CANCEL_MOUSE_POS, settle=1.0)
     return False
 
   tap(constants.VETERAN_MEMO_OK_MOUSE_POS, settle=1.0)
+  # The rejection is checked for before the "did it close?" test, because it
+  # covers the memo title and would otherwise read as a clean close.
+  if wait_for(on_error, limit=2.5, poll=0.3):
+    warning(f"The game refused the memo {text!r}: contains invalid characters.")
+    dismiss_error()
+    if on_memo():
+      tap(constants.VETERAN_MEMO_CANCEL_MOUSE_POS, settle=1.2)
+    return False
   # Polled, not read once. The dialog fades out, and a single look 1.2s after
   # the press caught it mid-fade and reported every write as a failure - which
   # then cancelled a memo that had in fact gone in.
@@ -849,9 +875,13 @@ def write_memo(text):
     warning(f"The memo dialog is still up after OK; cancelling out of {text!r}.")
     tap(constants.VETERAN_MEMO_CANCEL_MOUSE_POS, settle=1.0)
     return False
+  # No text comparison here either, for the same reason. The authority on
+  # whether the memo went in is the game: it raises its own error when it
+  # refuses one, and that was checked above. All that is left is that the
+  # card is back and carrying something.
   written = read_header(grab())["memo"]
-  if not same_memo(written, text):
-    warning(f"Memo reads {written!r} after writing {text!r}.")
+  if not written:
+    warning(f"The card shows no memo after writing {text!r}.")
     return False
   return True
 
@@ -878,10 +908,14 @@ def read_memo_field(screen):
 def same_memo(shown, wanted):
   """Whether a read of a memo is the memo that was asked for.
 
-  Case and spacing are ignored, and so is O against 0: the ids are V001-style
-  and easyocr reads a zero either way, which is not worth failing a write over.
+  Case and spacing are ignored, and so are O against 0 and S against 5.
   """
-  flatten = lambda text: text.replace(" ", "").lower().replace("o", "0")
+  # O/0 and S/5 both: the ids are V001-style, easyocr reads a zero as either
+  # and a five as either ("V050" came back as "VosO"), and failing a write
+  # over the glyph the font chose would be absurd.
+  def flatten(text):
+    text = text.replace(" ", "").lower()
+    return text.replace("o", "0").replace("s", "5")
   return flatten(shown) == flatten(wanted)
 
 

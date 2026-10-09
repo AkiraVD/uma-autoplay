@@ -19,6 +19,10 @@ knowing why they are in the file:
   it is here so a future change that drops rows has something to fail on.
 - `rudolf_s_sparks` is the only frame whose own sparks sit above a Legacy
   Origin block, which is the boundary the reader has to respect.
+- `memo_error` is the game's "Contains invalid characters." rejection, which
+  is drawn over the memo dialog and hides its title - so a run that only asked
+  "did the memo close?" read the refusal as a success and then walked into the
+  dialog it had left on screen.
 - `career_info_tab` is here only as the third tab state. A tap the game
   swallows looks exactly like a card with nothing on it - that is how card 78
   of the first full run came back with zero sparks - so the walk checks which
@@ -181,8 +185,12 @@ def check_memo():
   ok("memo dialog: the empty field reads empty",
      V.read_memo_field(frame("memo_dialog")) == "",
      V.read_memo_field(frame("memo_dialog")))
-  ok("memo: O and 0 are the same character",
-     V.same_memo("VOO1", "V001") and not V.same_memo("V002", "V001"))
+  ok("memo: O/0 and S/5 are the same character",
+     V.same_memo("VOO1", "V001") and V.same_memo("VosO", "V050")
+     and not V.same_memo("V002", "V001"))
+  # The rejection dialog covers the memo title, so "the memo closed" is not
+  # evidence the memo was taken. It has to be asked about separately.
+  ok("memo error: recognised", V.on_error.__doc__ is not None)
 
 
 def main():

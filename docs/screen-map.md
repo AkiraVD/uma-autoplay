@@ -2492,3 +2492,36 @@ screenshot, because a long skill list is never all on screen at once. About
 re-taken after the memo is written, so a sheet from a `--write-memo` run
 shows the id the card is now carrying rather than the dash it had a moment
 earlier.
+
+
+### The memo runs through a profanity filter (2026-10-09)
+
+The game answers a memo it does not like with an **Error** dialog reading
+"Contains invalid characters.", and draws it **over** the memo dialog - so it
+hides the memo's own title, and a check for "did the memo close?" reads the
+refusal as a success. That is how a 191-card run walked into a dialog it had
+left on screen and stopped at card 69 of 191.
+
+What it refuses, measured on that card:
+
+| tried | result |
+|---|---|
+| `V069`, `V69`, `V690`, `V069X` | refused |
+| `V06-9`, `V06 9`, `V06.9` | refused |
+| `V070` | accepted |
+| `V06X9`, `V068B`, `V070X` | accepted |
+
+So **`69` anywhere in the string trips it**, and separators do not help -
+the filter strips non-alphanumerics before matching - but a *letter* between
+the digits does. Hence `tools/veteran_list.py`'s rule: a banned label keeps
+its digits and has an `X` pushed in front of the last one, `V069` -> `V06X9`.
+Only 069 and 169 are affected in a 260-card roster.
+
+**The memo cannot be verified by reading it back.** At this size the field's
+font is not separable by OCR: `V070X` reads as `VOzOX`, `V068B` as `VOG8B`,
+`V050` as `VosO`. Comparing the text refused three writes the game had in
+fact accepted. The authority is the game itself - it raises the error above
+when it refuses - so the write now checks for that error, checks the dialog
+closed, and checks the field's *length* before committing (which still
+catches the failure that matters, a clear that did not clear and left the new
+id appended to the old).

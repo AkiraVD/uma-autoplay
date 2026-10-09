@@ -215,6 +215,11 @@ cards; the whole roster has not been run yet. What is still open:
 - **Nothing consumes the file yet.** It exists so a parent can be chosen from
   what the roster actually holds rather than from memory. The obvious next
   step is a picker, or a ranking against the rules in `docs/parenting.md`.
+- **The memo's profanity filter is known by one entry.** `69` is refused and
+  `tools/veteran_list.py` dodges it (`V069` -> `V06X9`); whatever else the
+  filter holds will show up as a refused write with a warning naming the id,
+  and belongs in `BANNED_IN_MEMO`. Only 069 and 169 are affected in a
+  260-card roster, so the list may well already be complete for this use.
 - **The ids are positional.** They hold as long as the roster stays in
   Date Acquired / Asc order and nothing is transferred out from the middle; a
   rescan warns when a card carries an id that is not its own, which is the

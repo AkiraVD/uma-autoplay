@@ -235,14 +235,17 @@ def write(text, interval=0.04):
     return pyautogui.write(text, interval=interval)
   keyboard = _get_keyboard()
   devices = _devices()
+  # Every key is resolved before the first one is sent. Typing half a string
+  # and then raising leaves the field holding something nobody asked for, in
+  # a game where that text is about to be saved.
+  codes = [(char, devices.keycode(SHIFTED.get(char, char))) for char in text]
   shift = devices.keycode("shift")
-  for char in text:
-    plain = SHIFTED.get(char)
-    if plain is not None:
+  for char, code in codes:
+    if char in SHIFTED:
       keyboard.key(shift, True)
-      keyboard.tap(devices.keycode(plain), HOLD)
+      keyboard.tap(code, HOLD)
       keyboard.key(shift, False)
     else:
-      keyboard.tap(devices.keycode(char), HOLD)
+      keyboard.tap(code, HOLD)
     time.sleep(interval)
   time.sleep(PAUSE)

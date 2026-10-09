@@ -61,9 +61,38 @@ FONTS = ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
          "C:/Windows/Fonts/arialbd.ttf")
 # The memo caps at 9 characters, so the id is a prefix and three digits.
 ID_FORMAT = "V{:03d}"
-# An id as it comes back off the card. easyocr reads the zeros as letter O
-# about half the time, which is cosmetic - the shape is what identifies it.
-ID_READ = re.compile(r"^[vV][0oO\d]{3}$")
+# The game runs a profanity filter over the memo and answers anything it does
+# not like with "Contains invalid characters." - which it draws OVER the memo
+# dialog, so it reads as a clean close unless you look for it. "69" anywhere
+# in the string trips it: V069, V69, V690 and V069X were all refused, while
+# V070 went in.
+#
+# Breaking the pair with a separator does not work either - "V06-9", "V06 9"
+# and "V06.9" were all refused, so the filter strips non-alphanumerics before
+# matching. A LETTER does work: "V06X9" is accepted. So a banned label keeps
+# its digits and has an X pushed in front of the last one.
+#
+# Only 069 and 169 are affected in a 260-card roster. The list is here rather
+# than inline because the filter's full contents are the game's business and
+# this is the one entry it has taught us.
+BANNED_IN_MEMO = ("69",)
+
+
+def memo_id(index):
+  """The id for a position: V001-style, dodged around the profanity filter.
+
+  Computed the same way whether or not memos are being written, so a
+  read-only scan and a later `--write-memo` run agree on what each card is
+  called.
+  """
+  label = ID_FORMAT.format(index)
+  if any(token in label for token in BANNED_IN_MEMO):
+    label = label[:-1] + "X" + label[-1]
+  return label
+# An id as it comes back off the card, allowing for the font: easyocr reads
+# 0 as O, 5 as S, 6 as G and 7 as z in this field about half the time, so the
+# shape is all that identifies it.
+ID_READ = re.compile(r"^[vV][0-9A-Za-z]{3,4}$")
 
 
 def load(path):
@@ -138,6 +167,8 @@ def on_roster(tries=4):
 
 def leave_dialogs():
   """Close anything stacked over the roster, and say whether it worked."""
+  if veteran.dismiss_error():
+    warning("An error dialog was open; closed it.")
   if veteran.on_memo():
     warning("A memo dialog is open; cancelling out of it.")
     veteran.tap(constants.VETERAN_MEMO_CANCEL_MOUSE_POS, settle=1.0)
@@ -223,7 +254,7 @@ def scan(args):
     parts = None if args.no_frames else {}
     card = veteran.read_card(keep=parts)
     card["index"] = index
-    card["id"] = ID_FORMAT.format(index)
+    card["id"] = memo_id(index)
 
     # A card that already carries an id is the cross-check on the order. The
     # same id means a previous run put it there and the positions still line
@@ -255,6 +286,8 @@ def scan(args):
         card["memo_written"] = veteran.write_memo(card["id"])
         if card["memo_written"]:
           card["memo"] = card["id"]
+        else:
+          card["warnings"].append(f"the memo was not set to {card['id']}")
 
     if parts is not None:
       # After the memo, so a sheet from a --write-memo run shows the id the

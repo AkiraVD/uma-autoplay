@@ -38,6 +38,7 @@ BUTTONS = {"left": 0x110, "right": 0x111, "middle": 0x112, "back": 0x113, "forwa
 KEYS = {
   "esc": 1, "backspace": 14, "tab": 15, "enter": 28, "space": 57,
   "shift": 42, "home": 102, "end": 107, "delete": 111,
+  "-": 12, "=": 13, ".": 52, ",": 51, "/": 53, " ": 57,
   "f1": 59, "f2": 60, "f3": 61, "f4": 62, "f5": 63, "f6": 64, "f7": 65,
   "f8": 66, "f9": 67, "f10": 68, "f11": 87, "f12": 88,
   "up": 103, "left": 105, "right": 106, "down": 108,
@@ -62,6 +63,9 @@ def check():
   return None
 
 def keycode(name):
+  # Before stripping - " " is a real key and strip() would empty it.
+  if name in KEYS:
+    return KEYS[name]
   key = name.strip().lower()
   key = ALIASES.get(key, key)
   if key not in KEYS:
