@@ -2555,7 +2555,9 @@ badge could be read came out unanimous:
 
 That is two tiers per letter - G, G+, F, F+, E, E+, ... A, A+, S, S+, SS,
 SS+, UG, UG+, ... - which band 4 and band 12 fix at both ends. Bands 18 and
-20 are the pattern extended, not something read off a card.
+20 were the pattern extended when this was written and were checked against
+the cards on 2026-10-10: V090 and V146 do read SS+, V147 does read UG+. So
+every band in the table above has been seen on a real badge.
 
 **The badge is still read, as a check on the rating.** A disagreement on the
 LETTER means one of the two is wrong and the rating is the suspect - which is
