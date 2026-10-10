@@ -322,6 +322,67 @@ def scan(args):
   return 0
 
 
+def aptitudes(args):
+  """Walk the roster filling in only the aptitude grades.
+
+  A field added after the roster was scanned does not need the whole walk
+  again: this reads the header and the ten grades and leaves the skills, the
+  sparks, the memos and the sheets alone, which takes about a quarter of the
+  time. It refuses to write to a record whose name and rating do not match
+  what is on screen, so a roster that has been re-sorted stops it rather than
+  scrambling the file.
+
+  Read from the GAME, not from the saved sheets: at JPEG quality the grades
+  lose about one in ten and misread another - V120's End read B against the
+  card's E - and a plausible wrong grade is worse than no grade.
+  """
+  if not to_roster():
+    return 1
+  if not veteran.ensure_ascending() and not args.any_order:
+    error("The roster is not in oldest-first order; the records would not line up.")
+    return 1
+  data = load(OUT)
+  by_index = {u["index"]: u for u in data.get("umas", [])}
+  if not by_index:
+    error(f"{OUT} has no records to fill in.")
+    return 1
+
+  veteran.tap(constants.VETERAN_ROSTER_FIRST_CARD_MOUSE_POS, settle=2.0)
+  if not veteran.on_details():
+    error("Tapping the first card did not open Umamusume Details.")
+    return 1
+
+  seen, done, skipped = None, 0, []
+  for index in sorted(by_index):
+    if index > 1 and not veteran.next_card(previous=seen):
+      error(f"The roster stopped advancing at card {index}.")
+      break
+    seen = veteran.fingerprint()
+    screen = veteran.grab()
+    head = veteran.read_header(screen)
+    record = by_index[index]
+    if head["rating"] != record["rating"] or head["name"] != record["name"]:
+      skipped.append(f"{record['id']} (screen says {head['name']} {head['rating']})")
+      continue
+    record["aptitudes"] = veteran.read_aptitudes(screen)
+    blank = [k for k, v in record["aptitudes"].items() if v is None]
+    record["warnings"] = [w for w in record["warnings"] if "aptitudes did not read" not in w]
+    if blank:
+      record["warnings"].append(f"aptitudes did not read: {', '.join(blank)}")
+    done += 1
+    if done % 20 == 0 or blank:
+      info(f"[{index}/{max(by_index)}] {record['id']} "
+           f"{' '.join(record['aptitudes'][k] or '?' for k, _, _ in constants.VETERAN_APTITUDE_SLOTS)}"
+           f"{' !' + ','.join(blank) if blank else ''}")
+    save(OUT, data)
+
+  veteran.tap(constants.VETERAN_CLOSE_MOUSE_POS, settle=1.5)
+  info(f"Filled in aptitudes for {done} cards.")
+  if skipped:
+    warning(f"{len(skipped)} record(s) did not match what was on screen: {'; '.join(skipped[:5])}")
+  return 0
+
+
 def card(args):
   """Read whatever card is already open, without stepping or writing."""
   if not veteran.on_details():
@@ -347,6 +408,11 @@ def main():
   run.add_argument("--no-frames", action="store_true",
                    help=f"skip the per-card contact sheets in {FRAMES}/")
   run.set_defaults(func=scan)
+
+  apt = sub.add_parser("aptitudes", help="fill in only the aptitude grades on an existing file")
+  apt.add_argument("--any-order", action="store_true",
+                   help="walk even when the roster is not oldest-first")
+  apt.set_defaults(func=aptitudes)
 
   sub.add_parser("card", help="read the card already on screen").set_defaults(func=card)
   sub.add_parser("nav", help="get to the roster and stop").set_defaults(

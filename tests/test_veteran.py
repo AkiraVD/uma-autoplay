@@ -151,6 +151,32 @@ def check_rank_bands():
     ok(f"band edge {rating:,} is {rank}", got == rank, got)
 
 
+APTITUDES = {
+  "rudolf_splus_skills":   "A G D A A A B A A C",
+  "rudolf_s_sparks":       "A G D A A A B A A C",
+  "oguri_a_skills":        "A B D S A B F A A D",
+  "condor_sparks":         "A B F A S A E A A C",
+  "bakushin_aplus_sparks": "A G A A F G A A D G",
+}
+
+
+def check_aptitudes():
+  """The ten grades, read one glyph at a time off a square crop.
+
+  Both of those matter. Read as one strip, easyocr returns the labels and
+  drops every grade; batched into one image it gets 40 of 50; and at a crop
+  of 34x36 rather than 34x34 the grey G in the Dirt slot reads as nothing,
+  twice, while the identical glyph elsewhere reads at 1.00.
+  """
+  order = [slot for slot, _, _ in V.constants.VETERAN_APTITUDE_SLOTS]
+  for name, truth in APTITUDES.items():
+    got = V.read_aptitudes(frame(name))
+    line = [got[k] or "?" for k in order]
+    want = truth.split()
+    ok(f"{name}: aptitudes", line == want,
+       "" if line == want else f"{' '.join(line)} != {truth}")
+
+
 def check_stats():
   for name, expected in STATS.items():
     read = V.read_stats(frame(name))
@@ -269,6 +295,7 @@ def check_popups():
 def main():
   check_headers()
   check_rank_bands()
+  check_aptitudes()
   check_stats()
   check_sparks()
   check_skills()

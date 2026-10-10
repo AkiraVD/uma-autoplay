@@ -405,6 +405,36 @@ def read_rating(screen):
   return int(digits) if digits else -1
 
 
+# Aptitudes are graded S..G with no "+", unlike the career rank badge, so one
+# glyph is the whole answer.
+APTITUDE_GRADES = "SABCDEFG"
+
+
+def read_aptitudes(screen):
+  """{turf, dirt, sprint, mile, medium, long, front, pace, late, end} as
+  single letters, with None for any that would not read.
+
+  One OCR call per glyph. See the note in utils/constants.py for why they are
+  not read together, and why the crop is square.
+
+  No confidence floor: correct reads come back as low as 0.33 on this font,
+  so a floor costs more than it saves when the allowlist is already eight
+  letters wide and a bad read shows up as a grade the uma plainly cannot have.
+  """
+  pad, side = constants.VETERAN_APTITUDE_PAD, constants.VETERAN_APTITUDE_GLYPH
+  scale = constants.VETERAN_APTITUDE_SCALE
+  found = {}
+  for name, column, row in constants.VETERAN_APTITUDE_SLOTS:
+    x = constants.VETERAN_APTITUDE_COLUMNS[column]
+    y = constants.VETERAN_APTITUDE_ROWS[row]
+    patch = screen.crop((x - pad, y - pad, x + side + pad, y + side + pad))
+    patch = patch.resize((patch.width * scale, patch.height * scale), Image.LANCZOS)
+    hits = [b for b in read_boxes(patch, allowlist=APTITUDE_GRADES) if b[0].strip()]
+    letter = max(hits, key=lambda b: b[2][3])[0].strip().upper()[:1] if hits else ""
+    found[name] = letter if letter in APTITUDE_GRADES else None
+  return found
+
+
 def read_stats(screen):
   """{spd, sta, pwr, guts, wit}, each -1 when it would not read.
 
@@ -812,6 +842,7 @@ def read_card(keep=None):
   badge = card.get("rank_badge") or read_rank(screen)
   card["rank_badge"] = badge
   card["stats"] = read_stats(screen)
+  card["aptitudes"] = read_aptitudes(screen)
   card["skills"], unmatched = read_skills(keep=None if keep is None else keep["skills"])
 
   if select_tab(constants.VETERAN_TAB_INSPIRATION_MOUSE_POS,
@@ -834,6 +865,9 @@ def read_card(keep=None):
     # the two reads is wrong and the rating is the one worth doubting.
     warnings.append(f"the badge reads {badge} but the rating {card['rating']}"
                     f" is {card['rank']}; the rating may have misread")
+  blank = [name for name, grade in card["aptitudes"].items() if grade is None]
+  if blank:
+    warnings.append(f"aptitudes did not read: {', '.join(blank)}")
   missing = [stat for stat, value in card["stats"].items() if value < 0]
   if missing:
     warnings.append(f"stats did not read: {', '.join(missing)}")

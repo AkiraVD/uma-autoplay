@@ -611,6 +611,28 @@ VETERAN_MEMO_REGION = (556, 210, 236, 36)      # "-" when no memo is set
 VETERAN_MEMO_PENCIL_MOUSE_POS = (818, 228)
 VETERAN_STATS_REGION = (265, 255, 580, 70)
 VETERAN_APTITUDE_REGION = (258, 335, 592, 106)
+# The ten aptitude grades, as the top-left of each glyph. They sit on a fixed
+# four-column grid at the right-hand end of each pill; the Track row uses the
+# first two columns only. Reading the strip as one OCR call returns the labels
+# and drops every grade, and batching the ten glyphs into one strip reads
+# 40 of 50 - so they are read one at a time, which is both exact (50 of 50
+# over five cards) and faster, 3.3s a card against 5.2s.
+VETERAN_APTITUDE_COLUMNS = (469, 576, 683, 790)
+VETERAN_APTITUDE_ROWS = {"track": 343, "distance": 377, "style": 411}
+VETERAN_APTITUDE_SLOTS = (
+  ("turf", 0, "track"), ("dirt", 1, "track"),
+  ("sprint", 0, "distance"), ("mile", 1, "distance"),
+  ("medium", 2, "distance"), ("long", 3, "distance"),
+  ("front", 0, "style"), ("pace", 1, "style"),
+  ("late", 2, "style"), ("end", 3, "style"),
+)
+# The glyph is 18px. The crop MUST be square: at 34x36 instead of 34x34 the
+# grey G in the Dirt slot read as nothing at all, twice, while the identical
+# glyph elsewhere read at 1.00. easyocr resizes its own canvas and a two-pixel
+# difference in the box was enough to lose the detection.
+VETERAN_APTITUDE_GLYPH = 18
+VETERAN_APTITUDE_PAD = 8
+VETERAN_APTITUDE_SCALE = 6
 VETERAN_TAB_SKILLS_MOUSE_POS = (362, 466)
 VETERAN_TAB_INSPIRATION_MOUSE_POS = (552, 466)
 VETERAN_TAB_CAREER_MOUSE_POS = (741, 466)
