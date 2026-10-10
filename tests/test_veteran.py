@@ -185,6 +185,26 @@ def check_skills():
     ok(f"{name}: no name carries a rank glyph", not carried, carried)
 
 
+def check_merged_row():
+  """A row easyocr returns as ONE box spanning both columns.
+
+  This frame is V162's skills panel, lifted out of its contact sheet and
+  pasted back at the panel's screen position - so only the panel is real,
+  which is all the reader looks at. easyocr reads its first row as a single
+  detection, "Let's Pump Some Ironl 73 Shooting for Victoryl": the left pill,
+  its level badge and the right pill. Grouped as one name that matched
+  nothing, it cost V162 and V163 the right-hand skill outright.
+  """
+  from core.skill import canonical_skill
+  rows = V.read_skills_frame(frame("merged_row"), top_edge=0)
+  got = [V.RANK_GLYPH.sub("", canonical_skill(r) or r).strip() for r in rows]
+  ok("merged row: the right-hand skill survives", "Shooting for Victory!" in got,
+     got[:3])
+  ok("merged row: the left-hand skill survives", "Let's Pump Some Iron!" in got)
+  merged = [r for r in rows if "shooting" in r.lower() and "iron" in r.lower()]
+  ok("merged row: the two are not one name", not merged, merged)
+
+
 def check_roster():
   ok("roster: registered count", V.read_registered(frame("roster_ascending")) == (191, 260),
      V.read_registered(frame("roster_ascending")))
@@ -252,6 +272,7 @@ def main():
   check_stats()
   check_sparks()
   check_skills()
+  check_merged_row()
   check_roster()
   check_tabs()
   check_memo()

@@ -572,6 +572,17 @@ def read_sparks_frame(screen, top_edge=PANEL_EDGE):
   return sparks, legacy_y is not None
 
 
+def split_row(panel, top, bottom):
+  """Re-read one row of the panel as its two columns. See read_skills_frame.
+
+  Returned as (left boxes, right boxes), each box's y relative to `top`.
+  """
+  pad = 2
+  top, bottom = max(0, top - pad), min(panel.height, bottom + pad)
+  halves = ((0, PANEL_COLUMN_SPLIT), (PANEL_COLUMN_SPLIT, panel.width))
+  return [read_boxes(panel.crop((left, top, right, bottom))) for left, right in halves]
+
+
 def read_skills_frame(screen, top_edge=PANEL_EDGE):
   """The skill names visible on one frame of the Skills tab.
 
@@ -585,6 +596,20 @@ def read_skills_frame(screen, top_edge=PANEL_EDGE):
   columns = {0: [], 1: []}
   for index, (text, _, (x, y, w, h)) in enumerate(read_boxes(panel)):
     if not text.strip() or SKILL_LEVEL.match(text.strip()):
+      continue
+    if x < PANEL_COLUMN_SPLIT < x + w:
+      # One box across both columns, which no single pill can be: easyocr
+      # took a whole ROW as one detection and returned
+      # "Let's Pump Some Ironl 73 Shooting for Victoryl" - the left pill, its
+      # level badge and the right pill. Grouped into one column, that is a
+      # name matching nothing AND the right-hand skill silently gone, which
+      # is what cost V162 and V163 their "Shooting for Victory!". The row is
+      # read again as two halves instead. It is rare enough - 2 cards in 191
+      # - that the extra calls cost nothing measurable.
+      for side, part in enumerate(split_row(panel, y, y + h)):
+        for text2, _, (x2, y2, w2, h2) in part:
+          if text2.strip() and not SKILL_LEVEL.match(text2.strip()):
+            columns[side].append((y + y2, y + y2 + h2, index, text2))
       continue
     columns[0 if x < PANEL_COLUMN_SPLIT else 1].append((y, y + h, index, text))
 
