@@ -207,11 +207,14 @@ cards; the whole roster has not been run yet. What is still open:
   leading digits dropped. It was caught by the badge disagreeing with the
   rating's band, which is now a warning, but nothing re-reads a rating that
   only *looks* plausible.
-- **The aptitude grades are not read at all.** easyocr returns nothing for the
-  stylised letters, so a veteran's Turf/Long/Pace grades are missing from the
-  file even though the strip is right there. Same answer as above: a template
-  per grade. That is the one field a parent is picked on that the scan does
-  not have, since the pink spark is drawn from exactly the A+ aptitudes.
+- ~~The aptitude grades are not read at all.~~ Read since 2026-10-10, one OCR
+  call per glyph on a square crop: 1,909 of 1,910 across the roster. The one
+  miss is a grey **G**, which is the only grade with no colour in it and is
+  marginal for easyocr - it failed once in the Turf slot on V061 while three
+  other G's on the same card read fine. It comes back as `null` with a
+  warning rather than a guess. A template for G alone would close it; so
+  would any preprocessing that survives testing, though autocontrast and
+  binarising both failed.
 - **A skill's ○ / ◎ rank is still unknown** (see `screen-map.md` for the two
   attempts). It matters for parent farming - only the top of a tier group pays
   a spark - so names are stored stripped rather than guessed.

@@ -2564,3 +2564,35 @@ LETTER means one of the two is wrong and the rating is the suspect - which is
 how V153 was caught: the card said 1,066, the scan read 66, and the badge's
 F+ against the rating's G is what gave it away. A disagreement on the "+"
 says nothing, because the badge cannot settle it.
+
+
+### The aptitude grades (2026-10-10)
+
+Ten grades on a fixed four-column grid, read **one glyph at a time**:
+
+| | |
+|---|---|
+| columns (glyph left edge) | x 469, 576, 683, 790 |
+| rows | y 343 Track, 377 Distance, 411 Style |
+| Track uses | the first two columns only |
+| glyph | 18px, cropped with 8px padding, upscaled x6 LANCZOS |
+| allowlist | `SABCDEFG` - aptitudes have no "+", unlike the rank badge |
+
+Three things were measured rather than assumed:
+
+- **Reading the strip as one call returns the labels and drops every grade.**
+  That is what "easyocr cannot read them" was originally based on, and it was
+  the wrong conclusion - it cannot read them *together*.
+- **Batching the ten glyphs into one image is worse**, 40 of 50 against 50 of
+  50, and slower: 5.2s a card against 3.3s.
+- **The crop has to be square.** At 34x36 instead of 34x34 the grey G in the
+  Dirt slot read as nothing at all, twice, while the identical glyph
+  elsewhere read at 1.00. easyocr resizes its own canvas and two pixels in
+  the box were enough to lose the detection.
+
+No confidence floor: correct reads come back as low as 0.33 on this font.
+
+**Not from the contact sheets.** They carry the aptitude strip, so backfilling
+from them needs no game time, and it was tried - at JPEG quality V120 came
+back 8 of 10 with one unread *and one wrong*, its End reading B against the
+card's E. The grades are read from the game instead.
