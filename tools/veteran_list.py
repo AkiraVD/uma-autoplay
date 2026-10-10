@@ -361,9 +361,16 @@ def aptitudes(args):
     screen = veteran.grab()
     head = veteran.read_header(screen)
     record = by_index[index]
-    if head["rating"] != record["rating"] or head["name"] != record["name"]:
+    if head["name"] != record["name"]:
       skipped.append(f"{record['id']} (screen says {head['name']} {head['rating']})")
       continue
+    if head["rating"] != record["rating"]:
+      # The name lines up and the walk is sequential from card 1, so this is
+      # a rating that reads differently rather than the wrong card - V153's
+      # 1,066 comes off the screen as 66 every time. Aptitudes do not depend
+      # on the rating, so they are still worth taking.
+      warning(f"{record['id']}: the screen's rating reads {head['rating']},"
+              f" the record says {record['rating']}; filling it in anyway.")
     record["aptitudes"] = veteran.read_aptitudes(screen)
     blank = [k for k, v in record["aptitudes"].items() if v is None]
     record["warnings"] = [w for w in record["warnings"] if "aptitudes did not read" not in w]

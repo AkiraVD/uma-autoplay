@@ -431,7 +431,11 @@ def read_aptitudes(screen):
     patch = patch.resize((patch.width * scale, patch.height * scale), Image.LANCZOS)
     hits = [b for b in read_boxes(patch, allowlist=APTITUDE_GRADES) if b[0].strip()]
     letter = max(hits, key=lambda b: b[2][3])[0].strip().upper()[:1] if hits else ""
-    found[name] = letter if letter in APTITUDE_GRADES else None
+    # `len(letter) == 1` first: "" is a substring of every string, so a bare
+    # `letter in APTITUDE_GRADES` lets an empty read through as a grade of
+    # "" - which then is not None, so nothing reports it as unread. V061's
+    # Turf sat in the file as "" because of exactly that.
+    found[name] = letter if len(letter) == 1 and letter in APTITUDE_GRADES else None
   return found
 
 

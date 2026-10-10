@@ -175,6 +175,11 @@ def check_aptitudes():
     want = truth.split()
     ok(f"{name}: aptitudes", line == want,
        "" if line == want else f"{' '.join(line)} != {truth}")
+    # "" is a substring of every string, so an unread grade has to come back
+    # as None and not as an empty string that passes for a grade.
+    ok(f"{name}: no grade is the empty string",
+       all(v is None or (len(v) == 1 and v in V.APTITUDE_GRADES) for v in got.values()),
+       {k: v for k, v in got.items() if v == ""})
 
 
 def check_stats():
