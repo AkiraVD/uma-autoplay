@@ -25,6 +25,9 @@ SHOTS = os.path.join(ROOT, "shots")
 UMATOOL = "tools/umatool.py"
 
 # blocked: refused while the bot is running. needs_at: takes an X,Y point.
+# needs_seconds / needs_direction: the extra arguments hold and scroll take,
+# both range-checked here for the same reason the point is - this endpoint is
+# reachable over the tailnet and the values reach the game.
 COMMANDS = {
   "health": {"label": "Health check", "argv": ["tools/health.py"], "timeout": 120},
   "shot": {"label": "Screenshot", "argv": [UMATOOL, "shot"], "timeout": 60},
@@ -42,7 +45,21 @@ COMMANDS = {
   "type": {"label": "Type text", "argv": [UMATOOL, "type"], "timeout": 90, "blocked": True,
            "needs_text": True},
   "scan": {"label": "Facility scan", "argv": [UMATOOL, "scan"], "timeout": 120, "blocked": True},
+  # A click is press and release in one frame. Some of the game's controls only
+  # answer to a press that is held - the Spark Selection screen is the known
+  # one (core/sparks.py's deliberate_click).
+  "hold": {"label": "Click and hold", "argv": [UMATOOL, "hold"], "timeout": 60, "blocked": True,
+           "needs_at": True, "needs_seconds": True},
+  # Lists in this game are dragged, never wheeled, which is what
+  # core/menu_scan.py exists for.
+  "scroll": {"label": "Scroll list", "argv": [UMATOOL, "scroll"], "timeout": 60, "blocked": True,
+             "needs_at": True, "needs_direction": True},
 }
+
+# A hold longer than this is almost certainly a mistake, and the job timeout is
+# 60s. A scroll further than one screen overshoots whatever is being read.
+MAX_HOLD = 10.0
+MAX_SCROLL = 600
 
 MAX_LINES = 400
 AT = re.compile(r"^\s*(\d{1,4})\s*,\s*(\d{1,4})\s*$")
@@ -79,7 +96,7 @@ def screen_jpeg(quality=85):
   img.save(buf, "JPEG", quality=quality)
   return buf.getvalue(), img.size
 
-def start(name, at=None, text=None):
+def start(name, at=None, text=None, seconds=None, direction=None, distance=None):
   """Start a command. Returns (job, None), or (None, (http_status, message))."""
   global _job
   spec = COMMANDS.get(name)
@@ -99,6 +116,24 @@ def start(name, at=None, text=None):
     if not (0 <= x < 1920 and 0 <= y < 1080):
       return None, (400, f"TOOL-E04 {x},{y} is outside the 1920x1080 screen.")
     argv.append(f"{x},{y}")
+  if spec.get("needs_seconds"):
+    try:
+      secs = 2.0 if seconds is None else float(seconds)
+    except (TypeError, ValueError):
+      return None, (400, "TOOL-E16 give the hold time in seconds.")
+    if not (0 < secs <= MAX_HOLD):
+      return None, (400, f"TOOL-E17 hold between 0 and {MAX_HOLD:g} seconds; got {secs:g}.")
+    argv += ["--seconds", f"{secs:g}"]
+  if spec.get("needs_direction"):
+    if direction not in ("up", "down"):
+      return None, (400, "TOOL-E18 direction must be 'up' or 'down'.")
+    try:
+      px = MAX_SCROLL // 2 if distance is None else int(distance)
+    except (TypeError, ValueError):
+      return None, (400, "TOOL-E19 give the scroll distance in pixels.")
+    if not (0 < px <= MAX_SCROLL):
+      return None, (400, f"TOOL-E20 scroll between 1 and {MAX_SCROLL} pixels; got {px}.")
+    argv += ["--direction", direction, "--distance", str(px)]
   if spec.get("needs_text"):
     # Checked here rather than trusted from the page: this reaches the game
     # over the tailnet, and utils.control resolves one X keysym per character,

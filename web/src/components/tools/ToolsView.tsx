@@ -3,9 +3,12 @@ import {
   Camera,
   FastForward,
   HeartPulse,
+  ChevronsDown,
+  ChevronsUp,
   Keyboard,
   Loader2,
   MousePointerClick,
+  Timer,
   Power,
   PowerOff,
   Radar,
@@ -78,7 +81,15 @@ const CLICK: Tool = { name: "click", label: "Click at X,Y", hint: "Tap one point
 // filled from here. Focusing the field is Click at X,Y's job; this only sends
 // the keys, so printable ASCII is all the game's keyboard can take.
 const TYPE: Tool = { name: "type", label: "Type text", hint: "Type into the field you already tapped", icon: Keyboard, locked: true };
+// A click is press and release in one frame. Some of the game's controls only
+// answer to a press that is held - the Spark Selection screen is the known one.
+const HOLD: Tool = { name: "hold", label: "Click and hold", hint: "Press the point, hold, release - for controls a tap does not reach", icon: Timer, locked: true };
+// Lists in this game are dragged, never wheeled.
+const SCROLL_DOWN: Tool = { name: "scroll", label: "Scroll down", hint: "Drag the list from this point to show what is further down", icon: ChevronsDown, locked: true };
+const SCROLL_UP: Tool = { name: "scroll", label: "Scroll up", hint: "Drag the list from this point back towards the top", icon: ChevronsUp, locked: true };
 const MAX_TYPE = 120;
+const HOLD_SECONDS = [1, 2, 3, 5];
+const SCROLL_PX = 260;
 
 const POLL_MS = 1500;
 // While a job runs, poll fast: the picker only reloads the screen once the job
@@ -192,6 +203,7 @@ export default function ToolsView() {
   const [refusal, setRefusal] = useState<string | null>(null);
   const [at, setAt] = useState("");
   const [text, setText] = useState("");
+  const [holdSecs, setHoldSecs] = useState(2);
   const outputRef = useRef<HTMLPreElement>(null);
 
   const refresh = useCallback(async () => {
@@ -229,7 +241,7 @@ export default function ToolsView() {
     if (outputRef.current) outputRef.current.scrollTop = outputRef.current.scrollHeight;
   }, [lineCount]);
 
-  const run = async (tool: Tool, body: Record<string, string> = {}) => {
+  const run = async (tool: Tool, body: Record<string, string | number> = {}) => {
     if (tool.confirm && !window.confirm(tool.confirm)) return;
     setRefusal(null);
     try {
@@ -251,7 +263,7 @@ export default function ToolsView() {
   const botRunning = status?.bot_running ?? false;
 
   // unready: the tool is missing an input it needs, like a point to click.
-  const button = (tool: Tool, body?: Record<string, string>, unready = false) => {
+  const button = (tool: Tool, body?: Record<string, string | number>, unready = false) => {
     const locked = !!tool.locked && botRunning;
     const Icon = busy && job?.name === tool.name ? Loader2 : tool.icon;
     return (
@@ -323,6 +335,29 @@ export default function ToolsView() {
                           Point: {at || "click the screen to pick one"}
                         </span>
                         {button(CLICK, { at }, !parsePoint(at))}
+                      </div>
+                      {/* A tap is press and release in one frame; a held press
+                          and a drag are different gestures, and some of the
+                          game's controls only answer to those. Both reuse the
+                          point picked above. */}
+                      <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+                        <span className="text-sm text-muted-foreground">Hold for</span>
+                        {HOLD_SECONDS.map((n) => (
+                          <Button
+                            key={n}
+                            size="sm"
+                            variant={holdSecs === n ? "default" : "outline"}
+                            onClick={() => setHoldSecs(n)}
+                          >
+                            {n}s
+                          </Button>
+                        ))}
+                        {button(HOLD, { at, seconds: holdSecs }, !parsePoint(at))}
+                        <span className="ml-auto text-sm text-muted-foreground">
+                          Drag {SCROLL_PX}px from the point
+                        </span>
+                        {button(SCROLL_UP, { at, direction: "up", distance: SCROLL_PX }, !parsePoint(at))}
+                        {button(SCROLL_DOWN, { at, direction: "down", distance: SCROLL_PX }, !parsePoint(at))}
                       </div>
                       {/* Typing goes wherever the caret already is, so tap the field
                           with Click at X,Y first - the screen above shows whether it

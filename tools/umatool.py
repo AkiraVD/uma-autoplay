@@ -489,6 +489,49 @@ def cmd_click(a):
   print(f"clicked ({x},{y})")
 
 
+def cmd_hold(a):
+  """Press at one point, hold, release - without moving.
+
+  A click is press and release in the same frame; some of the game's controls
+  only answer to a press that is *held*, and the Spark Selection screen wants
+  a deliberate press rather than a tap (core/sparks.py has the same idea in
+  `deliberate_click`). Separate from `click` because the duration is the whole
+  point and defaulting it onto click would slow every tap down.
+  """
+  import utils.control as control
+  x, y = (int(v) for v in a.at.split(","))
+  control.moveTo(960, 540)
+  time.sleep(0.15)
+  control.moveTo(x, y, duration=0.15)
+  control.mouseDown()
+  time.sleep(a.seconds)
+  control.mouseUp()
+  print(f"held ({x},{y}) for {a.seconds}s")
+
+
+def cmd_scroll(a):
+  """Scroll a list by dragging it, which is the only thing the game answers to.
+
+  Not a wheel event: every list in this game is dragged, which is why
+  core/menu_scan.py exists. The drag holds still at both ends for the reason
+  menu_scan's slow_drag does - a flick keeps gliding after release and
+  anything read during the glide is garbage.
+
+  `up` moves the content up, i.e. shows what is further down the list, the
+  same sense as menu_scan's `scroll(up=False)`.
+  """
+  import utils.control as control
+  x, y = (int(v) for v in a.at.split(","))
+  distance = a.distance if a.direction == "down" else -a.distance
+  control.moveTo(x, y, duration=0.2)
+  control.mouseDown()
+  time.sleep(0.6)
+  control.moveTo(x, y - distance, duration=1.0)
+  time.sleep(0.4)
+  control.mouseUp()
+  print(f"scrolled {a.direction} {a.distance}px from ({x},{y})")
+
+
 def cmd_type(a):
   """Type text into whatever field is already focused, then capture.
 
@@ -607,6 +650,18 @@ def main():
   s = sub.add_parser("click", help="click a point (capture with `shot` after)")
   s.add_argument("at", help="X,Y")
   s.set_defaults(func=cmd_click)
+
+  s = sub.add_parser("hold", help="press and hold a point, then release")
+  s.add_argument("at", help="X,Y")
+  s.add_argument("--seconds", type=float, default=2.0, help="how long to hold (default 2)")
+  s.set_defaults(func=cmd_hold)
+
+  s = sub.add_parser("scroll", help="drag a list up or down from a point")
+  s.add_argument("at", help="X,Y to drag from")
+  s.add_argument("--direction", choices=["up", "down"], default="down",
+                 help="down shows what is further down the list (default)")
+  s.add_argument("--distance", type=int, default=260, help="pixels to travel (default 260)")
+  s.set_defaults(func=cmd_scroll)
 
   s = sub.add_parser("type", help="type text into the focused field, then capture")
   s.add_argument("text", help="the text to type (printable ASCII)")
