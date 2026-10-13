@@ -42,6 +42,25 @@ FACILITY = re.compile(
 SPLIT = re.compile(r"Split:\[([^\]]*)\]")
 SPLIT_ENTRY = re.compile(r"(\w+):(\w+)=(\d+)")
 
+# Grand Concert only: the Performance types a scheduled song is still short of,
+# and which of them each facility pays. `performance_bonus` is scored off this,
+# so a career recorded without it cannot replay that term at all - it comes back
+# 0.0 for every facility and the whole turn scores as if nothing were scheduled.
+# Careers recorded before 2026-10-12 have no `performance` key for that reason.
+PERFORMANCE = re.compile(r"^Performance: short of (\[[^\]]*\])( \(urgent\))?,"
+                         r" chips (\{.*\})$")
+
+# training_score's own breakdown, one line per facility. Recorded as an oracle
+# rather than as input: a replay that rebuilds the board from `facilities` must
+# land on the same `total`, and that is the only way to tell a scorer change
+# from a reconstruction mistake. It also carries the one input the board line
+# never prints - `total_hints` only reaches the score as a flat +0.5 on `base`,
+# so the difference between the logged base and a rebuilt one recovers it.
+SCORE = re.compile(r"^(spd|sta|pwr|guts|wit) -> base=([\d.]+), multiplier=([\d.]+),"
+                   r" room=([\d.]+), unity=([-\d.]+), gains=([\d.]+)"
+                   r"(?:, performance=([\d.]+))?(?:, wit_band=([\d.]+))?"
+                   r"(?:, duel=([\d.]+))?, total=([-\d.]+)")
+
 PATTERNS = {
   "year": re.compile(r"^Year: (.+)$"),
   "turn": re.compile(r"^Turn: (.+)$"),
@@ -70,7 +89,18 @@ DECISIONS = [
                        r" spend, so taking (\w+) instead\.$")),
   ("rest", re.compile(r"^Energy .* is under .*, resting instead of training\.$")),
   ("rest", re.compile(r"^.*nothing clears the \d+% failure bar")),
-  ("rest", re.compile(r"^All trainings are unsafe")),
+  ("rest", re.compile(r"^No safe training found")),
+  # NOT a rest, though it reads like one: logic.py follows this line with
+  # `return "wit"`. Recorded as a rest it made two wit trainings in
+  # grandconcert_kitasan_20261012 look like the scorer and the career
+  # disagreeing, which is the one thing a backtest must not get wrong.
+  ("train", re.compile(r"^All trainings are unsafe, but (WIT) is safe")),
+  # A Recreation outing is a third thing a turn can do, and the turn trains
+  # nothing - so inferring from "board scored, no training executed" labelled
+  # it a rest. `do_something` never sees that choice (should_recreate makes it
+  # afterwards), so a replay of the scorer cannot be judged against it either
+  # way: it is kept as its own action so it can be excluded rather than scored.
+  ("outing", re.compile(r"^Going on a Recreation outing")),
   ("train", re.compile(r"^Training ([A-Z]+)\.$")),
 ]
 
@@ -166,6 +196,29 @@ def extract(paths, since=None, until=None):
           by_type.setdefault(card_type, {})[level] = int(count)
         record["split"] = by_type
       current["facilities"][key.lower()] = record
+      continue
+
+    hit = SCORE.search(message)
+    if hit:
+      current.setdefault("scores", {})[hit.group(1)] = {
+        "base": float(hit.group(2)), "multiplier": float(hit.group(3)),
+        "room": float(hit.group(4)), "unity": float(hit.group(5)),
+        "gains": float(hit.group(6)),
+        "performance": float(hit.group(7)) if hit.group(7) else 0.0,
+        "wit_band": float(hit.group(8)) if hit.group(8) else 0.0,
+        "duel": float(hit.group(9)) if hit.group(9) else 0.0,
+        "total": float(hit.group(10)),
+      }
+      continue
+
+    hit = PERFORMANCE.search(message)
+    if hit:
+      chips = _dict(hit.group(3)) or {}
+      current["performance"] = {
+        "short": _dict(hit.group(1)) or [],
+        "urgent": bool(hit.group(2)),
+        "chips": chips,
+      }
       continue
 
     for name, pattern in PATTERNS.items():

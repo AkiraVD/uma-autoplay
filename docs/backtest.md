@@ -132,10 +132,112 @@ scorer) replays in full, but `rainbow_training` and `training_score` cannot be
 replayed against them at all. `trackblazer_20260918.json` is one of those: it
 predates the change by a few hours.
 
-## Not built yet
+## The replay harness
 
-There is no replay harness. The fixture makes one straightforward - feed each
-turn's `facilities`/`stats`/`caps`/`energy` into the scorers and diff the choice
-against `action`/`trained` - but what counts as a regression is a judgement
-call (a different facility at the same score is not obviously worse), so the
-comparison has not been written.
+`tools/career_replay.py` (2026-10-12). It drives the **real**
+`core.logic.do_something`, with only the four readers that function opens with
+stubbed from the record, so the choice comes out of the actual filters, duel
+and camp rules, Junior branch, `rainbow_training` and rest fallbacks rather
+than out of a second copy of the scorer that would drift from them.
+
+```bash
+# fidelity only: does the harness reproduce what the career did?
+.venv/bin/python tools/career_replay.py tests/fixtures/careers/<career>.json
+
+# and what a different weighting would have chosen
+.venv/bin/python tools/career_replay.py tests/fixtures/careers/<career>.json \
+    --override '{"priority_weights": [2.5, 1.5, 0.7, 0.5, -1],
+                 "priority_weight": "HEAVY"}'
+```
+
+Two arms over the same turns: `base` is `--config` (default `config.json`),
+`alt` is that with `--override` merged in. It prints the pick counts, the stat
+points the chosen facility actually printed (clipped to that turn's headroom),
+and every turn the two arms disagreed on. "What counts as a regression" is
+still a judgement call, which is why the output is a diff and a stat-point
+total rather than a pass/fail.
+
+**Read the fidelity line first.** A replay that cannot reproduce the recorded
+career is measuring its own reconstruction. On
+`grandconcert_kitasan_20261012` it reproduces 59 of 60 comparable turns
+(98.3%); the one miss is a Junior turn, and the 3 Recreation outings are
+excluded because `should_recreate` - not `do_something` - made that choice, so
+the scorer cannot be marked right or wrong on them.
+
+Two inputs are genuinely absent from a fixture and are rebuilt:
+
+- `total_hints` never reaches the log as a number, only as a flat +0.5 on
+  `base`, so it is recovered from the recorded `scores.<stat>.base`.
+- the per-type split is missing on pre-2026-09-18 careers. The harness refuses
+  those rather than replaying them wrongly. A board with **no supports** also
+  prints no split, but it has no rainbow either, so that absence costs nothing.
+
+Both arms share whatever reconstruction error is left, so a *difference*
+between them is real even where the absolute choice is not.
+
+### The trap in replaying `maximum_failure`
+
+`check_training` short-circuits: a facility reading over `MAX_FAILURE + 5`
+is written down as exactly `MAX_FAILURE + 5`, and so is **every facility
+scanned after it that turn** (`core/execute.py`, `margin = 5`). On
+`grandconcert_kitasan_20261012`, 64 of 315 facility reads are that clamp - the
+value 20, under a `maximum_failure` of 15 - and not a measurement at all.
+
+So replaying with `maximum_failure: 20` lets all 64 through the filter as if
+they had been read at exactly 20%, when what the game actually showed was
+"more than 20". That arm reported 10 extra trainings and +359 Speed, which is
+fiction. Replaying at **18** is sound: it admits the real 16/17/18% reads and
+still rejects the clamped 20s. **Raising the bar to the clamp value of the
+career being replayed cannot be backtested at all** - only measured live.
+
+### The trap in the energy cap
+
+A log never records how long the energy bar is, and `None` is **not** a neutral
+stand-in for it. `logic.energy_points` reads a missing cap as an *empty tank*
+and prices energy at its top rate on every turn, and `logic.energy_value` used
+to raise `TypeError` on it outright - which does not make a facility score
+lower, it takes the whole decision down another branch. That is what dropped
+the 2026-10-13 replay from 97% reproduced to 39%, and it read exactly like a
+scoring regression.
+
+`career_replay.energy_cap()` therefore estimates one per fixture: 100 for the
+ordinary bar, or the highest reading when that is higher, because the Grand
+Concert widens it - the 2026-10-13 career sat at 97-104 for eighteen turns and
+peaked at 104.24. Anything new that prices energy has to be given a cap here,
+and `energy_value` now clips nothing rather than raising when it has none.
+
+### What a replay cannot tell you
+
+A replay scores each turn against the board and the energy the career actually
+recorded, so it never sees the *consequences* of a different choice. The sharpest
+case is wit: lifting the old `WIT_MIN_RAINBOWS` gate turned four to six recorded
+rests a career into wit trainings, and the harness scores those as free stats -
+correctly, since wit costs no energy. What it cannot show is the turn after,
+because wit hands back only 5-15 energy where the rest it replaced returned
+about 50, so the tank it leaves behind is a different one. Treat a replay's
+verdict on an energy-shaped change as an upper bound, and check the energy
+trajectory of the live career that follows.
+
+## Careers recorded with Performance data
+
+`performance_bonus` is scored off the Grand Concert `Performance:` line, which
+`career_extract.py` only started storing on 2026-10-12. The two Bakushin
+fixtures carry none, so that term replays as 0.0 on them and the harness says
+so in its header. A Grand Concert change therefore has to be measured against
+a career recorded since - which is also a useful control: a career with no
+Performance data proves the change is inert where it should be.
+
+## Two extractor bugs, both found by the harness
+
+Fixed 2026-10-12, and both had been producing fixtures that looked healthy:
+
+- **`All trainings are unsafe, but WIT is safe...` is not a rest.** `logic.py`
+  follows that line with `return "wit"`. It was in `DECISIONS` as a rest, so
+  two WIT trainings were recorded as rests and the replay looked like it
+  disagreed with the career on turns where it had matched it exactly. The real
+  rest message is `No safe training found`.
+- **A Recreation outing is neither a train nor a rest.** The turn trains
+  nothing, so it was inferred as a rest. It is now its own `action: "outing"`,
+  which is what lets the harness exclude it instead of scoring it.
+
+Fidelity on that career went 92.1% -> 98.3% on those two alone.
