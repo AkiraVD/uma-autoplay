@@ -382,13 +382,37 @@ def test_parent_mode_spends_nothing_on_a_skill_that_cannot_spark():
     ok("a forced skill that cannot spark is refused by the same test",
        not S.inheritable(BY_NAME["Ignited Spirit SPD"]))
 
-    # Every name the shipped config forces has to survive that guard, or the
-    # list quietly shrinks the first time a parent career runs.
+    # Every name the live config forces has to survive that guard, or the list
+    # quietly shrinks the first time a parent career runs.
+    #
+    # Matched the way skill.py matches it: `on_screen.get(base_name(wanted))`,
+    # and base_name strips the rank glyph and lowercases. So a config that says
+    # "Nakayama Racecourse" legitimately means whichever of ◎/○/× is on offer,
+    # and comparing the raw string against master.mdb's exact names failed on
+    # all six aptitude skills in the 2026-10-13 config while the bot bought them
+    # perfectly well.
+    import core.skill as skill_mod
+    by_base = {}
+    for name, record in BY_NAME.items():
+      by_base.setdefault(skill_mod.base_name(name), []).append(record)
     forced = list(getattr(state, "URA_FORCE_BUY_SKILLS", []))
-    unknown = [n for n in forced if n not in BY_NAME]
+    unknown = [n for n in forced if skill_mod.base_name(n) not in by_base]
     ok("every forced name is in master.mdb", not unknown, str(unknown))
-    dead = [n for n in forced if n in BY_NAME and not S.inheritable(BY_NAME[n])]
-    ok("and every forced name pays a spark", not dead, str(dead))
+    # Only PARENT mode requires a spark, so this is checked against the mode the
+    # config really carries, not the one this test forced. `trials` forces
+    # skills for the Team Trials payout, where a skill that hands nothing down
+    # is still worth its points - the 2026-10-13 config forces four such
+    # (Break It Down!, Straightaway Spurt, Deep Breaths, Stamina to Spare) quite
+    # legitimately. The guard is that SOME rank of the name sparks, since that is
+    # the rank the forced buy would take.
+    dead = [n for n in forced
+            if skill_mod.base_name(n) in by_base
+            and not any(S.inheritable(r) for r in by_base[skill_mod.base_name(n)])]
+    if saved_mode == "parent":
+      ok("and every forced name has a rank that pays a spark", not dead, str(dead))
+    elif dead:
+      print(f"note  {len(dead)} forced skill(s) pay no spark; fine under"
+            f" buy_mode={saved_mode!r}, but they would be refused in 'parent': {dead}")
   finally:
     restore_mode(saved_mode)
 

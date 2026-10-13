@@ -116,13 +116,15 @@ def test_stopping_is_a_return_not_a_click():
      resume < body.index("CAREER_START_ENABLED"))
   ok("and starting a new one is still behind its setting",
      "state.CAREER_START_ENABLED" in body)
-  # Set by the three reloads that leave the career in progress, and by nothing
-  # else: the daily reset, the Session Error walk-back, and the restart after a
-  # frozen client. All three land on this same home screen, and without it any
-  # of them reads a live career as finished - or, with career_start on, starts
-  # a new one on top of a career that is still running.
+  # Set by the four reloads that leave the career in progress, and by nothing
+  # else: the daily reset, the Session Error walk-back, the title screen after
+  # a download, and the restart after a frozen client. All four land on this
+  # same home screen, and without it any of them reads a live career as
+  # finished - or, with career_start on, starts a new one on top of a career
+  # that is still running. (Was 3 until the download-resume site was added;
+  # the count had not been updated with it.)
   ok("RESUMING_CAREER is only set by a reload that keeps the career",
-     source.count("RESUMING_CAREER = SEEN_LOBBY") == 3,
+     source.count("RESUMING_CAREER = SEEN_LOBBY") == 4,
      f"{source.count('RESUMING_CAREER = SEEN_LOBBY')} sites")
   ok("and cleared as soon as a lobby is seen again",
      "SEEN_LOBBY = True\n    RESUMING_CAREER = False" in source)
