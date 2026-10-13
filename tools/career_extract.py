@@ -104,6 +104,30 @@ DECISIONS = [
   ("train", re.compile(r"^Training ([A-Z]+)\.$")),
 ]
 
+# --- the Lessons board ------------------------------------------------------
+#
+# Every visit logs its board card by card (lessons.describe), the Performance
+# totals, and - since 2026-10-13 - the rest of what choose() is handed. Together
+# that is the whole input, so a Lessons decision can be replayed the same way a
+# training decision is. The card line is describe()'s own format:
+#
+#   Lesson card 2: technique 'Jazz Dance Basics' [Speed +4 Guts +4] (locked) 8/0/0/8/0
+#
+# The name comes through `!r`, so it is quoted with whichever quote it does not
+# contain. The cost row is POINT_KEYS order (da, pa, vo, vi, co) and is absent
+# when the row would not read.
+LESSON_CARD = re.compile(
+  r"^Lesson card (\d+): (technique|song|\?) (['\"])(.*?)\3"
+  r" \[(.*)\] \((learnable|locked)(, scheduled)?\)(?: ([\d/]+))?$")
+LESSON_POINTS = re.compile(r"^Performance points (\{[^}]*\}), reserve (\{[^}]*\}),"
+                           r" (\d+) technique\(s\)")
+LESSON_INPUTS = re.compile(r"^Lessons inputs: energy (-?[\d.]+)/([\d.]+), wit returns"
+                           r" ([\d.]+), segment (\d+), songs (\d+) (\{[^}]*\}),"
+                           r" page (\d+), spend_all (True|False)")
+LESSON_ACTION = re.compile(r"^(Learning|Scheduling) (?:technique |song )?(['\"])(.*?)\2: (.*?)\.$")
+LESSON_NONE = re.compile(r"^Lessons: (.*?)\.?$")
+POINT_KEYS = ("da", "pa", "vo", "vi", "co")
+
 PLANNER_SCORES = re.compile(r"^planner scores: (.*?) \| best")
 PLANNER_WOULD = re.compile(r"^planner would: (\S+) - (.*?) \[goal=(.*?),")
 
@@ -196,6 +220,77 @@ def extract(paths, since=None, until=None):
           by_type.setdefault(card_type, {})[level] = int(count)
         record["split"] = by_type
       current["facilities"][key.lower()] = record
+      continue
+
+    # --- the Lessons board, one record per purchase attempt ------------------
+    # The board is re-read after every purchase, so one visit can leave several
+    # records. Card 1 opens one; the action line closes it. A board with no
+    # action line (the visit was cut short, or the read would not settle) is
+    # dropped rather than half-kept.
+    hit = LESSON_CARD.match(message)
+    if hit:
+      slot, kind, _q, name, effects, flags, scheduled, price = hit.groups()
+      if int(slot) == 1 or current.get("_board") is None:
+        current["_board"] = {"at": stamp, "cards": []}
+      cost = None
+      if price:
+        parts = price.split("/")
+        if len(parts) == len(POINT_KEYS):
+          cost = {k: int(v) for k, v in zip(POINT_KEYS, parts)}
+      current["_board"]["cards"].append({
+        "slot": int(slot) - 1,
+        "kind": kind if kind != "?" else None,
+        "name": name,
+        # describe() joins the card's effect lines with "; ", and a single line
+        # can still carry two stats ("Speed +4 Guts +4"), so this is the lines
+        # back, not the stats.
+        "effects": [e for e in effects.split("; ") if e and e != "no effects read"],
+        "learnable": flags == "learnable",
+        "scheduled": bool(scheduled),
+        "cost": cost,
+      })
+      continue
+
+    hit = LESSON_POINTS.match(message)
+    if hit and current.get("_board") is not None:
+      current["_board"]["points"] = _dict(hit.group(1))
+      current["_board"]["reserve"] = _dict(hit.group(2))
+      current["_board"]["to_page"] = int(hit.group(3))
+      continue
+
+    hit = LESSON_INPUTS.match(message)
+    if hit and current.get("_board") is not None:
+      energy = float(hit.group(1))
+      current["_board"].update({
+        "energy": None if energy < 0 else energy,
+        "cap": float(hit.group(2)),
+        "wit_return": float(hit.group(3)),
+        "segment": int(hit.group(4)),
+        "songs": int(hit.group(5)),
+        # The per-segment counts, which the total cannot be split back into -
+        # hype_songs_needed reads them, so choose() needs them to replay.
+        "songs_by_segment": {int(k): v for k, v in (_dict(hit.group(6)) or {}).items()},
+        "page": int(hit.group(7)),
+        "spend_all": hit.group(8) == "True",
+      })
+      continue
+
+    hit = LESSON_ACTION.match(message)
+    if hit and current.get("_board") is not None:
+      board = current.pop("_board")
+      board["action"] = "learn" if hit.group(1) == "Learning" else "schedule"
+      board["chose"] = hit.group(3)
+      board["why"] = hit.group(4)
+      current.setdefault("lessons", []).append(board)
+      continue
+
+    hit = LESSON_NONE.match(message)
+    if hit and current.get("_board") is not None:
+      board = current.pop("_board")
+      board["action"] = "none"
+      board["chose"] = None
+      board["why"] = hit.group(1)
+      current.setdefault("lessons", []).append(board)
       continue
 
     hit = SCORE.search(message)
@@ -299,6 +394,27 @@ def main():
     if not turn.get("action"):
       turn["action"] = "rest"
       turn["decided_by"] = "inferred: board scored, no training executed"
+  # A visit left half-recorded - the log ended, or the board would not settle -
+  # has cards but no action, and scoring a replay against "no decision" would
+  # count as a miss. Drop those, and fall back to the turn's own energy reading
+  # for logs written before `Lessons inputs:` existed (2026-10-13).
+  visits = dropped = 0
+  for turn in turns:
+    turn.pop("_board", None)
+    boards = turn.get("lessons")
+    if not boards:
+      continue
+    keep = [b for b in boards if b.get("action")]
+    dropped += len(boards) - len(keep)
+    for board in keep:
+      if "energy" not in board and turn.get("energy") is not None:
+        board["energy"] = turn["energy"]
+        board["energy_from"] = "turn"
+    if keep:
+      turn["lessons"] = keep
+      visits += len(keep)
+    else:
+      turn.pop("lessons")
   payload = {
     "label": a.label or os.path.splitext(os.path.basename(a.out))[0],
     "source": {"logs": a.logs, "since": a.since},
@@ -311,6 +427,10 @@ def main():
   acted = [t for t in turns if t.get("action")]
   print(f"  {len(acted)} turns carry a decision, "
         f"{len([t for t in turns if t.get('planner')])} carry a planner verdict")
+  if visits or dropped:
+    cap = len([b for t in turns for b in t.get("lessons", []) if b.get("cap")])
+    print(f"  {visits} Lessons board(s) recorded ({cap} with the energy cap logged)"
+          + (f", {dropped} half-recorded and dropped" if dropped else ""))
   return 0
 
 

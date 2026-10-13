@@ -166,6 +166,76 @@ def stub_readers(state, logic, turn, max_energy=None):
   state.CURRENT_YEAR = year
 
 
+def replay_lessons(turns, config, label):
+  """Replay every recorded Lessons board through the real `choose`.
+
+  The training arm stubs four screen readers; this one stubs the board module's
+  running state instead - the song counts, the page countdown, the energy cap
+  and the wit return - because all four are published rather than derived, and
+  a fixture records what they were. Feeding them back is the honest way round:
+  simulating lessons' own state machine over a career would be a second
+  implementation of it, and the thing under test is `choose`.
+
+  Returns (same, differed, unreplayable).
+  """
+  import core.state as state
+  import core.lessons as lessons
+
+  state.load_config = lambda: copy.deepcopy(config)
+  state.reload_config()
+  state.apply_scenario()
+
+  boards = [(t, b) for t in turns for b in (t.get("lessons") or [])]
+  same = differed = skipped = 0
+  misses = []
+  saved = (lessons._songs.copy(), dict(lessons._pattern), lessons._energy_cap,
+           lessons._wit_return)
+  try:
+    for turn, board in boards:
+      if board.get("energy") is None or not board.get("points"):
+        skipped += 1
+        continue
+      by_segment = board.get("songs_by_segment")
+      if by_segment is None:
+        # Logged before 2026-10-13: the per-segment split is not recoverable
+        # from the total, and hype_songs_needed reads it.
+        skipped += 1
+        continue
+      lessons._songs.clear()
+      lessons._songs.update({int(k): v for k, v in by_segment.items()})
+      lessons._energy_cap = board.get("cap") or None
+      lessons.set_wit_return(board.get("wit_return"))
+      page = board.get("page")
+      restore_page = lessons.techs_to_next_page
+      if page is not None:
+        lessons.techs_to_next_page = lambda year, _p=page: _p
+      try:
+        action, card, _why = lessons.choose(
+          [dict(c) for c in board["cards"]], board["energy"],
+          turn.get("year") or "", board.get("spend_all", False),
+          turn.get("turn"), board.get("points"))
+      except Exception as exc:                                  # noqa: BLE001
+        misses.append((board["at"], board.get("action"), f"ERROR:{exc}"))
+        differed += 1
+        continue
+      finally:
+        lessons.techs_to_next_page = restore_page
+      got = (action, card["name"] if card else None)
+      was = (board["action"], board.get("chose"))
+      if got == was:
+        same += 1
+      else:
+        differed += 1
+        misses.append((board["at"], f"{was[0]}:{was[1]}", f"{got[0]}:{got[1]}"))
+  finally:
+    lessons._songs.clear()
+    lessons._songs.update(saved[0])
+    lessons._pattern.update(saved[1])
+    lessons._energy_cap = saved[2]
+    lessons.set_wit_return(saved[3])
+  return same, differed, skipped, misses
+
+
 def replay(turns, config, label):
   """Every scored turn's decision under `config`. None means rest."""
   import core.state as state
@@ -294,6 +364,20 @@ def main():
         + f", differed {diff}, not comparable {unknown} (outings)")
   for row in worst[:a.show]:
     print(f"    {row[0]}  {row[1]:<28} career={str(row[2]):<5} replay={row[3]}")
+
+  # The Lessons board, if the career recorded one. Separate arm because a visit
+  # is not a turn: several boards can be read in one, and the purchase that
+  # matters to the training decision is settled before it.
+  lsame, ldiff, lskip, lmiss = replay_lessons(turns, base_config, "base")
+  if lsame or ldiff or lskip:
+    ltotal = lsame + ldiff
+    print(f"\n--- fidelity: Lessons boards vs what the career bought ---")
+    print(f"  reproduced {lsame}/{ltotal}"
+          + (f" ({100.0 * lsame / ltotal:.1f}%)" if ltotal else "")
+          + f", differed {ldiff}, not replayable {lskip}"
+          + ("  (recorded before `Lessons inputs:`)" if lskip else ""))
+    for row in lmiss[:a.show]:
+      print(f"    {row[0]}  career={row[1]:<34} replay={row[2]}")
 
   if not a.override:
     return 0

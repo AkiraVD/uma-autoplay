@@ -218,6 +218,59 @@ about 50, so the tank it leaves behind is a different one. Treat a replay's
 verdict on an energy-shaped change as an upper bound, and check the energy
 trajectory of the live career that follows.
 
+## The Lessons board
+
+A Grand Concert career records its Lessons boards too, and they replay in their
+own arm (`replay_lessons`, 2026-10-13). A visit is not a turn: the board is read
+again after every purchase, so one visit leaves several records, and the
+purchase that matters to the training decision is settled before it.
+
+The board itself was always in the log - `lessons.describe` writes each card's
+kind, name, effect lines, lock state and cost row, and the Performance totals
+go beside it:
+
+```
+Lesson card 1: technique 'Relaxing Body Massage' [Energy +30] (learnable) 20/0/0/0/0
+Lesson card 2: technique 'Dance Step Advanced' [Speed +12] (locked) 0/0/0/30/0
+Performance points {'da': 54, ...}, reserve {'da': 21, ...}, 2 technique(s) to the next song page.
+Lessons inputs: energy 60.0/105.0, wit returns 0, segment 1, songs 4 {0: 2, 1: 2}, page 2, spend_all False.
+Learning technique 'Relaxing Body Massage': energy first.
+```
+
+The last-but-one line is the addition. Three of `choose`'s inputs were not
+logged anywhere and none can be recovered: the **energy at the visit** (the
+lobby reading is several lines away and may be a different turn), the **bar's
+cap**, and the **per-segment song counts** - `hype_songs_needed` reads those,
+and a total of 4 songs cannot be split back into `{0: 2, 1: 2}`.
+
+**A board recorded before that line is reported as not replayable, not as a
+miss.** The arm says so in its own line, and `tools/career_extract.py` falls
+back to the turn's energy reading for the rest of the record so the cards are
+still there to read.
+
+Replaying feeds the recorded state back rather than simulating it: the song
+counts, the page countdown, the cap and the wit return are all *published*
+values in `core/lessons.py`, and a fixture records what they were. Simulating
+lessons' own state machine over a career would be a second implementation of
+it, and the thing under test is `choose`.
+
+`tests/test_lessons_replay.py` pins the whole round trip - log lines in,
+fixture out, `choose` replayed, decision matched - including a card name
+holding an apostrophe (`describe` uses `!r`, so the quoting flips) and the
+old-log skip path.
+
+### What this arm found immediately
+
+That a "preserve" verdict was not being carried out. `energy_offer` refuses an
+Energy technique that would spill the tank, but `choose` then ranked it with
+every other technique and bought it anyway: at 70 energy against a 105 bar an
+Energy +30 scores 8.6, well clear of `WASTED_TECHNIQUE_FLOOR`. The preserve
+only ever took effect on a nearly full tank, where the value fell under the
+floor - which is why the unit tests, written against a 100 bar, all passed.
+`choose` now drops a preserved card from the ranking. The preserve also holds
+until the card *fits* rather than for one turn, which is what makes the
+concert-screen exception reachable at all.
+
 ## Careers recorded with Performance data
 
 `performance_bonus` is scored off the Grand Concert `Performance:` line, which
