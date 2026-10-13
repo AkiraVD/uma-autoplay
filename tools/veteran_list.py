@@ -7,6 +7,12 @@
   python tools/veteran_list.py card                 # read the card already open
   python tools/veteran_list.py nav                  # just get to the roster
 
+Each record carries the Uma's own sparks AND its two Legacy Origin parents'
+sparks, under `parents`. Those matter because a spark inherited from a veteran
+brings its parents' sparks down with it, so "what does this card hand on" is
+not answerable from its own block alone - and stamina, the stat a Champions
+Meeting build can least afford to train for, is mostly got that way.
+
 The route is Enhance (bottom-left) -> Veteran Umamusume -> List. From there the
 first card is opened once and the next arrow does the rest; core/veteran.py has
 the whole story of why. The file is `logs/veterans.json` and it is rewritten
@@ -307,6 +313,8 @@ def scan(args):
     info(f"[{index}/{total}] {card['id']} {card['variant']} {card['name']}"
          f" {card['rank']} {card['rating']} "
          f"{len(card['skills'])} skills, {len(card['sparks'])} sparks"
+         f", {sum(len(p) for p in card.get('parents') or [])} from"
+         f" {len(card.get('parents') or [])} parent(s)"
          f"{' !' + '; '.join(card['warnings']) if card['warnings'] else ''}"
          f"  (~{left} min left)")
 
@@ -390,6 +398,164 @@ def aptitudes(args):
   return 0
 
 
+def races(args):
+  """Fill in the Career Info tab's Race History for selected cards.
+
+  Only for the cards named with --ids, because this is the expensive tab: a
+  race row is three lines tall, so one card is fifteen-odd OCR passes against
+  the two or three the other tabs need. Stepping past an unwanted card costs
+  about two seconds, so a thirty-card shortlist out of two hundred is well
+  under an hour where the whole roster would be three hours or more.
+
+  What it is for: inheritance affinity. A shared G1 win between the trainee
+  and a parent is +3 affinity, and affinity multiplies every spark's trigger
+  chance, so the G1 wins decide how much of a parent's Stamina actually lands.
+  No other tab carries them - a race spark is paid by only 34 of the races.
+
+  The card states its own "Races: n  Wins: n", which is kept beside the rows
+  as the cross-check. Expect the rows read to come in UNDER the races run:
+  Takarazuka Kinen and Arima Kinen are run in both Classic and Senior, and a
+  race counts once towards affinity however often it was won, so repeats are
+  folded here deliberately.
+  """
+  wanted = {i.strip().upper() for i in (args.ids or "").split(",") if i.strip()}
+  if not wanted:
+    error("Pass --ids V007,V047,... - this reads one slow tab per card.")
+    return 1
+  if not to_roster():
+    return 1
+  if not veteran.ensure_ascending() and not args.any_order:
+    error("The roster is not in oldest-first order; the records would not line up.")
+    return 1
+  data = load(OUT)
+  by_index = {u["index"]: u for u in data.get("umas", [])}
+  targets = {i for i, u in by_index.items() if u["id"].upper() in wanted}
+  missing = wanted - {by_index[i]["id"].upper() for i in targets}
+  if missing:
+    warning(f"not in {OUT}: {', '.join(sorted(missing))}")
+  if not targets:
+    error("None of those ids are in the file.")
+    return 1
+  info(f"Reading Race History for {len(targets)} card(s), walking to card {max(targets)}.")
+
+  veteran.tap(constants.VETERAN_ROSTER_FIRST_CARD_MOUSE_POS, settle=2.0)
+  if not veteran.on_details():
+    error("Tapping the first card did not open Umamusume Details.")
+    return 1
+
+  seen, done = None, 0
+  for index in sorted(by_index):
+    if index > max(targets):
+      break
+    if index > 1 and not veteran.next_card(previous=seen):
+      error(f"The roster stopped advancing at card {index}.")
+      break
+    seen = veteran.fingerprint()
+    if index not in targets:
+      continue
+    record = by_index[index]
+    head = veteran.read_header(veteran.grab())
+    if head["name"] != record["name"]:
+      warning(f"{record['id']}: screen says {head['name']}, record says {record['name']}; skipped.")
+      continue
+    if not veteran.select_tab(constants.VETERAN_TAB_CAREER_MOUSE_POS,
+                              constants.VETERAN_TAB_CAREER_BBOX):
+      warning(f"{record['id']}: the Career Info tab would not open.")
+      continue
+    found, stated = veteran.read_race_history()
+    record["races"] = found
+    record["race_record"] = stated
+    wins = [r for r in found if r["won"]]
+    g1 = [r for r in wins if r["grade"] == "G1"]
+    record["g1_wins"] = [r["name"] for r in g1]
+    done += 1
+    note = ""
+    if stated and len(found) < stated.get("races", 0) - 3:
+      note = f"  !only {len(found)} of {stated['races']} races read"
+    info(f"[{index}] {record['id']} {record['name'][:22]:<22} "
+         f"{len(found)} races, {len(wins)} wins, {len(g1)} G1 wins "
+         f"(card says {stated.get('races','?')}/{stated.get('wins','?')}){note}")
+    save(OUT, data)
+    veteran.select_tab(constants.VETERAN_TAB_SKILLS_MOUSE_POS, constants.VETERAN_TAB_SKILLS_BBOX)
+
+  veteran.tap(constants.VETERAN_CLOSE_MOUSE_POS, settle=1.5)
+  info(f"Read Race History for {done} card(s) into {OUT}.")
+  return 0
+
+
+def tag(args):
+  """Set the favourite icon on selected cards, so the roster can filter them.
+
+  The icon is the ONLY thing the roster filters on. The memo this tool writes
+  is nine characters of text and nothing sorts, searches or filters by it, so a
+  shortlist of parents is only findable in the game if it is marked this way.
+
+  --ids takes the record ids and --icon one of VETERAN_FAVOURITE_ICONS. Cards
+  that already carry the icon are left alone rather than re-set.
+
+  The roster's own "Batch Favorite" button opens the same grid, but its wording
+  ("apply in batch") does not say whether it then asks WHICH cards or applies
+  to everything listed, and finding out costs 198 overwritten icons if it is
+  the latter. This walks and sets them one at a time instead.
+  """
+  wanted = {i.strip().upper() for i in (args.ids or "").split(",") if i.strip()}
+  if not wanted:
+    error("Pass --ids V002,V007,...")
+    return 1
+  if args.icon not in constants.VETERAN_FAVOURITE_ICONS:
+    error(f"--icon must be one of: {', '.join(constants.VETERAN_FAVOURITE_ICONS)}")
+    return 1
+  if not to_roster():
+    return 1
+  if not veteran.ensure_ascending() and not args.any_order:
+    error("The roster is not in oldest-first order; the records would not line up.")
+    return 1
+  data = load(OUT)
+  by_index = {u["index"]: u for u in data.get("umas", [])}
+  targets = {i for i, u in by_index.items() if u["id"].upper() in wanted}
+  missing = wanted - {by_index[i]["id"].upper() for i in targets}
+  if missing:
+    warning(f"not in {OUT}: {', '.join(sorted(missing))}")
+  if not targets:
+    error("None of those ids are in the file.")
+    return 1
+  info(f"Tagging {len(targets)} card(s) with {args.icon!r}, walking to card {max(targets)}.")
+
+  veteran.tap(constants.VETERAN_ROSTER_FIRST_CARD_MOUSE_POS, settle=2.0)
+  if not veteran.on_details():
+    error("Tapping the first card did not open Umamusume Details.")
+    return 1
+
+  seen, done, failed = None, 0, []
+  for index in sorted(by_index):
+    if index > max(targets):
+      break
+    if index > 1 and not veteran.next_card(previous=seen):
+      error(f"The roster stopped advancing at card {index}.")
+      break
+    seen = veteran.fingerprint()
+    if index not in targets:
+      continue
+    record = by_index[index]
+    head = veteran.read_header(veteran.grab())
+    if head["name"] != record["name"]:
+      failed.append(f"{record['id']} (screen says {head['name']})")
+      continue
+    if veteran.set_favourite(args.icon):
+      record["favourite"] = args.icon
+      done += 1
+      info(f"[{index}] {record['id']} {record['name'][:22]:<22} -> {args.icon}")
+    else:
+      failed.append(record["id"])
+    save(OUT, data)
+
+  veteran.tap(constants.VETERAN_CLOSE_MOUSE_POS, settle=1.5)
+  info(f"Tagged {done} card(s) with {args.icon!r}.")
+  if failed:
+    warning(f"{len(failed)} did not take: {', '.join(failed)}")
+  return 0
+
+
 def card(args):
   """Read whatever card is already open, without stepping or writing."""
   if not veteran.on_details():
@@ -420,6 +586,20 @@ def main():
   apt.add_argument("--any-order", action="store_true",
                    help="walk even when the roster is not oldest-first")
   apt.set_defaults(func=aptitudes)
+
+  tg = sub.add_parser("tag", help="set the favourite icon on selected cards")
+  tg.add_argument("--ids", help="comma-separated record ids")
+  tg.add_argument("--icon", default="heart",
+                  help="one of: " + ", ".join(constants.VETERAN_FAVOURITE_ICONS))
+  tg.add_argument("--any-order", action="store_true",
+                  help="do not insist the roster is oldest-first")
+  tg.set_defaults(func=tag)
+
+  rc = sub.add_parser("races", help="read the Career Info Race History for selected cards")
+  rc.add_argument("--ids", help="comma-separated record ids, e.g. V007,V047,V180")
+  rc.add_argument("--any-order", action="store_true",
+                  help="do not insist the roster is oldest-first")
+  rc.set_defaults(func=races)
 
   sub.add_parser("card", help="read the card already on screen").set_defaults(func=card)
   sub.add_parser("nav", help="get to the roster and stop").set_defaults(

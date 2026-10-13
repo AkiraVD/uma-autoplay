@@ -573,26 +573,226 @@ def select_tab(point, bbox, tries=5):
   return tap_until(point, lambda: tab_selected(bbox), tries=tries, label="tab")
 
 
-def read_sparks_frame(screen, top_edge=PANEL_EDGE):
-  """The spark rows visible on one frame, and whether the ancestors' block has
-  come into view.
+# The Inspiration tab's left margin, where each block's portrait sits. A
+# portrait is the only colourful thing there - the connector line beside it is
+# grey and the background white - so a run of saturated rows is a portrait, and
+# the gaps between those runs are what separate one block from the next.
+PORTRAIT_STRIP = (10, 100)
+PORTRAIT_SAT = 40
+PORTRAIT_ROW_PIXELS = 15
+# The ring drawn around a portrait breaks its run into two or three pieces, up
+# to 25px apart on condor_sparks, while the gap between the own portrait and
+# the first legacy one is only 33px on that same frame. There is no distance
+# that separates those two cases with room to spare, which is why the
+# "Legacy Origin" header is used as a hard split as well.
+PORTRAIT_MERGE_GAP = 28
+PORTRAIT_MIN_HEIGHT = 30
 
-  Returns ([{name, kind, stars}], saw_legacy). Only the Uma's own sparks are
-  returned: the "Legacy Origin" header is the boundary, and everything under it
-  belongs to the career's parents, which the child already records itself.
+
+def portrait_bands(panel, legacy_y=None):
+  """y ranges in the panel's left margin that hold a portrait, top to bottom.
+
+  One band per spark block: the Uma's own first, then one per Legacy Origin
+  parent. A row of sparks belongs to the last band that starts at or above it.
+  """
+  image = np.asarray(panel.convert("RGB")).astype(int)
+  strip = image[:, PORTRAIT_STRIP[0]:PORTRAIT_STRIP[1]]
+  saturated = strip.max(axis=2) - strip.min(axis=2)
+  lit = (saturated > PORTRAIT_SAT).sum(axis=1) > PORTRAIT_ROW_PIXELS
+
+  runs, start = [], None
+  for y, on in enumerate(lit):
+    if on and start is None:
+      start = y
+    elif not on and start is not None:
+      runs.append([start, y])
+      start = None
+  if start is not None:
+    runs.append([start, len(lit)])
+
+  merged = []
+  for low, high in runs:
+    if merged and low - merged[-1][1] <= PORTRAIT_MERGE_GAP:
+      merged[-1][1] = high
+    else:
+      merged.append([low, high])
+
+  # A portrait cannot straddle the "Legacy Origin" header, so that header
+  # splits a band whatever the distances say.
+  if legacy_y is not None:
+    split = []
+    for low, high in merged:
+      if low < legacy_y < high:
+        split += [[low, legacy_y], [legacy_y, high]]
+      else:
+        split.append([low, high])
+    merged = split
+  return [(low, high) for low, high in merged if high - low >= PORTRAIT_MIN_HEIGHT]
+
+
+# --- Career Info tab: the Race History -------------------------------------
+#
+# Only needed for inheritance affinity. A shared G1 win between the trainee and
+# a parent is worth +3 affinity, and affinity multiplies every spark's trigger
+# chance (InheritanceOdds = BaseOdds x (1 + affinity/100)), so "which G1s did
+# this veteran win" decides how good a parent it is. Nothing else on the card
+# says it: a race spark is only paid by 34 of the races, so the Inspiration tab
+# undercounts the wins badly.
+#
+# easyocr splits the grade pill from the race name on a live frame ("EX" and
+# "URA Finale Finals" as two boxes) but merges them on some others, so both
+# shapes are handled: GRADE_ONLY matches the pill on its own, RACE_HEADER the
+# merged form. It reads the 1 of G1 as I or l about half the time, hence the
+# character class in both.
+GRADE_TOKEN = r"G\s?[1Il]|G\s?2|G\s?3|EX|OP|Pre-?\s?OP|Maiden|Debut"
+RACE_HEADER = re.compile(rf"^({GRADE_TOKEN})\s+(\S.*)$", re.I)
+GRADE_ONLY = re.compile(rf"^({GRADE_TOKEN})$", re.I)
+# How far apart two boxes' centres may sit and still be the same line.
+RACE_LINE_SLACK = 14
+# The grade pill never starts right of this (panel-local x).
+GRADE_MAX_X = 90
+# The placement medal, as panel-local x. The band is taken from the header row
+# because the medal straddles the header and the track line below it.
+MEDAL_X = (470, 570)
+MEDAL_BAND = (-25, 80)
+# 1st is drawn gold on a laurel; every other placing is flat grey or brown.
+# Measured on four real rows: the three 1sts came in at 0.177-0.180 of the band
+# gold, the 5th at 0.001 and the 9th at 0.000. Nothing lands near 0.05.
+MEDAL_GOLD = lambda a: (a[:, :, 0] > 200) & (a[:, :, 1] > 140) & (a[:, :, 2] < 130)
+MEDAL_WON = 0.05
+# "Career Record  Races: 17  Wins: 16" - the card's own count, kept as the
+# cross-check on how many 1sts the medal test found.
+RACE_RECORD = re.compile(r"races:?\s*(\d+)\s*wins:?\s*(\d+)", re.I)
+# A career runs at most ~20 races and the tab opens on three blocks of other
+# content, at roughly two new rows a pass. 20 is comfortably past the longest.
+RACE_PASSES = 20
+
+
+def normalise_grade(text):
+  """"GI" -> "G1". easyocr drops the 1 of G1 to an I or an l routinely."""
+  grade = re.sub(r"\s+", "", text).upper().replace("PRE-OP", "OP").replace("PREOP", "OP")
+  if grade in ("GI", "GL", "G1"):
+    return "G1"
+  return grade
+
+
+def read_races_frame(screen, top_edge=PANEL_EDGE):
+  """The Race History rows on one frame, as [{grade, name, won}].
+
+  `won` is read from the medal's colour rather than its text: easyocr renders
+  "1st" as Ist, Iste, Ist; and Istz, and "5th" as Sh or Sxh, which is not
+  something to decide a parent on.
+  """
+  panel = crop(screen, region_of(constants.VETERAN_PANEL_BBOX))
+  image = np.asarray(panel.convert("RGB")).astype(int)
+  boxes = read_boxes(panel)
+  floor = panel.height - PANEL_EDGE
+
+  # (grade, name, centre y) for every header, however easyocr split it.
+  headers = []
+  for text, _confidence, (x, y, w, h) in boxes:
+    clean = (text or "").strip()
+    middle = y + h / 2
+    merged = RACE_HEADER.match(clean)
+    if merged:
+      headers.append((merged.group(1), merged.group(2).strip(), middle))
+      continue
+    if not GRADE_ONLY.match(clean) or x > GRADE_MAX_X:
+      continue
+    # The pill on its own: the name is the next box along the same line.
+    rest = [(bx, bt) for bt, _bc, (bx, by, bw, bh) in boxes
+            if bx > x + w / 2 and abs((by + bh / 2) - middle) <= RACE_LINE_SLACK
+            and (bt or "").strip()]
+    if not rest:
+      continue
+    headers.append((clean, min(rest)[1].strip(), middle))
+
+  races = []
+  for grade_text, name, middle in headers:
+    # The medal hangs below the header, so a header near the bottom edge has
+    # no medal to read and the row is left for the pass that shows it whole.
+    if middle < top_edge or middle + MEDAL_BAND[1] > floor:
+      continue
+    low = max(0, int(middle + MEDAL_BAND[0]))
+    high = min(panel.height, int(middle + MEDAL_BAND[1]))
+    band = image[low:high, MEDAL_X[0]:MEDAL_X[1]]
+    gold = MEDAL_GOLD(band).sum() / max(1, band[:, :, 0].size)
+    races.append({"grade": normalise_grade(grade_text), "name": name,
+                  "won": bool(gold > MEDAL_WON)})
+  return races
+
+
+def read_race_history(keep=None):
+  """Every race on the Career Info tab, and the card's own Races/Wins line.
+
+  Returns (races, record) where record is {"races": n, "wins": n} or {} when
+  that line did not read. The record is the cross-check: the medals found have
+  to add up to the wins the card claims.
+
+  Repeats are kept - Takarazuka Kinen runs in both Classic and Senior - because
+  the card shows both, but affinity counts a race once however often it was
+  won, so the caller should look at the distinct names.
+  """
+  record = {}
+
+  def frame(screen, top_edge):
+    nonlocal record
+    if not record:
+      panel = crop(screen, region_of(constants.VETERAN_PANEL_BBOX))
+      joined = " ".join(t for t, _c, _b in read_boxes(panel))
+      hit = RACE_RECORD.search(joined)
+      if hit:
+        record = {"races": int(hit.group(1)), "wins": int(hit.group(2))}
+    return read_races_frame(screen, top_edge)
+
+  frames = scan_panel(frame, keep=keep, passes=RACE_PASSES)
+  races, seen = [], set()
+  for found in frames:
+    for race in found:
+      key = (race["grade"], race["name"].lower())
+      # The same race can legitimately appear twice (Classic and Senior), but
+      # so can one row read on two overlapping passes, and the two cannot be
+      # told apart from the name alone. Counting it once is what affinity
+      # wants anyway.
+      if key in seen:
+        continue
+      seen.add(key)
+      races.append(race)
+  return races, record
+
+
+def read_inspiration_frame(screen, top_edge=PANEL_EDGE, past_legacy=False):
+  """One frame of the Inspiration tab, split into the blocks it shows.
+
+  Returns (own sparks, [parent block], saw_legacy). A parent block is
+  {"sparks": [...], "clipped": bool}; `clipped` says its portrait runs off the
+  top or bottom of this frame, so the block may be missing rows and the caller
+  should prefer a frame that shows the same parent whole.
+
+  `past_legacy` says the header was already passed on an earlier frame. It has
+  to be carried in, because the header scrolls off the top: on the second pass
+  of El Condor Pasa's card there is no header on screen at all, and without
+  this every one of that frame's parent rows was counted as one of the Uma's
+  own sparks.
+
+  The "Legacy Origin" header separates the Uma's own sparks from its parents'.
+  Which parent a row under that header belongs to is the portrait beside it -
+  the two parents are otherwise indistinguishable, and they can carry the same
+  spark (both of the first card's parents hand down Yasuda Kinen), so they
+  cannot simply be pooled and deduplicated.
   """
   panel = crop(screen, region_of(constants.VETERAN_PANEL_BBOX))
   boxes = read_boxes(panel)
   legacy_y = next((y for t, _, (x, y, w, h) in boxes if "legacy" in t.lower()), None)
+  bands = portrait_bands(panel, legacy_y)
+  floor = panel.height - PANEL_EDGE
 
-  sparks = []
+  own, blocks = [], {}
   for (column, star_y), stars in sorted(star_rows(panel).items(), key=lambda kv: (kv[0][1], kv[0][0])):
-    if legacy_y is not None and star_y > legacy_y:
-      continue
     # A row whose name is off the top of the panel, or whose stars are off the
     # bottom, is read partly - and a partly read star row is the wrong number
     # of stars, which is worse than not reading it. See PANEL_EDGE.
-    if star_y - NAME_BAND[0] < top_edge or star_y + 16 > panel.height - PANEL_EDGE:
+    if star_y - NAME_BAND[0] < top_edge or star_y + 16 > floor:
       continue
     low, high = star_y - NAME_BAND[0], star_y - NAME_BAND[1]
     # read_boxes hands them back in reading order, so the index keeps a wrapped
@@ -602,8 +802,38 @@ def read_sparks_frame(screen, top_edge=PANEL_EDGE):
     name = " ".join(t for _, t in sorted(parts)).strip()
     if not name:
       continue
-    sparks.append({"name": name, "kind": pill_kind(panel, column, star_y), "stars": stars})
-  return sparks, legacy_y is not None
+    spark = {"name": name, "kind": pill_kind(panel, column, star_y), "stars": stars}
+    if not past_legacy and (legacy_y is None or star_y <= legacy_y):
+      own.append(spark)
+      continue
+    # Below the header: the band it sits under says which parent it is. A row
+    # with no band above it is one whose portrait scrolled off, and it cannot
+    # be attributed, so it is left out rather than guessed at.
+    owner = next((i for i, (start, _) in reversed(list(enumerate(bands)))
+                  if start <= star_y + PORTRAIT_ROW_TOLERANCE), None)
+    if owner is None:
+      continue
+    blocks.setdefault(owner, []).append(spark)
+
+  parents = []
+  for owner in sorted(blocks):
+    start, end = bands[owner]
+    parents.append({"sparks": blocks[owner],
+                    "clipped": start <= top_edge or end >= floor})
+  return own, parents, past_legacy or legacy_y is not None
+
+
+# How far above its portrait's first row a spark row may sit and still belong
+# to it: the portrait is centred on its block, so the block's first row starts
+# a little above the band.
+PORTRAIT_ROW_TOLERANCE = 20
+
+
+def read_sparks_frame(screen, top_edge=PANEL_EDGE):
+  """The Uma's own spark rows on one frame, and whether the ancestors' block
+  has come into view. See read_inspiration_frame, which does the work."""
+  own, _parents, saw_legacy = read_inspiration_frame(screen, top_edge)
+  return own, saw_legacy
 
 
 def split_row(panel, top, bottom):
@@ -713,7 +943,7 @@ def rewind_panel():
   debug(f"Details panel still moving after {PANEL['rewind_limit']} drags.")
 
 
-def scan_panel(read_frame, stop_when=None, keep=None):
+def scan_panel(read_frame, stop_when=None, keep=None, passes=None):
   """Scroll the panel top to bottom, collecting what `read_frame` reads.
 
   The panel is rewound first for the reason core/menu_scan.py rewinds: the
@@ -724,6 +954,10 @@ def scan_panel(read_frame, stop_when=None, keep=None):
   `stop_when(result)` ends the scan early - the Inspiration tab uses it to stop
   as soon as the ancestors' block is in view, since nothing below it is wanted.
 
+  `passes` overrides the calibration's limit. The Race History needs it: a
+  race row is three lines tall, so eight passes covered only 12 of one card's
+  16 races - which the card's own "Races: 16 Wins: 12" line is there to catch.
+
   `keep`, when given a list, collects the panel crop of every pass. That is
   what the saved contact sheet is made of: a long skill list is only ever
   fully on screen across several passes, so one screenshot could not show
@@ -731,7 +965,7 @@ def scan_panel(read_frame, stop_when=None, keep=None):
   """
   rewind_panel()
   collected = []
-  for pass_no in range(PANEL["passes"]):
+  for pass_no in range(passes or PANEL["passes"]):
     if state.stop_event.is_set():
       return collected
     # See PANEL_TOP_EDGE: the first pass is at the top of the list, so nothing
@@ -754,7 +988,7 @@ def scan_panel(read_frame, stop_when=None, keep=None):
       menu_scan.wait_for_list(PANEL)
     if menu_scan.still(PANEL, before, menu_scan.frame(PANEL)):
       return collected
-  warning(f"Details panel still scrolling after {PANEL['passes']} passes.")
+  warning(f"Details panel still scrolling after {passes or PANEL['passes']} passes.")
   return collected
 
 
@@ -793,23 +1027,130 @@ def read_skills(keep=None):
   return skills, unmatched
 
 
-def read_sparks(keep=None):
-  """The Uma's own sparks, as [{name, kind, stars}].
+def same_parent(one, other):
+  """Are these two blocks, read on different passes, the same parent?
+
+  By agreement on (name, stars), because a parent read whole twice reads the
+  same both times. A half overlap is the test rather than equality, so an OCR
+  slip on one name does not split a parent in two - and it is only a half, so
+  the two parents of the first card scanned, which share Yasuda Kinen 1*, are
+  not pooled into one.
+  """
+  a = {(spark["name"].lower(), spark["stars"]) for spark in one}
+  b = {(spark["name"].lower(), spark["stars"]) for spark in other}
+  if not a or not b:
+    return False
+  return len(a & b) * 2 >= min(len(a), len(b))
+
+
+def read_inspiration(keep=None):
+  """The Uma's own sparks and its Legacy Origin parents'.
+
+  Returns (own, parents): own is [{name, kind, stars}], parents is a list of
+  the same, one per parent, in the order the card shows them.
 
   A white pill is a skill spark or a race spark; master.mdb's race names say
   which, so the kind is reported as "race" or "skill" rather than "white".
+
+  The scan runs to the END of the tab, where it used to stop at the Legacy
+  Origin header. That costs a pass or two a card and is what makes the parents
+  readable at all: on condor_sparks the first parent fills the frame and the
+  second has only just appeared at the bottom.
+
+  Only blocks whose portrait is wholly on screen are taken, and the same parent
+  seen on two passes is kept once - the longer read of the two, since the other
+  was missing rows to the panel edge.
   """
-  seen, sparks = set(), []
-  frames = scan_panel(read_sparks_frame, stop_when=lambda result: result[1], keep=keep)
-  for found, _ in frames:
+  # The header is sticky: once a pass has shown it, every row on every later
+  # pass is below it, header on screen or not.
+  passed = {"legacy": False}
+
+  def frame(screen, top_edge):
+    result = read_inspiration_frame(screen, top_edge, past_legacy=passed["legacy"])
+    passed["legacy"] = passed["legacy"] or result[2]
+    return result
+
+  frames = scan_panel(frame, keep=keep)
+
+  seen, own = set(), []
+  for found, _blocks, _saw in frames:
     for spark in found:
       named = name_spark(spark)
       key = named["name"].lower()
       if key in seen:
         continue
       seen.add(key)
-      sparks.append(named)
-  return sparks
+      own.append(named)
+
+  parents = []
+  for _found, blocks, _saw in frames:
+    for block in blocks:
+      if block["clipped"]:
+        continue
+      sparks = [name_spark(spark) for spark in block["sparks"]]
+      if not sparks:
+        continue
+      match = next((i for i, got in enumerate(parents) if same_parent(got, sparks)), None)
+      if match is None:
+        parents.append(sparks)
+      elif len(sparks) > len(parents[match]):
+        parents[match] = sparks
+  return own, parents
+
+
+# How many times to look for the dialog closing after OK, 0.8s apart.
+FAVOURITE_CLOSE_POLLS = 4
+
+
+def on_favourite():
+  """True when the "Favorite Icon Selection" dialog is up.
+
+  Read rather than template-matched: the dialog is a one-off and its title is
+  a clean strip of text, so this costs one small OCR and no new asset.
+  """
+  text = " ".join(t for t, _c, _b in
+                  read_boxes(crop(grab(), constants.VETERAN_FAVOURITE_TITLE_REGION)))
+  return "favorite" in text.lower()
+
+
+def set_favourite(icon):
+  """Set the open card's favourite icon. True when the card now carries it.
+
+  This is the only mark the roster can FILTER on - the memo is nine characters
+  of text and nothing sorts or filters by it - so it is how a shortlist of
+  parents is made findable on the Legacy Select screen.
+
+  A card that already carries the icon is left alone: the dialog greys its OK
+  out when nothing changed, so pressing it would do nothing and leave the
+  dialog sitting open over the next card. That case is cancelled out and
+  reported as success, because the card does carry the icon either way.
+  """
+  if icon not in constants.VETERAN_FAVOURITE_ICONS:
+    warning(f"No such favourite icon: {icon!r}.")
+    return False
+  tap(constants.VETERAN_FAVOURITE_MOUSE_POS, settle=1.0)
+  if not on_favourite():
+    warning("The favourite icon dialog did not open.")
+    return False
+  index = constants.VETERAN_FAVOURITE_ICONS.index(icon)
+  origin, step = constants.VETERAN_FAVOURITE_GRID_ORIGIN, constants.VETERAN_FAVOURITE_GRID_STEP
+  tap((origin[0] + (index % 4) * step[0], origin[1] + (index // 4) * step[1]), settle=0.6)
+  tap(constants.VETERAN_FAVOURITE_OK_MOUSE_POS, settle=1.2)
+  # The dialog does not always close inside one settle - V002's took longer,
+  # and reading it as "still open" there turned a successful set into a
+  # pointless Cancel. Poll instead of deciding on one frame.
+  for _ in range(FAVOURITE_CLOSE_POLLS):
+    if not on_favourite():
+      return True
+    sleep(0.8)
+  # Genuinely still open: OK is greyed because the icon was already the one
+  # asked for, and the dialog is waiting on Cancel.
+  tap(constants.VETERAN_FAVOURITE_CANCEL_MOUSE_POS, settle=1.0)
+  if on_favourite():
+    warning("The favourite icon dialog would not close.")
+    return False
+  debug(f"Already set to {icon}; left as it was.")
+  return True
 
 
 def read_card(keep=None):
@@ -851,10 +1192,11 @@ def read_card(keep=None):
 
   if select_tab(constants.VETERAN_TAB_INSPIRATION_MOUSE_POS,
                 constants.VETERAN_TAB_INSPIRATION_BBOX):
-    card["sparks"] = read_sparks(keep=None if keep is None else keep["sparks"])
+    card["sparks"], card["parents"] = read_inspiration(
+        keep=None if keep is None else keep["sparks"])
   else:
     warnings.append("the Inspiration tab would not open; its sparks are missing")
-    card["sparks"] = []
+    card["sparks"], card["parents"] = [], []
   repair_unique(card)
 
   if not card["name"]:
@@ -887,6 +1229,9 @@ def read_card(keep=None):
         warnings.append(f"no {kind} spark found; the sparks panel read short")
   if card["sparks"] and not any(spark["kind"] == "green" for spark in card["sparks"]):
     warnings.append("no green spark (expected for a 1- or 2-star uma)")
+  if card["sparks"] and len(card.get("parents") or []) not in (0, 2):
+    warnings.append(f"read {len(card['parents'])} Legacy Origin parent(s), expected 2"
+                    " (or none for a first-generation career)")
   unread = [spark["name"] for spark in card["sparks"] if not spark.get("matched")]
   if unread:
     warnings.append(f"sparks matched no real name: {'; '.join(unread)}")

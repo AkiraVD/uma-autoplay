@@ -609,6 +609,29 @@ VETERAN_RATING_REGION = (318, 220, 112, 30)
 VETERAN_EPITHET_REGION = (533, 166, 190, 30)
 VETERAN_MEMO_REGION = (556, 210, 236, 36)      # "-" when no memo is set
 VETERAN_MEMO_PENCIL_MOUSE_POS = (818, 228)
+
+# The "favourite" icon in the top-left corner of the Umamusume Details dialog,
+# and the "Favorite Icon Selection" grid that tapping it opens. The icon is
+# what the roster filters on, so it is the only way to mark a card as worth
+# keeping as a parent - the memo is 9 characters of text and nothing filters by
+# it. Measured 2026-10-13.
+VETERAN_FAVOURITE_MOUSE_POS = (290, 112)
+# The grid is 4x4, row-major from the top-left cell. "None" is cell 0, so a
+# card is cleared by picking that rather than by a separate button.
+VETERAN_FAVOURITE_GRID_ORIGIN = (366, 357)
+VETERAN_FAVOURITE_GRID_STEP = (125, 98)
+VETERAN_FAVOURITE_TITLE_REGION = (300, 258, 500, 42)
+VETERAN_FAVOURITE_OK_MOUSE_POS = (686, 774)
+VETERAN_FAVOURITE_CANCEL_MOUSE_POS = (419, 774)
+# Grid order as the dialog draws it. The roster's own "Batch Favorite" button
+# opens the same grid, but its wording ("apply in batch") does not say whether
+# it then asks which cards, so this walks and sets them one at a time instead.
+VETERAN_FAVOURITE_ICONS = (
+  "none", "carrot", "rice", "drink",
+  "chocolate", "cake", "diamond", "spade",
+  "heart", "club", "pink_shoe", "green_shoe",
+  "yellow_shoe", "blue_shoe", "red_shoe", "handshake",
+)
 VETERAN_STATS_REGION = (265, 255, 580, 70)
 VETERAN_APTITUDE_REGION = (258, 335, 592, 106)
 # The ten aptitude grades, as the top-left of each glyph. They sit on a fixed
