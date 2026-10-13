@@ -510,16 +510,19 @@ def test_one_visit_a_turn():
   L._tap, L._wait_for_lessons, L._leave = (lambda *a: True), (lambda *a: True), (lambda *a: None)
   try:
     L._declined = None
-    L.shop = lambda *a: 1
+    # **kw: visit() passes max_energy by keyword (the Grand Concert widens the
+    # bar, so the cap is read rather than assumed). A positional-only double
+    # turns that into a TypeError that stops the whole suite.
+    L.shop = lambda *a, **kw: 1
     ok("a visit that bought reports it", L.visit(80, "Classic Year Late Jan", 4))
     ok("and the turn is not visited again", not L.should_visit("Classic Year Late Jan", 4))
     ok("but the next turn is", L.should_visit("Classic Year Early Feb", 3))
     seen = []
-    L.shop = lambda energy, year, spend_all, turn: seen.append(spend_all) or 0
+    L.shop = lambda energy, year, spend_all, turn, **kw: seen.append(spend_all) or 0
     L.visit(80, "Finale Underway", "Race Day")
     ok("a Finale visit spends everything", seen == [True], seen)
     L._declined = None
-    L.shop = lambda *a: L.purchase_limit()
+    L.shop = lambda *a, **kw: L.purchase_limit()
     L.visit(80, "Classic Year Late Jan", 4)
     ok("a visit cut short by the purchase cap may come back", L.should_visit("Classic Year Late Jan", 4))
   finally:

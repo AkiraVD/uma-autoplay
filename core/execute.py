@@ -399,7 +399,9 @@ def check_training():
 
   results = {}
 
-  # failcheck enum "train","no_train","check_all"
+  # failcheck enum "train","check_all". There was a "no_train" that short-
+  # circuited the rest of the scan to unsafe; see the comment where it was
+  # removed (2026-10-12) for why only the safe direction is sound.
   failcheck="check_all"
   margin=5
 
@@ -479,15 +481,31 @@ def check_training():
           warning(f"Couldn't read {key.upper()} failure chance, treating it as unsafe.")
           failure_chance = state.MAX_FAILURE + margin + 1
         elif failure_chance > (state.MAX_FAILURE + margin):
-          info("Failure rate too high skip to check wit")
-          failcheck="no_train"
-          failure_chance = state.MAX_FAILURE + margin
+          # Kept as read, and the scan CARRIES ON. This used to set
+          # failcheck="no_train", which wrote MAX_FAILURE+margin for every
+          # facility after it without reading any of them - and the facility
+          # read first is Speed.
+          #
+          # Speed is the worst case, not a representative one. Over the two
+          # 2026-10-12 careers, on the turns where the five were really read,
+          # Speed was the highest-failure facility 8 times out of 13, and it
+          # averaged 15.3% against Stamina 9.2%, Power 8.7% and Guts 9.8%. So
+          # "Speed is unsafe" was condemning three facilities that are five to
+          # six points safer, unread. It cost 34 turns across those two
+          # careers - every one of them a rest or a thin wit, with Speed the
+          # top-scoring facility on 16 - and 11 of those had energy to spare,
+          # so the assumption, not the tank, is what decided them.
+          #
+          # The inference is only sound in the other direction, which is why
+          # the "train" branch below still propagates: the worst facility
+          # being clearly safe does say the safer ones are. Two careers and no
+          # training has failed under it.
+          debug(f"{key.upper()} failure {failure_chance}% is over"
+                f" {state.MAX_FAILURE}%; still reading the rest.")
         elif failure_chance < (state.MAX_FAILURE - margin):
           info("Failure rate is low enough, skipping the rest of failure checks.")
           failcheck="train"
           failure_chance = 0
-      elif failcheck == "no_train":
-        failure_chance = state.MAX_FAILURE + margin
       elif failcheck == "train":
         failure_chance = 0
     else:
@@ -720,7 +738,46 @@ def set_skip_x2(max_presses=3):
 # waits: frames seen on the panel with neither a confirmation nor a friend row,
 # which is usually mid-animation. taps: friend-row clicks that never produced
 # the confirmation dialog, which means the row is not taking them.
-_recreation = {"waits": 0, "taps": 0}
+#
+# `turn` is which lobby turn those taps belong to, and it is what makes `taps`
+# mean what its comment says. Both counters are module state, and the success
+# path never cleared `taps`: the only resets were the confirmation dialog, a
+# complete chain, and the give-up itself. The confirmation is matched through
+# the panel's own OK button and in the 2026-10-12 Grand Concert career it never
+# matched once - "Confirming the outing." appears zero times in the whole log -
+# so `taps` simply counted friend outings taken and tripped on every third one,
+# downgrading it to plain recreation. Seven friend-row visits, give-ups on the
+# 1st, 4th and 7th; the 7th sat at four of five chevrons, so the Light Hello
+# chain never paid its last step. The first visit of that career already
+# started at two, carried in from the career before it.
+#
+# Resetting on the tap instead would have brought back the loop the counter was
+# added for (2026-09-24, three minutes of tapping a spent row), because a frame
+# that is the chooser again is indistinguishable from the first one. Keyed to
+# the turn, `taps` counts retries inside the one outing attempt, which is what
+# it was for, and cannot leak into the next turn or the next career.
+_recreation = {"waits": 0, "taps": 0, "turn": None}
+
+# Friend-row taps allowed in one outing before taking plain recreation instead.
+RECREATION_TAP_LIMIT = 2
+
+
+def recreation_tap_giving_up(turn_key):
+  """Count this friend-row tap, and say whether to stop tapping and take the
+  trainee row instead.
+
+  Pulled out of the panel branch so the one thing that went wrong with it can
+  be tested: the count has to restart on a new turn. See _recreation.
+  """
+  if _recreation["turn"] != turn_key:
+    _recreation["turn"] = turn_key
+    _recreation["taps"] = 0
+  _recreation["taps"] += 1
+  if _recreation["taps"] > RECREATION_TAP_LIMIT:
+    _recreation["taps"] = 0
+    return True
+  return False
+
 
 CHOICE_VERTICAL_GAP = 112
 
@@ -1542,8 +1599,17 @@ def career_lobby():
       fresh = check_current_year()
       if re.search(r"Junior|Classic|Senior|Finale", fresh or ""):
         state.CURRENT_YEAR = fresh
-      lessons.to_lessons(matches["gc_to_lessons"][0], year=state.CURRENT_YEAR,
-                         turn=state.CURRENT_TURN)
+      # Energy has to be read and passed. Without it lessons.choose() sees
+      # None, which makes an Energy technique look like pure waste however
+      # empty the tank is AND disables the "on plan, but energy is low" rescue
+      # that is the only thing allowed to break the song-point hold. On
+      # 2026-10-13 that declined Energy +30 at 44 energy and Energy +20 at 48,
+      # both under the threshold, in a career where every rest was forced by
+      # the energy floor. One OCR read, only on Schedule Notification turns.
+      lessons_energy, lessons_cap = check_energy_level()
+      lessons.to_lessons(matches["gc_to_lessons"][0], energy=lessons_energy,
+                         year=state.CURRENT_YEAR, turn=state.CURRENT_TURN,
+                         max_energy=lessons_cap)
       continue
     if matches["gc_concert_start"]:
       # The Grand Concert's confirmation also offers to skip its cutscene.
@@ -1601,11 +1667,11 @@ def career_lobby():
           continue
         # A row that will not answer, for any other reason: the confirmation
         # never came, so this frame is the chooser again. Two goes, then take
-        # the trainee row rather than tap forever.
-        _recreation["taps"] += 1
-        if _recreation["taps"] > 2:
-          warning("The friend row did not answer three taps; taking plain recreation.")
-          _recreation["taps"] = 0
+        # the trainee row rather than tap forever - counted per turn, because
+        # a new turn is a new outing and not a third go at this one.
+        if recreation_tap_giving_up((state.CURRENT_YEAR, state.CURRENT_TURN)):
+          warning(f"The friend row did not answer {RECREATION_TAP_LIMIT + 1}"
+                  " taps this turn; taking plain recreation.")
           x, y = constants.RECREATION_TRAINEE_ROW_MOUSE_POS
           click(boxes=(x, y, 1, 1), text="Falling back to plain recreation.")
           sleep(2)
@@ -2355,7 +2421,8 @@ def career_lobby():
       state.saw_scenario("grand_concert", "Lessons button in the lobby")
     lessons_button = lessons.ready(screen) if state.GRAND_CONCERT_SEEN else None
     if lessons_button and lessons.should_visit(year, turn):
-      if lessons.visit(energy_level, year, turn, button=lessons_button):
+      if lessons.visit(energy_level, year, turn, button=lessons_button,
+                       max_energy=max_energy):
         continue
 
     # If the calendar says race day, race. Every mode's finale comes through

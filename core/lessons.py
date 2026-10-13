@@ -37,6 +37,7 @@ from PIL import ImageGrab
 from rapidfuzz import fuzz, process
 
 import core.state as state
+import core.training_cost as training_cost
 import utils.constants as constants
 from core.ocr import extract_text, extract_number, read_boxes
 from utils.log import debug, info, warning, log_dir
@@ -81,6 +82,22 @@ SONG_NAME_MATCH = 80
 # An Energy technique at high energy scores amount * 0.05 (1.5 for +30); any
 # other effect scores several points. Below this it waits a turn (see choose).
 WASTED_TECHNIQUE_FLOOR = 3.0
+# What one Performance point of reserve dent costs, in the same weighted stat
+# points technique_value returns, when picking which Technique to buy.
+#
+# It used to be unpriced: the pick was `min(deficit, then -value)`, so any dent
+# at all lost to no dent, whatever the two cards were worth. On 2026-10-12 that
+# bought 'Makeup Advanced Class' [Guts +12] - worth 1.2, because this config
+# weights Guts at zero - over 'Formation Intermediate Class' [Speed +6, Skill
+# Pts +6] worth 13.8, because the Speed card dented a 21-point Da reserve by 2.
+#
+# 2.0 is what both known cases want. The 2026-10-12 pair needs anything under
+# 6.3 for the Speed card to win. Career 2, which is why `reserve` exists at
+# all, needs it high enough that a Speed +12 worth 16.8 does NOT eat 12 points
+# of the Da reserve the 18th song then came 17 Da short of: at 2.0 it scores
+# -7.2 and loses to a 4-point card that dents nothing, and at 1.0 it would
+# still win.
+RESERVE_DENT_COST = 2.0
 # The turn value a visit from the concert screen passes, where every song
 # learned still counts towards the concert about to start.
 CONCERT_TURN = "concert"
@@ -611,6 +628,81 @@ def stat_weight(stat):
   except (ValueError, KeyError, TypeError, AttributeError):
     return 0.5
 
+# Fallback for how much energy a career can hold, used only when the real bar
+# could not be read. It is NOT a constant in play: the Grand Concert extends
+# the bar, and the 2026-10-13 career ran at 97-104 for eighteen turns. Pricing
+# those against a 100 cap says the tank is full when it has headroom, which is
+# the whole mistake this file made before.
+ENERGY_CAP = 100
+# The real cap, as check_energy_level measured it, published by shop() for the
+# turn rather than threaded through technique_value's dozen call sites - the
+# same arrangement core/logic.py uses for the stat headroom and the wit band.
+_energy_cap = None
+# Weighted stat points per point of energy that actually lands. A training
+# costs 20-27 energy and returns 25-40 stat points, so a point of energy is
+# worth a little over one stat point. 1.5 is what the old cliff used at low
+# energy, kept so only the SHAPE of the curve changes here, not its height.
+ENERGY_POINTS_PER = 1.5
+# What an energy point is worth once it would overflow: not nothing, because
+# the level is a guestimate off a pixel bar, but close to it.
+ENERGY_OVERFLOW_POINTS = 0.05
+# Energy a wit training hands back. Held back from the headroom when deciding
+# whether an Energy technique would spill: Lessons are settled before the turn
+# is planned, so a wit facility that would push the tank over cannot be seen
+# from here.
+#
+# It is NOT the flat master.mdb number. "Wit Friendship Recovery" on a wit
+# support card adds to it, once per card at MAX bond, and the additions STACK.
+# Measured off tests/fixtures/careers - energy before against energy after a
+# turn the bot trained wit, read against that board's own wit rainbow count:
+#
+#   0 rainbows  +5.1        1 rainbow  +9.3 / +9.8        2 rainbows  +14.4
+#
+# which is base 5 + Mihono Bourbon SSR 5 + Agnes Tachyon SR 4 to within the
+# energy bar's own pixel resolution. A card below max bond adds nothing.
+# (The web is no use here: game8's Friendship Training page says outright that
+# its numbers are still being tested.)
+#
+# visit() cannot see how many wit cards are at max bond this turn, so the
+# reserve is the deck's best case rather than the base. ALLOWANCE is two
+# max-bond wit cards' worth; a deck carrying more wants it raised.
+WIT_ENERGY_BASE = max(0, training_cost.change("wit"))
+WIT_RECOVERY_ALLOWANCE = 10
+WIT_ENERGY_RETURN = WIT_ENERGY_BASE + WIT_RECOVERY_ALLOWANCE
+
+
+def energy_value(amount, energy):
+  """Worth of an Energy technique, in weighted stat points.
+
+  Two things scale it down as the tank fills, and both are needed:
+
+  - only the part that FITS can land at all, and
+  - each point that fits is worth less than the one before it, because it
+    leaves less room for the rests and outings still to come.
+
+  A flat rate on the part that fits was tried first and was wrong at the top:
+  it priced +30 at 85 energy at 23 and bought it on the spot, where waiting a
+  turn and buying the same card at 60 banks the whole 30. The four
+  test_lessons checks that caught it are the ones worth keeping.
+
+  Still no cliff, which is what this replaced: the old rule paid 45 at 49
+  energy and 1.5 at 51.
+
+  An unreadable level is treated as a half-full tank rather than an empty or a
+  full one - with the energy argument now passed at both call sites it should
+  not come up, and guessing either extreme is worse than guessing the middle.
+  """
+  cap = _energy_cap if _energy_cap and _energy_cap > 0 else ENERGY_CAP
+  headroom = cap / 2.0 if energy is None or energy < 0 else max(0.0, cap - energy)
+  fits = min(float(amount), headroom)
+  # Each point added is worth less than the one before it, because it leaves
+  # less room for the rests and outings still to come. Summing that over the
+  # points that fit is the area under a falling line, not a rectangle:
+  #   (k/CAP) * integral(0..fits) of (headroom - x) dx
+  landed = (ENERGY_POINTS_PER / cap) * (fits * headroom - fits * fits / 2.0)
+  return landed + (amount - fits) * ENERGY_OVERFLOW_POINTS
+
+
 def technique_value(card, energy):
   """Rough worth of a Technique, in stat points."""
   value = 0.0
@@ -620,12 +712,61 @@ def technique_value(card, energy):
     elif effect == "skill_pts":
       value += amount * 0.9
     elif effect == "energy":
-      # Energy is only worth something when it would otherwise be a rest.
-      low = energy is not None and 0 <= energy < state.ENERGY_TECHNIQUE_BELOW
-      value += amount * (1.5 if low else 0.05)
+      # Energy is worth what will actually FIT. It used to be a cliff on
+      # ENERGY_TECHNIQUE_BELOW - full value under it, a thirtieth of it over -
+      # which priced the same Energy +30 at 45 on 49 energy and at 1.5 on 51,
+      # though at 51 it lands whole and wastes nothing. Only the part above the
+      # cap is lost, so only that part is discounted.
+      #
+      # It matters more than the other effects here because energy is what caps
+      # a career's TOTAL stats: every rest in the 2026-10-13 career was forced
+      # by the energy floor, so points turned into energy come back as whole
+      # extra trainings.
+      value += energy_value(amount, energy)
     elif effect == "hint":
       value += 2.0 * max(1, amount)
   return value
+
+def energy_pick(learnable, energy, year, segment, on_concert=False):
+  """The Energy technique to take from this board, or None to preserve it.
+
+  Energy is what caps a career's TOTAL stats - every one of the ten rests in
+  the 2026-10-13 career was forced by the energy floor, and each is a whole
+  turn that bought nothing - so the rule is ALWAYS BUY, ahead of any other
+  technique and ahead of holding points for the next song. Energy techniques
+  and songs do not share a board, so this never competes with one.
+
+  It is preserved for a later turn in one case: when buying it now would
+  SPILL. Spill is counted against a wit training as well, because wit hands
+  energy back (+5, from master.mdb) and the board is settled BEFORE the turn
+  is planned - lessons.visit runs ahead of check_training, so it cannot see
+  whether a wit facility is on offer and has to assume one might be.
+
+  The preserve costs exactly one turn: the _energy_wait at the foot of choose()
+  takes the same card on the next visit whatever the energy is by then. So it
+  cannot cost a song - buying is only ever deferred, never dropped - with one
+  exception, which is the only one: the concert screen is the visit that has
+  no next turn. Leaving an Energy technique there while the Hype gauge is
+  still short of its songs would cost the segment its Great Success, worth
+  +10 to every stat, to save some spilled energy. So it is bought there.
+  """
+  offers = [(parse_effects(c["effects"]).get("energy", 0), c) for c in learnable]
+  offers = [(amount, c) for amount, c in offers if amount > 0]
+  if not offers:
+    return None
+  amount, card = max(offers, key=lambda pair: pair[0])
+
+  cap = _energy_cap if _energy_cap and _energy_cap > 0 else ENERGY_CAP
+  if energy is None or energy < 0:
+    return card                       # unreadable: take it
+  spills = energy + amount + WIT_ENERGY_RETURN > cap
+  if not spills:
+    return card
+
+  if on_concert and _songs.get(segment, 0) < hype_songs_needed(segment):
+    return card                       # no next turn to preserve it for
+  return None
+
 
 def choose(cards, energy, year, spend_all=False, turn=None, points=None):
   """What to do with this board: ("learn" | "schedule" | "none", card, why).
@@ -753,31 +894,40 @@ def choose(cards, energy, year, spend_all=False, turn=None, points=None):
       if spill:
         best = max(spill, key=lambda c: technique_value(c, energy))
         return "learn", best, f"{', '.join(full)} near the {cap} cap; spending before it overflows"
-    if energy_low:
-      topped = [c for c in learnable_techs if "energy" in parse_effects(c["effects"])]
-      if topped:
-        return "learn", max(topped, key=lambda c: technique_value(c, energy)), "on plan, but energy is low"
+    topped = energy_pick(learnable_techs, energy, year, segment, on_concert)
+    if topped:
+      return "learn", topped, "on plan, but energy is always worth buying"
     return "none", None, f"{total} songs, on plan ({song_target(segment)}); holding points for the next songs"
 
-  # Short of the target: buy towards the next song page, keeping the reserve.
+  # Short of the target: buy towards the next song page, keeping the reserve -
+  # but energy first, because a rest costs a whole turn and the reserve only
+  # costs a song a turn or two of waiting.
+  topped = energy_pick(learnable_techs, energy, year, segment, on_concert)
+  if topped:
+    return "learn", topped, "energy first"
+
   note = ""
   if songs_done:
     best = max(learnable_techs, key=lambda c: technique_value(c, energy))
     note = f", {total} songs done, spending ahead of the Grand Concert"
   elif points and all(card_cost(c) for c in learnable_techs):
     held = reserve(year)
-    best = min(learnable_techs, key=lambda c: (extra_deficit(card_cost(c), points, held),
-                                                -technique_value(c, energy)))
+    # Worth against reserve dent, priced rather than ranked: a dent is a cost,
+    # not a veto, so a card worth twelve more stat points is allowed to pay two
+    # points of it. See RESERVE_DENT_COST.
+    best = max(learnable_techs,
+               key=lambda c: (technique_value(c, energy)
+                              - extra_deficit(card_cost(c), points, held) * RESERVE_DENT_COST,
+                              -cost_total(card_cost(c))))
     dent = extra_deficit(card_cost(best), points, held)
     note = f", {dent} into the song reserve" if dent else ", song reserve kept"
   else:
     best = max(learnable_techs, key=lambda c: technique_value(c, energy))
-  # An Energy technique costs 20-35 points, and with energy already high the
-  # energy is simply lost. Seen live: Energy +30 bought at high energy while
-  # a Wit +8 and a Skill Pts +8 sat locked on the same board, a turn or two
-  # of points away. So it waits one turn: by then those may be affordable, or
-  # energy may have dropped. If it is still the best card next turn it is
-  # bought, so the board keeps moving towards the next song.
+  # Only reachable for an Energy technique on a FULL tank: energy_pick takes
+  # one before this whenever any of it would land, so the single case left is
+  # the one where the points would buy literally nothing. It still waits a
+  # turn rather than burning them - by then energy has dropped and the same
+  # card is worth taking.
   wasted = technique_value(best, energy) < WASTED_TECHNIQUE_FLOOR and "energy" in parse_effects(best["effects"])
   if wasted:
     key = (year, turn)
@@ -893,7 +1043,7 @@ def _wait_for_lessons():
       return True
   return False
 
-def visit(energy=None, year="", turn=None, button=None, spend_all=False):
+def visit(energy=None, year="", turn=None, button=None, spend_all=False, max_energy=None):
   """Open Lessons, buy what is worth buying, and come back.
 
   Returns True when anything was bought, so the caller re-reads the lobby
@@ -915,7 +1065,7 @@ def visit(energy=None, year="", turn=None, button=None, spend_all=False):
     _leave()
     _declined = (year, turn)
     return False
-  bought = shop(energy, year, spend_all, turn)
+  bought = shop(energy, year, spend_all, turn, max_energy=max_energy)
   _leave()
   if bought < purchase_limit(spend_all):
     _declined = (year, turn)
@@ -959,8 +1109,10 @@ def _note_blocked(cards, points):
     if _blocked:
       info(f"Lessons board locked; training will favour {', '.join(sorted(_blocked))} to free it.")
 
-def shop(energy=None, year="", spend_all=False, turn=None):
+def shop(energy=None, year="", spend_all=False, turn=None, max_energy=None):
   """Buy from the board on screen until nothing is worth buying. Returns the count."""
+  global _energy_cap
+  _energy_cap = max_energy if max_energy and max_energy > 0 else None
   _note_year(year)
   bought = 0
   for _ in range(purchase_limit(spend_all)):
@@ -1060,7 +1212,7 @@ def concert(box, year="", grand=False):
   x, y, w, h = box
   _tap((x + w // 2, y + h // 2), "Starting the concert.")
 
-def to_lessons(box, energy=None, year="", turn=None):
+def to_lessons(box, energy=None, year="", turn=None, max_energy=None):
   """A Schedule Notification's "To Lessons": the reserved song can be bought.
 
   The turn is remembered as visited, so the lobby that follows does not open
@@ -1072,7 +1224,7 @@ def to_lessons(box, energy=None, year="", turn=None):
   if not _wait_for_lessons():
     warning("To Lessons did not open the Lessons screen.")
     return False
-  bought = shop(energy, year)
+  bought = shop(energy, year, max_energy=max_energy)
   _leave()
   if turn is not None and bought < purchase_limit():
     _declined = (year, turn)
