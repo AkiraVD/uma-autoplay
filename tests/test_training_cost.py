@@ -38,13 +38,34 @@ def main():
   ok("while a stat facility is charged what it costs",
      T.cost("spd") == -changes["spd"] > 0, T.cost("spd"))
 
-  print("\n-- the built-in fallback agrees with the database")
+  print("\n-- the built-in fallback agrees with the database, scenario by scenario")
   # If master.mdb is present the two must match; if it is absent the fallback is
   # what change() returned anyway, so this holds either way and catches a
   # fallback that drifts away from the real values.
-  for stat, value in T.FALLBACK.items():
-    ok(f"fallback {stat} matches what change() reports", T.change(stat) == value,
-       f"{T.change(stat)} vs {value}")
+  #
+  # FALLBACK is keyed by master.mdb scenario id since 2026-10-13, because the
+  # modes DISAGREE - Grand Concert is Speed -19 and Guts -20 where URA is -21
+  # and -22 - and the query used to take whichever row came first, always URA's.
+  saved_scenario = T._scenario
+  try:
+    for scenario, table in T.FALLBACK.items():
+      T.set_scenario(scenario)
+      for stat, value in table.items():
+        ok(f"scenario {scenario} fallback {stat} matches what change() reports",
+           T.change(stat) == value, f"{T.change(stat)} vs {value}")
+  finally:
+    T.set_scenario(saved_scenario)
+
+  print("\n-- wit hands energy back in every mode")
+  # The sign fix this module was written for has to hold whichever mode the
+  # career is, so it is not quietly a URA-only truth.
+  try:
+    for scenario in T.FALLBACK:
+      T.set_scenario(scenario)
+      ok(f"scenario {scenario}: wit returns energy", T.change("wit") > 0, T.change("wit"))
+      ok(f"scenario {scenario}: and is charged nothing", T.cost("wit") == 0)
+  finally:
+    T.set_scenario(saved_scenario)
 
   print("\n-- an unknown facility does not crash or come back free")
   ok("unknown facility falls back to the default cost",

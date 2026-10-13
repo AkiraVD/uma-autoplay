@@ -16,6 +16,7 @@ from core.ocr import extract_text, extract_number, extract_text_improved, read_b
 from core.recognizer import match_template, count_pixels_of_color, find_color_of_pixel, closest_color, multi_match_templates
 
 import utils.constants as constants
+import core.training_cost as training_cost
 
 STAT_VALUE_RANGE = (1, 1600)
 STAT_CAP_RANGE = (800, 2200)
@@ -711,9 +712,26 @@ def apply_scenario(new_career=False):
     if new_career:
       UNITY_SEEN = False
       GRAND_CONCERT_SEEN = False
+    _publish_scenario()
     return
   UNITY_SEEN = SCENARIO == "unity"
   GRAND_CONCERT_SEEN = SCENARIO == "grand_concert"
+  _publish_scenario()
+
+def _publish_scenario():
+  """Tell core.training_cost which mode's energy costs to read.
+
+  The per-facility costs differ between game modes, and training_cost cannot
+  import this module to find out - so the flags are pushed to it, the same way
+  logic.set_energy_level publishes the energy reading. Pushed from both the
+  places that move the flags: apply_scenario and saw_scenario.
+  """
+  if UNITY_SEEN:
+    training_cost.set_scenario(training_cost.UNITY)
+  elif GRAND_CONCERT_SEEN:
+    training_cost.set_scenario(training_cost.GRAND_CONCERT)
+  else:
+    training_cost.set_scenario(training_cost.URA)
 
 def saw_scenario(name, how):
   """The screen showed something only game mode `name` has.
@@ -735,9 +753,11 @@ def saw_scenario(name, how):
   if SCENARIO == "auto":
     if name == "unity" and not UNITY_SEEN:
       UNITY_SEEN = True
+      _publish_scenario()
       info(f"{how}: this is Unity Cup.")
     elif name == "grand_concert" and not GRAND_CONCERT_SEEN:
       GRAND_CONCERT_SEEN = True
+      _publish_scenario()
       info(f"{how}: this is Grand Concert.")
     return
   if name != SCENARIO and name not in _scenario_warned:
