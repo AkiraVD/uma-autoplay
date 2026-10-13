@@ -1,12 +1,24 @@
-"""rainbow_training's wit guard.
+"""rainbow_training's filter, and what wit's energy return is worth.
 
 Run with `python tests/test_rainbow.py` from the repo root. core.state is
 stubbed: importing the real one builds an easyocr Reader.
 
-The guard used to run after max() and return None, so a wit facility that won
-on points but failed the rainbow requirement took every other rainbow candidate
-down with it and dropped the bot into most_support_card. It is now a filter, so
-the runner-up stands.
+Two things are pinned here.
+
+**The filter.** The wit guard used to run after max() and return None, so a
+facility that won on points but failed its check took every other rainbow
+candidate down with it and dropped the bot into most_support_card. Candidates
+are filtered before max() now, so the runner-up stands. The wit guard itself is
+gone (see below), so the failure limit is what exercises it.
+
+**Wit's energy return.** WIT_MIN_RAINBOWS, a hard exclusion needing two of
+wit's own rainbows, and WIT_ENERGY_BAND, a flat bonus between 30 and 70 energy,
+both came out on 2026-10-13. Wit now competes on its board like any other
+facility, and the energy it hands back is added as a priced bonus. The point of
+the change: wit costs NO energy, so on a turn that would otherwise be a rest it
+is free stats - the gate was refusing them. Replaying the three recorded Grand
+Concert careers, lifting it turned four to six rests a career into wit
+trainings.
 """
 import os
 import sys
@@ -50,14 +62,16 @@ def levels(**kw):
   base.update(kw)
   return base
 
-def facility(stat, own_rainbows=0, supports=1, hints=0, failure=0):
+def facility(stat, own_rainbows=0, supports=1, hints=0, failure=0, maxed=0):
   """One entry of check_training()'s dict.
 
   `own_rainbows` are cards of the facility's own type at max bond - the only
-  ones that count as rainbows.
+  ones that count as rainbows. `maxed` is how many of those sit at the "max"
+  level specifically, which is what the energy return is paid on: a card below
+  max bond triggers no friendship training and hands back nothing.
   """
   data = {key: {"friendship_levels": levels()} for key in KEYS}
-  data[stat] = {"friendship_levels": levels(yellow=own_rainbows)}
+  data[stat] = {"friendship_levels": levels(yellow=own_rainbows, max=maxed)}
   data["total_supports"] = supports
   data["total_hints"] = hints
   data["failure"] = failure
@@ -65,60 +79,70 @@ def facility(stat, own_rainbows=0, supports=1, hints=0, failure=0):
   data["gains"] = {}
   return data
 
-def test_wit_energy_band():
-  """Wit hands energy back, so mid-tank it is really buying the next turn."""
-  low, high = L.WIT_ENERGY_BAND
-  mid = (low + high) // 2
+def test_wit_energy_return():
+  """What a wit training hands back, and what the scorers pay for it."""
+  # The measurement this is built on: 0 rainbows +5.1, one +9.3/+9.8, two
+  # +14.4, across tests/fixtures/careers. See WIT_RECOVERY_BASE.
+  bare = facility("wit")
+  one = facility("wit", maxed=1)
+  two = facility("wit", maxed=2)
+  ok("with no wit card at max bond, wit returns the base",
+     L.wit_energy_gain(bare) == L.WIT_RECOVERY_BASE,
+     f"{L.wit_energy_gain(bare)}")
+  ok("one max-bond wit card adds its recovery",
+     L.wit_energy_gain(one) > L.wit_energy_gain(bare))
+  ok("and two stack - the additions are not capped",
+     (L.wit_energy_gain(two) - L.wit_energy_gain(one)
+      == L.wit_energy_gain(one) - L.wit_energy_gain(bare)),
+     f"{L.wit_energy_gain(bare)} / {L.wit_energy_gain(one)}"
+     f" / {L.wit_energy_gain(two)}")
+  # A rainbow below max bond pays nothing: it triggers no friendship training.
+  ok("a yellow wit card is not a max-bond one and adds nothing",
+     L.wit_energy_gain(facility("wit", own_rainbows=2)) == L.WIT_RECOVERY_BASE)
 
-  # Below the band wit stays held to the strict requirement: there is not
-  # enough energy left for it to get back to a safe level, so resting wins.
-  L.set_energy_level(low - 10)
-  ok("below the band wit still needs the full rainbow count",
-     L.wit_min_rainbows() == L.WIT_MIN_RAINBOWS)
-  results = {"wit": facility("wit", own_rainbows=1, supports=4)}
-  ok("and a thin wit is not a candidate there",
-     L.rainbow_training(results) is None)
+  # The bonus is worth more the emptier the tank, and nothing on a full one.
+  L.set_energy_level(20.0, 100.0)
+  lowtank = L.wit_energy_bonus("wit", two)
+  L.set_energy_level(60.0, 100.0)
+  midtank = L.wit_energy_bonus("wit", two)
+  L.set_energy_level(100.0, 100.0)
+  fulltank = L.wit_energy_bonus("wit", two)
+  ok("the energy bonus is worth most on an empty tank", lowtank > midtank > fulltank,
+     f"{lowtank:.3f} > {midtank:.3f} > {fulltank:.3f}")
+  ok("...and nothing at all on a full one", fulltank == 0.0, f"{fulltank:.3f}")
+  ok("only wit is paid for its energy", L.wit_energy_bonus("spd", two) == 0.0)
 
-  # Above the band the energy wit returns would spill, so it is a weak
-  # training again.
-  L.set_energy_level(high + 10)
-  ok("above the band wit needs the full rainbow count too",
-     L.wit_min_rainbows() == L.WIT_MIN_RAINBOWS)
-  ok("no bonus above the band", L.wit_band_bonus("wit", 3) == 0.0)
+  # An unreadable cap must not raise. energy_value used to, and a scorer that
+  # throws does not score lower - it takes the decision down another branch,
+  # which dropped the 2026-10-13 replay from 97% reproduced to 39%.
+  L.set_energy_level(50.0, None)
+  try:
+    unknown = L.wit_energy_bonus("wit", two)
+    raised = None
+  except Exception as exc:                                    # noqa: BLE001
+    unknown, raised = None, exc
+  ok("an unreadable energy cap does not raise", raised is None, str(raised))
+  ok("...and still prices the return as worth something", (unknown or 0) > 0,
+     f"{unknown}")
 
-  # Inside it, wit qualifies on fewer of its own rainbows and scores heavier.
-  L.set_energy_level(mid)
-  ok("inside the band the bar is lower",
-     L.wit_min_rainbows() == L.WIT_BAND_MIN_RAINBOWS)
-  results = {"wit": facility("wit", own_rainbows=1, supports=4)}
-  ok("a thin wit becomes a candidate inside the band",
-     L.rainbow_training(results) == "wit")
-
-  # More rainbows, heavier - that is the whole point of scaling it.
-  ok("the bonus scales with wit rainbows",
-     L.wit_band_bonus("wit", 3) > L.wit_band_bonus("wit", 1) > 0)
-  ok("and only applies to wit",
-     L.wit_band_bonus("spd", 3) == 0.0)
-  ok("a wit tile with no rainbows of its own gets nothing",
-     L.wit_band_bonus("wit", 0) == 0.0)
-
-  # It has to beat resting, not a real training. A clearly better facility
-  # still wins inside the band.
+  # It is a nudge, not an override: a clearly better training still wins.
+  L.set_energy_level(40.0, 100.0)
   results = {
-    "wit": facility("wit", own_rainbows=1, supports=2),
+    "wit": facility("wit", own_rainbows=1, supports=2, maxed=1),
     "spd": facility("spd", own_rainbows=3, supports=5),
   }
-  ok("a genuinely good training still beats a banded wit",
+  ok("a genuinely good training still beats wit's energy",
      L.rainbow_training(results) == "spd")
-
-  L.set_energy_level(None)
+  L.set_energy_level(None, None)
 
 def main():
   L.set_stat_headroom({"spd": 400, "sta": 300, "pwr": 400, "guts": 300, "wit": 500})
+  L.set_energy_level(50.0, 100.0)
 
-  # Wit outscores everything on points but has only two of its own rainbows.
+  # The filter, with the failure limit as the thing that disqualifies: wit
+  # outscores everything on points but is unsafe. It must not take spd with it.
   results = {
-    "wit": facility("wit", own_rainbows=2, supports=5),
+    "wit": facility("wit", own_rainbows=2, supports=5, failure=90),
     "spd": facility("spd", own_rainbows=3, supports=3),
   }
   pick = L.rainbow_training(results)
@@ -128,27 +152,28 @@ def main():
   # weaker most_support_card scorer.
   ok("and does not abandon rainbow training", pick is not None)
 
-  # Wit with enough of its own rainbows is still allowed to win.
+  # Wit is no longer held to a rainbow count of its own. A wit board that wins
+  # on supports wins, which is what turns a rest into a free training.
   results = {
-    "wit": facility("wit", own_rainbows=L.WIT_MIN_RAINBOWS, supports=5),
+    "wit": facility("wit", own_rainbows=1, supports=5, maxed=1),
     "spd": facility("spd", own_rainbows=1, supports=1),
   }
-  ok("wit wins once it has its own rainbows",
+  ok("wit wins on its board, with no rainbow quota to clear",
      L.rainbow_training(results) == "wit")
 
-  # Rainbows belong to the facility's own type. Cards of other types sitting on
-  # the wit tile are not rainbows, however friendly they are.
-  results = {"wit": facility("wit", own_rainbows=0, supports=5)}
+  # Rainbows still belong to the facility's own type. Cards of other types
+  # sitting on the wit tile are not wit rainbows, however friendly they are -
+  # they count as supports and nothing more.
+  results = {"wit": facility("wit", own_rainbows=0, supports=1)}
   results["wit"]["spd"] = {"friendship_levels": levels(yellow=3)}
   ok("other types at max bond do not count as wit rainbows",
      L.rainbow_training(results) is None)
 
-  # Wit alone and disqualified still means no rainbow training, as before.
-  results = {"wit": facility("wit", own_rainbows=1, supports=4)}
-  ok("wit alone and short of rainbows yields nothing",
-     L.rainbow_training(results) is None)
+  # Nothing on the board at all still means no rainbow training.
+  results = {"wit": facility("wit", own_rainbows=0, supports=0)}
+  ok("an empty wit tile yields nothing", L.rainbow_training(results) is None)
 
-  test_wit_energy_band()
+  test_wit_energy_return()
 
   print("")
   print("FAILED: " + ", ".join(failures) if failures else "all checks passed")

@@ -112,20 +112,18 @@ def training_score(x):
   total += unity
   gains = gain_score(x[1], x[0])
   total += gains
-  performance = performance_bonus(x[1])
+  performance = performance_bonus(x[1], x[0])
   total += performance
-  # This is the path that otherwise ends in a rest, so the wit band has to
-  # reach it as well or wit could never be picked over resting.
-  own_rainbows = (x[1][x[0]]["friendship_levels"]["yellow"]
-                  + x[1][x[0]]["friendship_levels"]["max"])
-  wit_band = wit_band_bonus(x[0], own_rainbows)
-  total += wit_band
+  # This is the path that otherwise ends in a rest, so wit's energy return has
+  # to reach it as well or wit could never be picked over resting.
+  wit_energy = wit_energy_bonus(x[0], x[1])
+  total += wit_energy
 
   # Debug output
   debug(f"{x[0]} -> base={base}, multiplier={multiplier}, room={room:.2f},"
         f" unity={unity}, gains={gains:.2f}"
         + (f", performance={performance:.2f}" if performance else "")
-        + (f", wit_band={wit_band:.2f}" if wit_band else "")
+        + (f", wit_energy={wit_energy:.2f}" if wit_energy else "")
         + f", total={total}, priority={get_stat_priority(x[0])}")
 
   return (total, -get_stat_priority(x[0]))
@@ -159,7 +157,7 @@ def focus_max_friendships(results):
 
     possible_friendship += unity_bonus(data, stat_name, state.CURRENT_YEAR, base_score=possible_friendship)
     possible_friendship += gain_score(data, stat_name)
-    possible_friendship += performance_bonus(data)
+    possible_friendship += performance_bonus(data, stat_name)
     debug(f"{stat_name} : gray={data['total_friendship_levels']['gray']}, blue={data['total_friendship_levels']['blue']}, green={data['total_friendship_levels']['green']}, total={possible_friendship:.3f}")
     filtered_results[stat_name]["possible_friendship"] = possible_friendship
 
@@ -436,7 +434,7 @@ def unity_bonus(data, stat_name, year="", base_score=None):
     bonus += burst_points
   return bonus
 
-def performance_bonus(data):
+def performance_bonus(data, stat_name=""):
   """Grand Concert: extra score for paying the Performance type a scheduled
   song is short of.
 
@@ -454,6 +452,21 @@ def performance_bonus(data):
   Senior H2 every turn without the 18th song is a turn closer to losing the
   gold skill. At the ordinary weight neither ever changed a training choice
   (careers 4 and 5).
+
+  **Tapered by the facility's own headroom**, when the caller says which
+  facility this is. The chips are not a stat gain - they land whatever the stat
+  does - but this is *added to* terms that are each priority-weighted and
+  clipped to the room under the cap, and at the urgent weight it is worth about
+  as much as a whole rainbow. So on a facility whose stat has nowhere left to go
+  it could buy a training turn on chips alone. Seen in the 2026-10-12 Grand
+  Concert career: Guts at 647 against a 650 cap - three points of headroom,
+  priority weight zero - scored 0.39 proxy + 0.93 gains + 4.00 urgent chips and
+  took the turn from Speed's 14.50, and Guts finished 41 points *past* the cap
+  the config set. The taper keeps the nudge where the turn also pays stats and
+  withdraws it where the turn would pay nothing else.
+
+  An untapered call (no stat_name) is still the raw weight, which is what the
+  Lessons-side tests measure.
   """
   performance = data.get("performance") or {}
   short = set(performance.get("short") or ())
@@ -461,37 +474,43 @@ def performance_bonus(data):
     return 0.0
   weight = state.PERFORMANCE_URGENT_POINTS if performance.get("urgent") else state.PERFORMANCE_SHORT_POINTS
   hits = sum(1 for kind in performance.get("types") or () if kind in short)
-  return hits * weight
+  room = headroom_factor(stat_name) if stat_name else 1.0
+  return hits * weight * room
 
-# Rainbows a wit facility needs before it is worth taking. Wit trains slowly
-# and is otherwise picked up for energy and skill points, so it has to earn
-# the turn with its own rainbows rather than with borrowed ones - only
-# wit-type cards at max bond on the wit facility count, which is what
-# total_rainbow_friends measures.
-WIT_MIN_RAINBOWS = 3
-
-# Wit is the only training that hands energy back instead of spending it, so
-# in the middle of the tank it is really buying the next turn: it keeps enough
-# energy to take a good training at 0% failure when one shows up. That makes
-# the honest comparison "wit or rest", not "wit or a real training".
+# Energy a wit training hands back. Wit is the only facility that returns
+# energy instead of spending it, and that return is what the scorers add on
+# top of wit's ordinary score - no gate, no band: wit competes on its stat
+# gains and supports like every other facility, and the energy it gives back
+# is priced as a bonus through energy_value, which is already worth more the
+# emptier the tank and nothing at all once the gain would spill.
 #
-# Below the band there is too little left for wit to get back to a safe level
-# and resting is the right answer; above it the energy wit returns would spill
-# and wit is just a weak training again.
-WIT_ENERGY_BAND = (30, 70)
-# Per wit rainbow, inside the band. Wit's case here rests on its own rainbows:
-# a wit tile with none is a weak training whatever the energy is, so this
-# scales rather than being a flat bonus.
-WIT_BAND_POINTS_PER_RAINBOW = 0.9
-# Inside the band wit needs fewer of its own rainbows to be worth considering,
-# because it is being weighed against resting rather than against a good
-# training. Without this the band could never fire: WIT_MIN_RAINBOWS keeps wit
-# out of the running entirely below 3.
-WIT_BAND_MIN_RAINBOWS = 1
+# The return is NOT flat. "Wit Friendship Recovery" on a wit support card adds
+# to the base, once per card at MAX bond on the wit facility, and the additions
+# STACK. Measured off tests/fixtures/careers - energy before against energy
+# after a turn the bot trained wit, read against that board's own wit rainbow
+# count:
+#
+#   0 rainbows  +5.1        1 rainbow  +9.3 / +9.8        2 rainbows  +14.4
+#
+# which is base 5 + Mihono Bourbon SSR 5 + Agnes Tachyon SR 4 to within the
+# energy bar's own pixel resolution. A card below max bond adds nothing, so
+# only the "max" level counts here - not the yellow+max the rest of this module
+# calls a rainbow. (The web is no use: game8's Friendship Training page says
+# outright that its numbers are still being tested.)
+#
+# This replaced WIT_MIN_RAINBOWS, a hard exclusion, and WIT_ENERGY_BAND, a flat
+# bonus between 30 and 70 energy. Both were proxies for the same thing - wit is
+# worth taking when the tank needs filling - and both were wrong at the edges:
+# the gate needed two of its own rainbows, which the 2026-10-13 career managed
+# on exactly one of 43 turns, so wit was excluded all career however good the
+# board was; and the band paid the same bonus at 31 energy as at 69.
+WIT_RECOVERY_BASE = max(0, training_cost.change("wit"))
+WIT_RECOVERY_PER_RAINBOW = 4.75
 
-# Energy at the time do_something ran, for the wit band. Read once per turn
-# and published rather than re-read, the same way the stat headroom is.
+# Energy at the time do_something ran, and the bar's own cap. Read once per
+# turn and published rather than re-read, the same way the stat headroom is.
 _energy_level = None
+_max_energy = None
 
 # The goal text and turn counter, published by career_lobby before it calls
 # do_something. They exist only for the advisory planner: do_something receives
@@ -520,38 +539,33 @@ def goal_criteria():
   """
   text = (_goal_context.get("criteria") or "").strip()
   return re.split(r"\s*Entry criteria\b", text, maxsplit=1)[0].strip() or text
-# Whether the last turn was inside the band, so entering and leaving it is
-# logged once instead of on every turn - energy sits in the band most of the
-# time, which made an every-turn line pure noise.
-_in_wit_band = None
+def set_energy_level(level, max_energy=None):
+  """Publish this turn's energy reading for the scorers.
 
-def set_energy_level(level):
-  global _energy_level
-  _energy_level = level
-
-def in_wit_energy_band(energy_level=None):
-  level = _energy_level if energy_level is None else energy_level
-  if level is None or level < 0:
-    return False
-  low, high = WIT_ENERGY_BAND
-  return low <= level <= high
-
-def wit_min_rainbows():
-  """How many of its own rainbows wit needs to be a candidate this turn."""
-  return WIT_BAND_MIN_RAINBOWS if in_wit_energy_band() else WIT_MIN_RAINBOWS
-
-def wit_band_bonus(stat_name, rainbows):
-  """Extra weight for wit while energy sits where wit actually pays.
-
-  Added on top of the usual score rather than replacing it, so the stat gains
-  and support counts still decide between wit and a genuinely good training -
-  this only has to win against resting.
+  max_energy comes along because the Grand Concert widens the bar - the
+  2026-10-13 career sat at 97-104 for eighteen turns - and energy_value needs
+  the real cap to know how much of a gain would actually land.
   """
-  if stat_name != "wit" or not rainbows:
+  global _energy_level, _max_energy
+  _energy_level = level
+  _max_energy = max_energy
+
+def wit_energy_gain(data):
+  """Energy one wit training would hand back, given this turn's wit board."""
+  maxed = data["wit"]["friendship_levels"]["max"] if data.get("wit") else 0
+  return WIT_RECOVERY_BASE + maxed * WIT_RECOVERY_PER_RAINBOW
+
+def wit_energy_bonus(stat_name, data):
+  """What wit's energy return is worth this turn, in the scorers' own points.
+
+  Zero for every other facility: their energy COST is not priced here either,
+  so charging wit for the comparison would be the only accounting on the board.
+  Priced through energy_value, so it falls away as the tank fills and is worth
+  nothing at all on a full one.
+  """
+  if stat_name != "wit":
     return 0.0
-  if not in_wit_energy_band():
-    return 0.0
-  return rainbows * WIT_BAND_POINTS_PER_RAINBOW
+  return energy_value(wit_energy_gain(data), _energy_level or 0, _max_energy)
 
 def rainbow_training(results):
   global PRIORITY_WEIGHTS_LIST
@@ -582,8 +596,8 @@ def rainbow_training(results):
     rainbow_points = rainbow_points * multiplier * headroom_factor(stat_name)
     rainbow_points += unity_bonus(data, stat_name, state.CURRENT_YEAR, base_score=rainbow_points)
     rainbow_points += gain_score(data, stat_name)
-    rainbow_points += performance_bonus(data)
-    rainbow_points += wit_band_bonus(stat_name, total_rainbow_friends)
+    rainbow_points += performance_bonus(data, stat_name)
+    rainbow_points += wit_energy_bonus(stat_name, data)
     rainbow_candidates[stat_name]["rainbow_points"] = rainbow_points
     rainbow_candidates[stat_name]["total_rainbow_friends"] = total_rainbow_friends
 
@@ -592,7 +606,6 @@ def rainbow_training(results):
     stat: data for stat, data in results.items()
     if (int(data["failure"]) <= state.MAX_FAILURE or has_extreme_burst(data))
        and data["rainbow_points"] >= 2
-       and not (stat == "wit" and data["total_rainbow_friends"] < wit_min_rainbows())
   }
 
   if not rainbow_candidates:
@@ -723,8 +736,13 @@ def energy_value(delta, energy_level, max_energy):
   A gain is clipped to the room left under the cap - energy that spills is
   worth nothing, the same way a stat gain into a capped stat is. A cost is not
   clipped, because it is always paid in full.
+
+  An unreadable cap clips nothing rather than raising: check_energy_level can
+  return None for it, and a scorer that throws here does not fall back to a
+  worse score - it takes the whole decision down a different branch. That is
+  what dropped the replay of the 2026-10-13 career from 97% to 39%.
   """
-  if delta >= 0:
+  if delta >= 0 and max_energy and max_energy > 0:
     delta = min(delta, max(0, max_energy - energy_level))
   return delta * energy_points(energy_level, max_energy)
 
@@ -877,11 +895,13 @@ def turns_until_summer(year_text):
   camp = MONTHS.index("Jul") * 2
   return camp - now if now < camp else None
 
-# What one wit training hands back. Wit is the only facility that returns
-# energy instead of spending it, which is what lets it stand in for a rest.
-# Deliberately conservative: it only has to be enough to show that taking wit
-# does not put camp out of reach.
-WIT_ENERGY_RETURN = 5
+# What one wit training hands back, for the camp-reachability check. The base
+# alone, deliberately: a card's Wit Friendship Recovery only lands if that
+# card is at max bond on the wit facility this turn, and this has to hold for
+# every turn between here and camp. See WIT_RECOVERY_BASE for the measurement.
+WIT_ENERGY_RETURN = WIT_RECOVERY_BASE
+# Own rainbows a wit tile needs to be worth a pre-camp banking turn.
+PREP_WIT_MIN_RAINBOWS = 1
 # Sentinel for "spend this turn resting". Not a training key, so it cannot be
 # confused with one.
 SUMMER_REST = "rest"
@@ -889,11 +909,10 @@ SUMMER_REST = "rest"
 def prep_wit_ready(results):
   """True when the wit facility is worth taking on a banking turn.
 
-  Held to WIT_BAND_MIN_RAINBOWS rather than the strict bar, and deliberately
-  so: the strict bar exists because below the energy band wit cannot recover
-  the tank on its own, and on a banking turn that recovery is the entire
-  point. A wit tile with none of its own rainbows is still a weak training at
-  any energy, so it does not qualify - the turn is better spent resting.
+  A banking turn is spent to reach camp with a full tank, so the recovery is
+  the entire point and one of wit's own rainbows is enough. A wit tile with
+  none of them is still a weak training at any energy, so it does not
+  qualify - the turn is better spent resting.
   """
   data = results.get("wit")
   if not data:
@@ -902,7 +921,7 @@ def prep_wit_ready(results):
     return False
   own_rainbows = (data["wit"]["friendship_levels"]["yellow"]
                   + data["wit"]["friendship_levels"]["max"])
-  return own_rainbows >= WIT_BAND_MIN_RAINBOWS
+  return own_rainbows >= PREP_WIT_MIN_RAINBOWS
 
 def summer_prep_action(results, year_text, energy_level):
   """What a pre-camp turn should do, or None to leave the turn alone.
@@ -1122,19 +1141,10 @@ def do_something(results):
   # Published before any scorer runs: gain_score reads it to discount gains
   # that would land in a stat with no room left.
   set_stat_headroom(current_stats, game_caps)
-  # Published for the wit energy band, so rainbow_training and training_score
+  # Published for wit's energy bonus, so rainbow_training and training_score
   # do not each take their own reading.
-  global _in_wit_band
-  energy_level, _ = check_energy_level()
-  set_energy_level(energy_level)
-  banded = in_wit_energy_band()
-  if banded != _in_wit_band:
-    if banded:
-      info(f"Energy {energy_level:.0f} entered the wit band {WIT_ENERGY_BAND};"
-           " wit rainbows count for more until it leaves.")
-    else:
-      info(f"Energy {energy_level:.0f} left the wit band {WIT_ENERGY_BAND}.")
-    _in_wit_band = banded
+  energy_level, max_energy = check_energy_level()
+  set_energy_level(energy_level, max_energy)
 
   filtered = filter_by_stat_caps(results, current_stats, game_caps)
 
