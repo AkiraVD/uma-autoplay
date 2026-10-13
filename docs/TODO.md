@@ -121,7 +121,15 @@ Worth deriving properly if the behaviour ever looks wrong:
 - Outings: `MOOD_POINTS`, `HINT_POINTS`, `CONDITION_CLEAR_POINTS`,
   `BOND_POINTS`, `TRAINING_ENERGY_COST`. Only the energy anchor has a
   derivation behind it, and the readback checks energy alone.
-- The wit band's `(30, 70)` edges and its 0.9 per rainbow.
+- ~~The wit band's `(30, 70)` edges and its 0.9 per rainbow.~~ **Gone**
+  (2026-10-13). `WIT_ENERGY_BAND` and `WIT_MIN_RAINBOWS` were both removed;
+  wit's energy return is now priced through `energy_value` and the return
+  itself is **measured** - base 5 plus 4.75 per wit card at max bond, from
+  `tests/fixtures/careers`. What is still reasoned rather than measured is
+  `lessons.WIT_RECOVERY_ALLOWANCE = 10`, the reserve the Lessons board holds
+  back against a wit training it cannot see. It is only consulted when the
+  training board was not scanned first (a Schedule Notification or the
+  concert screen), and it is tuned to a two-wit-card deck.
 - `MAX_GAUGE_FRACTION = 0.75`. uma.guide gives a charging gauge no weight at
   all, so anything from 0 to just under one burst is defensible.
 - `core/skill_score.py`'s weights are the source optimizer's, not measured here.
@@ -841,3 +849,27 @@ rule - the fix is verified against the captured frames, not against a live
 reroll - and whether `(o)` really means a guaranteed win (it showed a single
 outcome where other glyphs showed two branches, still only on a handful of
 frames).
+
+## Open after the 2026-10-13 training-logic pass
+
+- **The reorder is unverified by any test.** `career_lobby()` now scans the
+  training board *before* the Lessons visit and re-scans only when an Energy
+  technique was bought. `tools/career_replay.py` drives the decision functions,
+  not the loop, so nothing covers the navigation - `check_training` to Lessons
+  to `check_training` - except a live career. Watch the first Grand Concert
+  turns of a run for a visit that leaves the board somewhere unexpected.
+- **That branch no longer ends in `continue`.** One iteration can now do two
+  actions, which is the only exception to the loop's rule. If a Lessons visit
+  ever lands the bot on a screen the later branches misread, this is why.
+- **`lessons.WIT_RECOVERY_ALLOWANCE` is deck-tuned** (10, for two max-bond wit
+  cards). Only used when the board was not scanned first. A deck with three wit
+  cards wants it raised; none wants it at 0. Deriving it from the deck needs the
+  deck to be identifiable, which `state.check_support_card` cannot do - it reads
+  type icons, never names.
+- **`test_notify`'s "career-finished message sends the Complete Career screen"
+  fails, and failed before any of this** (checked against HEAD on 2026-10-13).
+  Not diagnosed.
+- **No career has yet been recorded with `Lessons inputs:` in its log**, so the
+  Lessons replay arm has only ever run against the synthetic fixture in
+  `tests/test_lessons_replay.py`. The first career recorded after 2026-10-13
+  should be extracted and replayed to check the arm against real boards.
