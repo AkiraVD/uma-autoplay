@@ -206,18 +206,31 @@ def test_energy_technique():
   lonely = [tech(0, "Wit +8"), tech(1, "Energy +30"), tech(2, "Skill Pts +8")]
   lonely[0]["learnable"] = lonely[2]["learnable"] = False
   year = "Classic Year Early Apr"
-  ok("a lone Energy technique at high energy waits", L.choose(lonely, 85, year, turn=7)[0] == "none")
-  ok("for the rest of that turn", L.choose(lonely, 85, year, turn=7)[0] == "none")
-  ok("and is bought the next turn", L.choose(lonely, 85, year, turn=6)[1]["slot"] == 1)
+  # The preserve is held until the card FITS, not for one turn (2026-10-13).
+  # It used to be a one-turn wait that then bought the card whatever the
+  # energy was, which spilled it; the rule now is buy-unless-it-spills, and
+  # the spill test counts the energy a wit training would hand back too.
+  ok("a lone Energy technique at high energy is left on the board",
+     L.choose(lonely, 85, year, turn=7)[0] == "none")
+  ok("and is still left there on the next turn, because it would still spill",
+     L.choose(lonely, 85, year, turn=6)[0] == "none")
   L.reset()
   ok("bought straight away when energy is low", L.choose(lonely, 30, year, turn=7)[1]["slot"] == 1)
   L.reset()
+  ok("and once the tank has dropped enough to hold it",
+     L.choose(lonely, 50, year, turn=6)[1]["slot"] == 1)
+  L.reset()
   ok("and at career end", L.choose(lonely, 85, "Senior Year Late Dec", spend_all=True)[1]["slot"] == 1)
   L.reset()
-  L.choose(lonely, 85, year, turn=7)
+  # The one exception: the concert screen has no next visit to defer to, so a
+  # board still short of its Hype songs buys even though it spills.
+  L._songs.clear()
+  ok("but the concert screen buys it rather than lose the Hype gauge",
+     L.choose(lonely, 85, year, turn=L.CONCERT_TURN)[0] == "learn")
+  L.reset()
   other = [tech(0, "Wit +8"), tech(1, "Energy +20"), tech(2, "Skill Pts +8")]
   other[0]["learnable"] = other[2]["learnable"] = False
-  ok("a different Energy card starts its own wait", L.choose(other, 85, year, turn=6)[0] == "none")
+  ok("a smaller Energy card is held on the same test", L.choose(other, 85, year, turn=6)[0] == "none")
   L.reset()
 
 def test_concert_screens():

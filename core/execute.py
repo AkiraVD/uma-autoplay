@@ -17,7 +17,7 @@ from rapidfuzz import fuzz
 import core.state as state
 import core.scenarios as scenarios
 from core.state import check_support_card, check_unity_icons, check_failure, check_turn, check_mood, check_current_year, check_criteria, check_skill_pts, check_energy_level, check_energy_reserved, get_race_type, check_status_effects, check_aptitudes, check_credit, check_outing_available, check_recreation_panel, read_log_lines
-from core.logic import do_something, decide_race_for_goal, training_value, should_recreate, has_extreme_burst, set_goal_context, goal_criteria
+from core.logic import do_something, decide_race_for_goal, training_value, should_recreate, has_extreme_burst, set_goal_context, goal_criteria, wit_energy_gain
 
 from utils.log import info, warning, error, debug
 import utils.constants as constants
@@ -2421,9 +2421,40 @@ def career_lobby():
       state.saw_scenario("grand_concert", "Lessons button in the lobby")
     lessons_button = lessons.ready(screen) if state.GRAND_CONCERT_SEEN else None
     if lessons_button and lessons.should_visit(year, turn):
-      if lessons.visit(energy_level, year, turn, button=lessons_button,
-                       max_energy=max_energy):
-        continue
+      # The board is read BEFORE the visit, so the buying decision knows what a
+      # wit training would hand back this turn instead of reserving for the
+      # deck's worst case (2026-10-13). On a race day there is no training to
+      # hand anything back, so the reserve is nil and no scan is worth 7s.
+      if turn == "Race Day":
+        lessons.set_wit_return(0)
+      else:
+        if peeked_training is None and go_to_training():
+          sleep(0.5)
+          peeked_training = check_training()
+        lessons.set_wit_return(wit_energy_gain(peeked_training["wit"])
+                               if peeked_training and peeked_training.get("wit") else None)
+        # check_training leaves the lobby up, but the button was located on the
+        # screenshot from before it, so find it again rather than tapping blind.
+        lessons_button = lessons.ready(ImageGrab.grab()) or lessons_button
+      bought = lessons.visit(energy_level, year, turn, button=lessons_button,
+                             max_energy=max_energy)
+      lessons.set_wit_return(None)
+      if bought and lessons.bought_energy():
+        # Energy drives every facility's failure percentage - 30 energy is worth
+        # 25-30 points of it - so the scan taken before the purchase is now
+        # wrong in the one direction that matters: it reads trainings as unsafe
+        # that the purchase has just made safe. Read both again. Nothing else a
+        # technique can give moves a failure rate, so nothing else re-scans.
+        energy_level, max_energy = check_energy_level()
+        peeked_training = check_training() if go_to_training() else None
+        if peeked_training is None:
+          debug("Could not re-read the board after buying energy; taking the turn again.")
+          continue
+      elif bought:
+        # A stat or skill technique leaves the failure rates alone, so the scan
+        # still stands and the turn carries on with it. do_something re-reads
+        # the stats itself, so the purchase is not missed.
+        debug("Lessons bought something that does not move energy; keeping the board read.")
 
     # If the calendar says race day, race. Every mode's finale comes through
     # here too. A separate branch used to handle `year == "Finale Season"`, but
@@ -2516,8 +2547,11 @@ def career_lobby():
 
     # Check training button
     if peeked_training is not None:
-      # Already scanned when the infirmary was deferred; the screen has not
-      # changed since, so scanning again would only cost the turn more time.
+      # Already scanned - either when the infirmary was deferred, or before the
+      # Lessons visit so the board could price what a wit training hands back.
+      # Nothing since has moved a failure percentage: a Lessons purchase that
+      # moved energy re-scanned on the spot, and stats are re-read by
+      # do_something. So scanning again would only cost the turn more time.
       results_training = peeked_training
     else:
       if not go_to_training():

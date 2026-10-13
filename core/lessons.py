@@ -670,6 +670,28 @@ WIT_ENERGY_BASE = max(0, training_cost.change("wit"))
 WIT_RECOVERY_ALLOWANCE = 10
 WIT_ENERGY_RETURN = WIT_ENERGY_BASE + WIT_RECOVERY_ALLOWANCE
 
+# This turn's real return, published by career_lobby when it scans the
+# training board before the visit (2026-10-13). Then the reserve is not a
+# guess at all: the board says how many wit cards are at max bond on the wit
+# facility, and whether there is a wit facility to train. None means nobody
+# published one and WIT_ENERGY_RETURN stands in, which is what happens on a
+# visit reached from a Schedule Notification or the concert screen.
+_wit_return = None
+
+# Whether the last visit bought an Energy technique. The caller needs it
+# because energy drives every facility's failure percentage, so a board read
+# before the purchase is stale afterwards - by 25 to 30 points at low energy.
+_bought_energy = False
+
+def set_wit_return(value):
+  """Publish what a wit training would hand back this turn, or None."""
+  global _wit_return
+  _wit_return = value
+
+def bought_energy():
+  """True when the last visit bought an Energy technique."""
+  return _bought_energy
+
 
 def energy_value(amount, energy):
   """Worth of an Energy technique, in weighted stat points.
@@ -727,8 +749,15 @@ def technique_value(card, energy):
       value += 2.0 * max(1, amount)
   return value
 
-def energy_pick(learnable, energy, year, segment, on_concert=False):
-  """The Energy technique to take from this board, or None to preserve it.
+def energy_offer(learnable, energy, year, segment, on_concert=False):
+  """(the Energy technique on this board, what to do with it).
+
+  The verdict is "buy", "preserve", or None when none is offered. A preserve
+  has to be carried out by the CALLER: choose() must drop the card from the
+  ranking that follows it, or the generic technique-value path buys it anyway.
+  It did until 2026-10-13 - at 70 energy against a 105 bar an Energy +30
+  scores 8.6, well clear of WASTED_TECHNIQUE_FLOOR - so the preserve only ever
+  took effect on a nearly full tank, which is not what it is for.
 
   Energy is what caps a career's TOTAL stats - every one of the ten rests in
   the 2026-10-13 career was forced by the energy floor, and each is a whole
@@ -742,30 +771,30 @@ def energy_pick(learnable, energy, year, segment, on_concert=False):
   is planned - lessons.visit runs ahead of check_training, so it cannot see
   whether a wit facility is on offer and has to assume one might be.
 
-  The preserve costs exactly one turn: the _energy_wait at the foot of choose()
-  takes the same card on the next visit whatever the energy is by then. So it
-  cannot cost a song - buying is only ever deferred, never dropped - with one
-  exception, which is the only one: the concert screen is the visit that has
-  no next turn. Leaving an Energy technique there while the Hype gauge is
-  still short of its songs would cost the segment its Great Success, worth
-  +10 to every stat, to save some spilled energy. So it is bought there.
+  The preserve lasts until the card fits, not a fixed turn: the board is read
+  again every visit, and one training drops the tank 20-27, so it is normally
+  the next one. Buying is deferred, never dropped - with one exception, which
+  is the only one: the concert screen is the visit with no next turn. Leaving
+  an Energy technique there while the Hype gauge is still short of its songs
+  would cost the segment its Great Success, worth +10 to every stat, to save
+  some spilled energy. So it is bought there.
   """
   offers = [(parse_effects(c["effects"]).get("energy", 0), c) for c in learnable]
   offers = [(amount, c) for amount, c in offers if amount > 0]
   if not offers:
-    return None
+    return None, None
   amount, card = max(offers, key=lambda pair: pair[0])
 
   cap = _energy_cap if _energy_cap and _energy_cap > 0 else ENERGY_CAP
   if energy is None or energy < 0:
-    return card                       # unreadable: take it
-  spills = energy + amount + WIT_ENERGY_RETURN > cap
-  if not spills:
-    return card
+    return card, "buy"                # unreadable: take it
+  wit_back = _wit_return if _wit_return is not None else WIT_ENERGY_RETURN
+  if energy + amount + wit_back <= cap:
+    return card, "buy"
 
   if on_concert and _songs.get(segment, 0) < hype_songs_needed(segment):
-    return card                       # no next turn to preserve it for
-  return None
+    return card, "buy"                # no next turn to preserve it for
+  return card, "preserve"
 
 
 def choose(cards, energy, year, spend_all=False, turn=None, points=None):
@@ -894,17 +923,29 @@ def choose(cards, energy, year, spend_all=False, turn=None, points=None):
       if spill:
         best = max(spill, key=lambda c: technique_value(c, energy))
         return "learn", best, f"{', '.join(full)} near the {cap} cap; spending before it overflows"
-    topped = energy_pick(learnable_techs, energy, year, segment, on_concert)
-    if topped:
+    topped, verdict = energy_offer(learnable_techs, energy, year, segment, on_concert)
+    if verdict == "buy":
       return "learn", topped, "on plan, but energy is always worth buying"
+    if verdict == "preserve":
+      return "none", None, (f"{topped['name']!r} would spill the tank; leaving it on the"
+                            " board until it fits")
     return "none", None, f"{total} songs, on plan ({song_target(segment)}); holding points for the next songs"
 
   # Short of the target: buy towards the next song page, keeping the reserve -
   # but energy first, because a rest costs a whole turn and the reserve only
   # costs a song a turn or two of waiting.
-  topped = energy_pick(learnable_techs, energy, year, segment, on_concert)
-  if topped:
+  topped, verdict = energy_offer(learnable_techs, energy, year, segment, on_concert)
+  if verdict == "buy":
     return "learn", topped, "energy first"
+  if verdict == "preserve":
+    # Dropped from the ranking below, not just passed over. technique_value
+    # still rates it well above WASTED_TECHNIQUE_FLOOR whenever most of it
+    # would land, so leaving it in means buying the card the spill test just
+    # refused - which is what happened until 2026-10-13.
+    learnable_techs = [c for c in learnable_techs if c is not topped]
+    if not learnable_techs:
+      return "none", None, (f"{topped['name']!r} would spill the tank and nothing else is"
+                            " learnable; leaving it on the board until it fits")
 
   note = ""
   if songs_done:
@@ -923,11 +964,11 @@ def choose(cards, energy, year, spend_all=False, turn=None, points=None):
     note = f", {dent} into the song reserve" if dent else ", song reserve kept"
   else:
     best = max(learnable_techs, key=lambda c: technique_value(c, energy))
-  # Only reachable for an Energy technique on a FULL tank: energy_pick takes
-  # one before this whenever any of it would land, so the single case left is
-  # the one where the points would buy literally nothing. It still waits a
-  # turn rather than burning them - by then energy has dropped and the same
-  # card is worth taking.
+  # A backstop now rather than the main path: energy_offer takes an Energy
+  # technique whenever it fits and withholds it from this ranking when it
+  # would spill, so the only way an energy card reaches here is a board where
+  # parse_effects read an energy line that energy_offer did not count. Kept
+  # because burning the points on it would be the worse failure.
   wasted = technique_value(best, energy) < WASTED_TECHNIQUE_FLOOR and "energy" in parse_effects(best["effects"])
   if wasted:
     key = (year, turn)
@@ -1052,7 +1093,8 @@ def visit(energy=None, year="", turn=None, button=None, spend_all=False, max_ene
   Career 3 reopened it after every buy-then-wait, a wasted visit a turn. Only
   a visit cut short by the purchase cap is left open for another.
   """
-  global _declined
+  global _declined, _bought_energy
+  _bought_energy = False
   # Points still come in during the URA Finale and the board still sells: a
   # song's concert bonus "won't take effect", but its on-learn stats do (career
   # 3: Dream Sky, Wit +22, learnable on the Finals turn). Only the board after
@@ -1111,7 +1153,7 @@ def _note_blocked(cards, points):
 
 def shop(energy=None, year="", spend_all=False, turn=None, max_energy=None):
   """Buy from the board on screen until nothing is worth buying. Returns the count."""
-  global _energy_cap
+  global _energy_cap, _bought_energy
   _energy_cap = max_energy if max_energy and max_energy > 0 else None
   _note_year(year)
   bought = 0
@@ -1126,6 +1168,15 @@ def shop(energy=None, year="", spend_all=False, turn=None, max_energy=None):
       break
     debug(f"Performance points {points}, reserve {reserve(year)}, "
           f"{techs_to_next_page(year)} technique(s) to the next song page.")
+    # The inputs to choose() that are not the board itself. Logged so a visit
+    # can be replayed: tools/career_extract.py reads this line, and without the
+    # energy and the cap neither energy_offer nor technique_value can be scored
+    # against what the career actually saw.
+    wit_back = _wit_return if _wit_return is not None else WIT_ENERGY_RETURN
+    debug(f"Lessons inputs: energy {energy if energy is not None else -1:.1f}"
+          f"/{_energy_cap or ENERGY_CAP}, wit returns {wit_back}, segment"
+          f" {segment_of(year)}, songs {total_songs(year)} {dict(sorted(_songs.items()))},"
+          f" page {techs_to_next_page(year)}, spend_all {spend_all}.")
     _note_blocked(cards, points)
     action, card, why = choose(cards, energy, year, spend_all, turn, points)
     if action == "learn":
@@ -1141,8 +1192,12 @@ def shop(energy=None, year="", spend_all=False, turn=None, max_energy=None):
         info(f"Songs learned: {total_songs(year)} (plan {song_target(segment)} by this concert,"
              f" {song_target(4)} before Senior Early Dec).")
       gained = parse_effects(card["effects"]).get("energy")
+      if gained:
+        _bought_energy = True
       if gained and energy is not None and energy >= 0:
-        energy = min(100, energy + gained)
+        # The real bar, not a flat 100: the Grand Concert widens it, and the
+        # 2026-10-13 career sat at 97-104 for eighteen turns.
+        energy = min(_energy_cap or ENERGY_CAP, energy + gained)
       continue
     if action == "schedule":
       info(f"Scheduling {card['name']!r}: {why}.")

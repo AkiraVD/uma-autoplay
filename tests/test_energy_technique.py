@@ -125,6 +125,44 @@ def main():
      abs(spd - lessons.technique_value(tech("x", ["Speed +12"]), 10)) < 1e-9,
      f"{spd:.1f}")
 
+  # --- the reserve the board holds back for a wit training -------------------
+  # career_lobby scans the training board BEFORE the visit now, so the reserve
+  # is this turn's real number rather than the deck's worst case. On a race day
+  # there is no training to hand anything back, so it is nil.
+  tech30 = dict(tech("Energy Massage", ["Energy +30"]), slot=0)
+  locked_rival = dict(tech("Dance Step Advanced", ["Speed +12"]), slot=1, learnable=False)
+  try:
+    lessons._energy_cap = 105
+    # Through choose(), not energy_offer: the verdict is only half the job - the
+    # caller has to drop a preserved card from the ranking that follows, and it
+    # did not until 2026-10-13.
+    def buys(energy, wit_back):
+      lessons.set_wit_return(wit_back)
+      lessons.reset()
+      lessons._energy_cap = 105
+      lessons._songs.clear()
+      lessons._songs.update({0: 2, 1: 2})
+      action, card, _why = lessons.choose(
+        [dict(tech30), dict(locked_rival)], energy, "Classic Year Early Apr",
+        turn=30, points={"da": 54, "pa": 27, "vo": 30, "vi": 1, "co": 12})
+      return action == "learn" and card is not None and "Energy" in card["name"]
+    ok("with no wit training on the board the reserve is nil, so it buys",
+       buys(70.0, 0))
+    ok("...and with two max-bond wit cards on it, the same offer is preserved",
+       not buys(70.0, 14.5))
+    ok("an unpublished reserve falls back to the constant",
+       not buys(70.0, None) if lessons.WIT_ENERGY_RETURN > 5 else True,
+       f"constant {lessons.WIT_ENERGY_RETURN}")
+    ok("and a low tank buys whatever the reserve is",
+       buys(20.0, 14.5) and buys(20.0, 0))
+  finally:
+    lessons.set_wit_return(None)
+    lessons._energy_cap = None
+
+  # --- shop reports an energy purchase, because failure % depends on energy --
+  ok("a fresh visit starts with no energy purchase recorded",
+     lessons.bought_energy() is False)
+
   print()
   if failures:
     print(f"{len(failures)} check(s) failed:")
