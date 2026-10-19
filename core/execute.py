@@ -29,6 +29,7 @@ from core.gains import check_stat_gains
 from core.events import event_choice, get_event_name
 import core.outings as outings
 import core.race_row as race_row
+import core.career_record as career_record
 import core.training_cost as training_cost
 import core.trainee as trainee
 import core.lessons as lessons
@@ -926,6 +927,7 @@ def report_career_end(screen):
   _career_end["reported"] = True
   notify.send("Career finished\n"
               f"Stats: {_stat_line(state.LAST_STATS)}\n"
+              f"Races: {state.LAST_RACE_RECORD or 'not read'}\n"
               f"Sparks: {state.LAST_SPARKS or 'not read'}"
               + (f"\nuuid: {state.CAREER_UUID}" if state.CAREER_UUID else ""),
               # Two pictures, in this order: the Complete Career screen -
@@ -941,6 +943,7 @@ def report_career_end(screen):
   state.CAREER_END_FRAME = None
   state.LAST_SPARKS = None
   state.LAST_SPARKS_FRAME = None
+  state.LAST_RACE_RECORD = None
 
 def panel_digest(screen):
   """A fingerprint of the game panel, for spotting a client that has frozen.
@@ -1212,6 +1215,11 @@ def race_prep():
       PREFERRED_POSITION_SET = True
 
   view_result_btn = pyautogui.locateCenterOnScreen("assets/buttons/view_results.png", confidence=0.8, minSearchTime=get_secs(10), region=constants.SCREEN_BOTTOM_REGION)
+  # Nothing reads the placing here any more. core/placement.py sampled the
+  # screen at this point for a gold "1st" banner and never once found one: the
+  # banner is not up yet, and the gold it did count had no relation to the
+  # result. The record now comes from the game's own Races/Wins line at the end
+  # of the career - see core/career_record.py.
   click("assets/buttons/view_results.png", click=3)
   sleep(0.5)
   control.click()
@@ -1409,13 +1417,53 @@ RACE_RETRIES = 0
 # One lost-goal message per race, not per frame: the result screen stays up
 # for many polls, and the Retry offer matches on every one of them.
 RACE_LOST_SENT = False
+# This career's record as the game counts it, (races, wins), or None while no
+# Complete Career screen has been read. The reroll gate is the only thing that
+# wants it (bot.json reroll_sparks = "undefeated"), which is why one number at
+# the end does instead of a reading per race - see core/career_record.py for
+# why the per-race reading was abandoned.
+CAREER_RESULT = None
+
+def record_career_result():
+  """Read the Races/Wins off the Complete Career screen and keep them."""
+  global CAREER_RESULT
+  CAREER_RESULT = career_record.read()
+  if CAREER_RESULT:
+    races, wins = CAREER_RESULT
+    state.LAST_RACE_RECORD = f"{wins} of {races} won"
+  else:
+    state.LAST_RACE_RECORD = None
+
+def undefeated():
+  """Every race this career was a win, as the game counts them.
+
+  A career whose record did not read is **not** undefeated, and nor is one that
+  raced nothing: the one caller spends 30 TP on the answer, so an unread record
+  keeps the TP rather than gambling it on a guess.
+  """
+  if not CAREER_RESULT:
+    return False
+  races, wins = CAREER_RESULT
+  return races > 0 and wins == races
 # A lobby has been seen since the bot started, so a home screen now means the
 # game went back there under us (the daily reset) rather than a finished career.
 SEEN_LOBBY = False
 RESUMING_CAREER = False
+# The last energy the LOBBY read, and the wit return the last training scan
+# measured. Both exist for the Schedule Notification: its dialog covers the
+# energy bar, so check_energy_level there returns -1, and no training board is
+# scanned on that path either. Over the 2026-10-13 career that made 35 of 81
+# Lessons visits price energy as unknown - which energy_offer reads as "take
+# it", so the spill test was skipped on every one of them, and the wit reserve
+# fell back to the deck-tuned constant. A reading one action old is a far
+# better answer than no reading at all.
+LAST_ENERGY = (None, None)
+LAST_WIT_RETURN = None
 def career_lobby():
   # Program start
   global PREFERRED_POSITION_SET, RACE_RETRIES, SEEN_LOBBY, RESUMING_CAREER, RACE_LOST_SENT
+  global LAST_ENERGY, LAST_WIT_RETURN, CAREER_RESULT
+  CAREER_RESULT = None
   PREFERRED_POSITION_SET = False
   SEEN_LOBBY = False
   RESUMING_CAREER = False
@@ -1607,9 +1655,25 @@ def career_lobby():
       # both under the threshold, in a career where every rest was forced by
       # the energy floor. One OCR read, only on Schedule Notification turns.
       lessons_energy, lessons_cap = check_energy_level()
+      if lessons_energy is None or lessons_energy < 0:
+        # The notification's dialog sits over the bar, so this read fails far
+        # more often than it works. An unknown reading is NOT neutral here -
+        # energy_offer takes an Energy technique outright rather than testing
+        # whether it would spill - so the lobby's last reading stands in. It is
+        # one action stale, and a training since would only have lowered it,
+        # which errs towards preserving rather than towards wasting.
+        lessons_energy, lessons_cap = LAST_ENERGY
+        if lessons_energy is not None:
+          debug(f"Energy bar is behind the notification; using the lobby's"
+                f" last reading, {lessons_energy:.0f}.")
+      # No training board is scanned on this path, so the wit reserve would
+      # otherwise be the deck-tuned constant. The last scan's figure is for
+      # this deck and is usually this turn's too.
+      lessons.set_wit_return(LAST_WIT_RETURN)
       lessons.to_lessons(matches["gc_to_lessons"][0], energy=lessons_energy,
                          year=state.CURRENT_YEAR, turn=state.CURRENT_TURN,
                          max_energy=lessons_cap)
+      lessons.set_wit_return(None)
       continue
     if matches["gc_concert_start"]:
       # The Grand Concert's confirmation also offers to skip its cutscene.
@@ -1745,7 +1809,13 @@ def career_lobby():
       # core.sparks reads the set, applies the reroll rule and keeps the better
       # of the two. Every press in there is a deliberate_click: this screen
       # drops ordinary clicks and the career hangs here forever otherwise.
-      sparks.handle()
+      # The race record is handed in rather than read from this module: it is
+      # what `reroll_sparks = "undefeated"` gates on, and core.sparks cannot
+      # import this module back (it already reaches for deliberate_click late).
+      sparks.handle(undefeated=undefeated())
+      # Cleared here and not in the career_complete branch above, which is
+      # where it is *written* and fires a minute earlier in a career's life.
+      CAREER_RESULT = None
       sleep(3)
       continue
 
@@ -2071,6 +2141,10 @@ def career_lobby():
       # the aptitudes and the deck, and the To Home screen after it has none
       # of them.
       state.CAREER_END_FRAME = notify.save_frame(screen, "career_end_")
+      # The game's own Races/Wins, while the screen that can show them is still
+      # up: Details is on this screen and on no other in the career-end walk,
+      # and the sparks screen that gates on the answer is a minute away.
+      record_career_result()
       click(boxes=matches["career_complete"], text="Career complete.")
       # The career is finished, so a Date Changed or Session Error on the walk
       # out of it must reload to the home screen and stop, not tap Career for
@@ -2362,6 +2436,8 @@ def career_lobby():
     if not _career_start["skip_set"]:
       _career_start["skip_set"] = set_skip_x2()
     energy_level, max_energy = check_energy_level()
+    if energy_level is not None and energy_level >= 0:
+      LAST_ENERGY = (energy_level, max_energy)
     # An outing has played out by the time the lobby comes back, so this is
     # where it gets checked against what was predicted. Runs after the energy
     # reading because the bar is what the energy prediction is judged on.
@@ -2431,8 +2507,9 @@ def career_lobby():
         if peeked_training is None and go_to_training():
           sleep(0.5)
           peeked_training = check_training()
-        lessons.set_wit_return(wit_energy_gain(peeked_training["wit"])
-                               if peeked_training and peeked_training.get("wit") else None)
+        if peeked_training and peeked_training.get("wit"):
+          LAST_WIT_RETURN = wit_energy_gain(peeked_training["wit"])
+        lessons.set_wit_return(LAST_WIT_RETURN if peeked_training else None)
         # check_training leaves the lobby up, but the button was located on the
         # screenshot from before it, so find it again rather than tapping blind.
         lessons_button = lessons.ready(ImageGrab.grab()) or lessons_button

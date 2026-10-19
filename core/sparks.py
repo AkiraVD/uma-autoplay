@@ -216,22 +216,48 @@ def _press(img, region=None, minSearch=3, text="", confidence=0.8):
   return deliberate_click(img=img, region=region, minSearch=minSearch, text=text,
                           confidence=confidence)
 
-def handle():
+def mode_allows(undefeated):
+  """Whether `reroll_sparks` lets this career pay for a reroll.
+
+  `worth_rerolling` has already said the set is short of a 3-star blue by the
+  time this is asked, so all three answers are about a set worth improving:
+
+  - **off** - never; the 30 TP is wanted elsewhere.
+  - **always** - what the old `true` meant.
+  - **undefeated** - only a career that won every race. A parent is judged on
+    the sparks it hands down, and a career that swept its card is the one whose
+    white set is worth paying to re-roll; one that dropped a race is not worth
+    chasing. `undefeated` is False when no race was read, so a career whose
+    banners were all missed keeps its TP rather than spending it on a guess.
+  """
+  if state.REROLL_SPARKS == "off":
+    return False, "reroll_sparks is off"
+  if state.REROLL_SPARKS == "undefeated" and not undefeated:
+    return False, "reroll_sparks is undefeated-only and a race was lost"
+  return True, ""
+
+def handle(undefeated=False):
   """Drive the whole spark flow, from the list screen to the kept set.
 
   Returns True once something was confirmed. The caller re-observes either way,
   so a step that cannot be found leaves the screen alone rather than clicking
   near Reroll, which spends TP.
+
+  `undefeated` is the career's race record, counted by core/placement.py and
+  passed in by the caller; it is only read in the `undefeated` reroll mode.
   """
   rows = read()
   if not valid(rows):
     warning("On the spark screen but the sparks would not read; leaving them alone.")
     return False
   info(f"Sparks rolled: {describe(rows)}.")
-  if not worth_rerolling(rows) or not state.REROLL_SPARKS:
+  allowed, why_not = mode_allows(undefeated)
+  if not worth_rerolling(rows) or not allowed:
     # The reason and the set, because `why` is the whole of what the
     # end-of-career notification gets to say about the sparks. "as rolled" on
     # its own told nobody what was kept.
+    if why_not and worth_rerolling(rows):
+      info(f"Not rerolling: {why_not}.")
     return _keep(f"kept as rolled - {describe(rows)}")
 
   if not _press(REROLL_BTN, region=constants.SCREEN_BOTTOM_REGION,

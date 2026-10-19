@@ -1072,6 +1072,65 @@ below was clicked live at 1920x1080, so they are measured rather than derived.
 | | Event Boost (TP Usage x2) checkbox | (311, 809) |
 | | Cancel / Start Career! | (419, 997) / (686, 997) |
 
+### Trainee Select: picking a trainee that is not already selected (2026-10-16)
+
+The table above walks the setup *keeping* whatever was chosen last time, which
+is all `career_start` ever needs. Choosing a **different** trainee is a
+different problem, and it cost an hour of trial and error the first time, so:
+
+**The tiles carry no names.** Only the header names the selected trainee, so a
+tile cannot be identified before it is tapped. Worse, the grid is filtered by
+the *previous* career's profile - after a Kitasan Black run the filter was
+`Distance = Long` + `Style = Front` and the grid showed **4** umas out of 109,
+with nothing on screen saying a filter was hiding the rest except a small
+`Filters: ON` label.
+
+**`Filters: ON` is a label, not a button.** Clicking it does nothing (tried
+three times). The control is the **small icon at the right-hand end of the sort
+pill**, at **(723, 837)**, and it opens one dialog with two tabs.
+
+| Element | Position |
+|---|---|
+| Sort/Filter dialog opener (right end of the sort pill) | **(723, 837)** |
+| Asc/Desc toggle | (788, 838) |
+| dialog tab **Sort** / **Filter** | (408, 114) / (695, 114) |
+| Sort radios: Stars / Potential Lvl | (310, 231) / (500, 231) |
+| Track / Distance | (310, 316) / (500, 316) |
+| Style / Bond Points | (310, 400) / (500, 400) |
+| Date Obtained / **Name** | (310, 484) / **(552, 484)** |
+| Filter: Turf / Dirt | (310, 417) / (500, 417) |
+| Sprint / Mile / Medium | (310, 533) / (500, 533) / (690, 533) |
+| Long | (310, 600) |
+| Front / Pace / Late | (310, 718) / (500, 718) / (690, 718) |
+| End | (310, 785) |
+| Scenario Link | (310, 898) |
+| **Reset Filters** | (746, 897) |
+| dialog Cancel / OK | (419, 997) / (683, 990) |
+
+The Filter tab carries a pink `!` badge whenever anything is checked, which is
+the only honest signal that the grid is hiding umas.
+
+**How to actually select a named trainee.** Tapping a tile opens its **Details**
+dialog, and that dialog has **◀ (265, 384)** and **▶ (836, 384)** arrows that
+page through the *filtered* list in the current sort order, showing the full
+`[Variant] Name` each time. **Closing it with Close (419, 997) leaves the
+paged-to trainee selected.** That is the reliable route: filter to the uma's own
+aptitudes, sort by Name, then page with the arrows reading the header until the
+right variant is up, and Close. Measured 2026-10-16 picking
+`[Emperor's Path] Symboli Rudolf` - filter `Distance = Medium` + `Style = Pace`
+from `core/trainee.profile()`, sort `Name`, which cut 109 umas to about a dozen.
+
+Two traps. A **drag** on the tile grid is read as a **tap** and opens Details
+rather than scrolling. And the dialogs' button row sits at y 990-997, two rows
+above the game's bottom nav at y~1035-1045, so a mis-aimed Cancel lands on
+**Story** and leaves the career setup entirely; nothing is lost, but Home ->
+CAREER has to be walked again, and Scenario Select does remember its page.
+
+**Scenario Select** (same walk): prev / next arrows **(175, 495)** /
+**(930, 495)**, `Next` **(553, 910)**. Four pages, and the dots under the art
+say which: page 1 **URA Finale**, page 4 **Our Grand Concert**. The page is
+remembered between visits.
+
 **Starting a career costs 30 TP, and the game asks before it blocks you**
 (2026-09-19). Pressing `Start Career!` below the TP cost raises a Confirm
 dialog - *"You need 13 more TP to start a Career Scenario, and 43 more TP if
@@ -1227,6 +1286,31 @@ borrow the rarity badge of whatever row sorted first. Requiring the row text to
 be no shorter than the name (minus two, for a dropped glyph) fixes it: with the
 guard, `Kitasan Black` best-matches `Scenario Link` at 45 and `Tazuna Hayakawa`
 at 33, both far under the bar of 85.
+
+#### The list is a draw, not a roster
+
+The round arrow at the bottom right of the dialog, **(799, 848)**, re-queries
+the offers and redraws every row. Pressed live on 2026-10-18 it replaced two
+of the five rows - `[Peachy Silhouette] Narita Top Road` left, `Special Week`
+and `Kitasan Black` arrived - while the three middle lenders stayed. So **a
+card absent from one draw can be on the next**, which is what `career_start`
+retries behind: a `MISSING` read presses Refresh and reads again, up to
+`career_start.borrow_refresh_max` times (3 by default) before giving up.
+
+That covers both ways this walk actually stops. A lender swapping their
+support lead killed a career on 2026-10-18 (`Peachy Silhouette` gone), and the
+list is ordered by the lender's last login, so one who goes quiet sinks past
+the five rows the region reads as other people log in. Neither is a reason to
+stop the run while the next draw is one press away.
+
+**The margin is the point.** The button floats *over* the last row, so a press
+that misses the circle borrows whatever is under it. The face reads
+(240,239,240) at the centre and stays near-white out to ~22px, with the dark
+border ring (99,93,126) at 23-25px in every direction - identical on three
+frames a month apart, with and without the Remove button on top of the list.
+
+A refresh does **not** reach a card hidden by the Specialty filter, which is a
+different failure with the fix above, and it does not make the list scroll.
 
 #### Two guards, and what they cannot tell apart
 
@@ -2596,3 +2680,169 @@ No confidence floor: correct reads come back as low as 0.33 on this font.
 from them needs no game time, and it was tried - at JPEG quality V120 came
 back 8 of 10 with one unread *and one wrong*, its End reading B against the
 card's E. The grades are read from the game instead.
+
+## Post-race placement: did the trainee win? (measured 2026-10-17)
+
+The result banner that follows a race, read by `core/placement.py` so the
+reroll gate can ask whether a career went undefeated
+(`bot.json reroll_sparks = "undefeated"`).
+
+**Geometry.** `RACE_PLACEMENT_REGION = (380, 480, 320, 340)` - a centred window
+inside `GAME_SCREEN_REGION`, not the whole game screen. That is the whole
+trick: see the trap below.
+
+**Not a template.** The banner slides in from the left, scales up, settles,
+then slides out, so a fixed-scale match has to be loose enough to catch it
+part-drawn, and that is loose enough to catch other things. It is *counted*
+instead - saturated gold pixels, `R>200, 140<G<215, B<110`. The trainee's own
+1st is gold under a crown inside a full laurel wreath; every other placing is
+bronze, uncrowned, in a thinner wreath.
+
+**Separation**, over the 134 `after_race_no_next` frames in `shots/`:
+
+| what | gold px |
+|---|---|
+| own 1st, worst of 7 | 12,904 |
+| own 1st, best | 15,981 |
+| 3rd (best non-win) | 3,681 |
+| 5th | 1,373 - 2,609 |
+| 4th, 6th | 0 |
+
+`WIN_GOLD_PIXELS = 8000` sits in the gap. Both ends are in
+`tests/fixtures/placement/`.
+
+**The trap: a gold "1st" on screen is not our 1st.** The race broadcast draws
+its own "WIN 1st" pennant with a blue name plate over *whoever won*, which is
+usually another runner - the captured frames of it name Taiki Shuttle on a race
+the trainee ran 8th. That pennant sits at the left edge of the game screen,
+which is why the region is centred and why measuring across the full width
+scores that frame 13,968, straight into the win band. Widening this region
+breaks the reader.
+
+**When to read it.** `race_prep()` samples as soon as `view_results.png` is
+found and before anything is pressed: View Results only appears once the result
+screen has drawn, and the banner leaves with it. `placement.watch()` samples
+for 3s because the slide-in takes about a second.
+
+**Not verified against a live race.** Every frame behind these numbers was
+saved by the `after_race_no_next` fallback, the one path that writes a frame to
+disk; the normal path has never been captured. The numbers hold for the frames
+they came from, but whether `watch()` is looking at the right moment in the
+normal path can only be settled by running a career.
+
+## Career race record: the game's own count (measured 2026-10-18)
+
+The reroll gate wants one fact - did she win every race - and the section
+above gets it wrong on every race it reads. The game states the fact outright,
+two screens earlier than the sparks that gate on it.
+
+**Complete Career screen.** It carries a **Details** button at `(503,602)`,
+cut to `assets/buttons/career_details_btn.png` (69x37 at `(469,584)`). It does
+not move: it matched at exactly `(469,584)` on all seven real Complete Career
+frames in `shots/`, scoring **0.824-1.000**, where the Epithet dialog
+(`career_end_now*.png`) and every other screen tried came in at **0.610 or
+less**. `CAREER_END_DETAILS_MATCH` is 0.78, between the two.
+
+**Behind it is the wrong dialog, and that is the whole finding.** It is titled
+"Umamusume Details" exactly as the Veteran Roster's is, and it is not the same
+dialog: it draws at roughly `(258,30)-(850,1055)` and carries exactly **two**
+tabs, `Conditions` and `Skills`, over a stats / aptitude / growth-rate block.
+There is no Career Info tab and no `Races: n  Wins: n` anywhere on it. The
+frame is `shots/career_record_no_tab_064155.png` (career 20, 06:41:55), and
+the OCR of the band where the tab row should have been reads
+`['Style', 'Front', 'Pace', 'Late', 'End', 'Growth Rate', '0%', '20%', '0%',
+'10%', '0%']` - the aptitude rows, because the dialog is shorter.
+
+Career 19 had already failed here, on 2026-10-18 at 04:24:38, for what looked
+like a different reason: `select_tab((741,466))` refused five taps running
+while `on_details()` was perfectly happy. It was the same reason. `on_details()`
+matches its template anywhere on screen, so it cannot tell one dialog from
+another that shares a title bar.
+
+So `VETERAN_TAB_CAREER_*`, `VETERAN_PANEL_BBOX` and `read_race_history()` do
+**not** carry over from the roster to career end. Only
+`VETERAN_CLOSE_MOUSE_POS` does. `CAREER_END_DETAILS_*` is kept purely as the
+template that recognises the Complete Career screen; nothing taps it now.
+
+**The roster remains the only place the record is known to read.** Read off
+each career's own Veteran card on 2026-10-18, newest-first, with
+`tools/veteran_list.py`'s navigation:
+
+| career | rank | rating | record | losses |
+|---|---|---|---|---|
+| 18 | A | 11,671 | 19 races, **17** wins | Kikuka Sho, Saudi Arabia Royal Cup |
+| 19 | S | 15,067 | 19 races, **16** wins | Satsuki Sho, Hopeful Stakes, Saudi Arabia RC |
+| 20 | A | 10,441 | 19 races, **15** wins | Osaka Hai, Saudi Arabia RC, + 2 past the 15 rows the panel lists |
+
+Saudi Arabia Royal Cup is Symboli Rudolf's own Junior goal race, 1600m, and
+she is Mile C: she has lost it in all three. The gold-pixel reader had scored
+career 18's two losses at 1,101 and 2,382 px while scoring wins at 972 and
+3,558, which is what settled that there was no threshold to find.
+
+**The right-hand sidebar** (measured 2026-10-18) is a global nav, the same
+seven buttons on the home screen, in the career lobby and on Complete Career,
+at `x 1836`: Jukebox `y 60`, Sparks `225`, **Log `395`**, Career Profile `540`,
+Agenda `710`, Item Request `865`, Menu `990`. A tap there only ever redraws the
+right half of the screen - the left half, Complete Career button and all, is
+untouched - which is what makes it safe to probe at career end. **Log is dead
+outside a career**: the tap lands (Jukebox at the same `x` opens fine) and
+nothing happens, so it can only be read from inside one. `core/career_record.py`
+now taps it at career end, OCRs `CAREER_END_SIDE_PANEL_REGION`
+`(1040,20,650,1030)`, and keeps the panel as a frame either way.
+
+**Still unread live.** No career has yet returned a record. Every failure path
+keeps a frame now, which is the only reason career 20 diagnosed itself where
+career 19 did not; an unread record counts as not-undefeated, so the 30 TP is
+kept rather than spent on a guess.
+
+### Legacy Select: changing a parent, and what the sparks are worth (2026-10-18)
+
+`career_start` only ever presses Next here. Choosing a *different* parent was
+walked by hand to fix Symboli Rudolf's **Mile C**, which is what loses her the
+Saudi Arabia Royal Cup - her own Junior goal race, 1600m - in careers 18, 19
+and 20 alike.
+
+The screen states the answer before anything is committed: the aptitude block
+under the portrait is the **resulting** aptitude, and it updates the moment a
+card is tapped in the picker, before Confirm. So a candidate can be priced by
+looking rather than by theory.
+
+| Element | Position |
+|---|---|
+| Change, Legacy 1 / 2 | (409, 751) / (695, 751) |
+| picker: Display Settings (icon at the right end of the sort pill) | (717, 837) |
+| picker: card tiles | x 328 (Remove) / 440 / 552 / 665 / 777, row y 640 |
+| picker: Confirm | (552, 909) |
+| Display Settings: Sort / Filter tabs | (409, 114) / (696, 114) |
+| Filter: Speed / Stamina / Power checkboxes | (308, 232) / (497, 232) / (686, 232) |
+| Filter: attribute All / 2*+ / 3* only | (308, 392) / (497, 392) / (688, 392) |
+| Filter: Mile checkbox | (308, 645) |
+| Display Settings: Cancel / OK | (419, 997) / (685, 997) |
+
+The filter **ANDs across the two groups and ORs within one**, so "Attribute =
+Stamina, 2* or above" + "Aptitude = Mile" returns the cards holding both. That
+is the cheap way to find a parent: the grid is 214 cards and does not sort by
+anything useful.
+
+Cards of the trainee's own character are shown but carry a red `! Trainee`
+badge and cannot be picked, so every Symboli Rudolf veteran is out of a Rudolf
+career however good its sparks.
+
+**Origin-legacy (grandparent) sparks count, and they count a lot.** The filter
+has its own `Include Sparks from Origin Legacies` switch, and the aptitude
+block proves the point:
+
+| Legacy 1 | own sparks | grandparents | Mile ends at |
+|---|---|---|---|
+| V083 Matikanefukukitaru | Stamina 2*, Mile 2* | Mile 3*, Stamina 3* | **A** |
+| V142 Maruzensky | Speed 3*, Mile 3* | Speed 3*, Speed 3* | **B** |
+
+So a *smaller* own spark with grandparents behind it beat a 3* own spark with
+none. Anyone picking a parent off `logs/veterans.json` should read the
+`parents` list, not just `sparks`.
+
+**A confirmed choice survives leaving the screen.** Backing out to Home and
+walking in again (CAREER -> Next -> Next) reopened on the new parent, so
+`career_start` picks it up on the next run without anything in the config
+changing. Nothing records it, though: the only place the choice exists is the
+game.

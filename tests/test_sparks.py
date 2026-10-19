@@ -67,6 +67,42 @@ def test_policy():
   richer = [{"kind": "stat", "stars": 2}] + [{"kind": "skill", "stars": 1}] * 7
   ok("with equal blue, more whites wins", max([poorer, richer], key=S.rank) is richer)
 
+def test_reroll_modes():
+  """off / always / undefeated, and what none of them may do.
+
+  The third mode was added on 2026-10-17 for the parent farm: a career that
+  won every race is the one whose white set is worth 30 TP to re-roll. The
+  invariant that matters more than any of them is the last check here - a
+  3-star blue is what the career was run for, so no mode may spend TP on a set
+  that already holds one.
+  """
+  import core.state as state
+  before = state.REROLL_SPARKS
+  try:
+    for mode, undefeated, expected in (
+      ("off", True, False),
+      ("off", False, False),
+      ("always", True, True),
+      ("always", False, True),
+      ("undefeated", True, True),
+      ("undefeated", False, False),
+    ):
+      state.REROLL_SPARKS = mode
+      allowed, _ = S.mode_allows(undefeated)
+      ok(f"{mode} with undefeated={undefeated} -> {'reroll' if expected else 'keep'}",
+         allowed is expected)
+
+    # The old boolean still reads: bot.json files in the wild hold true/false.
+    ok("the legacy true means always", state.reroll_mode(True) == "always")
+    ok("the legacy false means off", state.reroll_mode(False) == "off")
+
+    keep = S.read(fixture("sparks_speed3star_c4.png"))
+    for mode in ("off", "always", "undefeated"):
+      state.REROLL_SPARKS = mode
+      ok(f"{mode} still keeps a 3-star blue", not S.worth_rerolling(keep))
+  finally:
+    state.REROLL_SPARKS = before
+
 def test_a_non_spark_screen_is_not_read_as_one():
   path = os.path.join("tests", "fixtures", "out_of_career", "career_complete.png")
   if not os.path.exists(path):
@@ -144,7 +180,8 @@ def test_restore_button_is_found_and_not_confused():
     miss = best(name)
     ok(f"and not confused with {name}", miss < S.RESTORE_CONFIDENCE, round(miss, 3))
 
-for test in [test_reader, test_kinds, test_policy, test_a_non_spark_screen_is_not_read_as_one,
+for test in [test_reader, test_kinds, test_policy, test_reroll_modes,
+             test_a_non_spark_screen_is_not_read_as_one,
              test_tp_restore_reading, test_restore_button_is_found_and_not_confused]:
   print(f"\n-- {test.__name__}")
   test()

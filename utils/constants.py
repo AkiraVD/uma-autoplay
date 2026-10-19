@@ -369,12 +369,39 @@ FINAL_CONFIRM_START_MOUSE_POS = (686, 997)
 # rows are read rather than counted: a Remove button tops the list only while a
 # card is already borrowed, which shifts every row below it by ~147px.
 BORROW_CLOSE_MOUSE_POS = (552, 997)
-BORROW_LIST_REGION = (270, 180, 570, 600)
+# Height raised 600 -> 715 on 2026-10-18, after a career refused to start on a
+# card that was plainly on the list. The region stopped at y=780 and the row
+# sat at y=835, so it was never read: "No row reads as 'Peachy Silhouette'",
+# with the card right there in the saved frame. It had borrowed the same card
+# fine 2.5 hours earlier, because the list is ordered by the lender's last
+# login - most recent first - and a lender 31 days idle sinks a row every time
+# somebody else logs in. So whether a career starts depended on which minute it
+# was tried, which is the sort of failure that looks like anything but what it
+# is. Measured on shots/career_start_failed_044249.png, the worst case (a
+# Remove button on top, pushing every row ~147px down): the fifth row spans
+# y 794-886 and the Filters bar starts at y 911, so 895 is the last line that
+# is still list. **Five rows is still all it reads** - the list does not
+# scroll - so a lender who sinks past the fifth will fail this the same way.
+BORROW_LIST_REGION = (270, 180, 570, 715)
 # How close an OCR'd row has to read to the wanted card's name. rapidfuzz
 # partial_ratio, so a row reading "[From the Ground Up] Light Hello" matches
 # "Light Hello" at 100; 85 leaves room for a mangled glyph without letting a
 # different card through.
 BORROW_NAME_MIN_RATIO = 85
+# The round arrow at the bottom right of the list: it re-queries the offers and
+# redraws the whole thing. **The list is a draw, not a roster** - pressing it on
+# 2026-10-18 replaced two of the five rows (Narita Top Road left, Special Week
+# and Kitasan Black arrived) while the three middle lenders stayed - so a card
+# that is not on this draw may well be on the next, which is the whole reason
+# career_start retries behind it.
+#
+# Measured on the live list and verified against two older frames a month
+# apart: the face reads (240,239,240) at this point on all three and stays
+# near-white out to ~22px, with the dark border ring at 23-25px in every
+# direction, Remove button on the list or not. It floats *over* the last row,
+# so a press that misses the circle borrows whatever is under it - which is why
+# the centre is what is stored, and why the test checks the margin.
+BORROW_REFRESH_MOUSE_POS = (799, 848)
 # The borrow list carries a *filter*, and it is remembered from whatever the
 # deck screens were last filtered to - so the list can hold four Wit cards and
 # no Pal one, and the card you asked for is not missing, it is filtered out.
@@ -425,6 +452,38 @@ SKIP_CUTSCENE_MOUSE_POS = (395, 665)
 RACE_PLAYBACK_CHECKBOX_BBOX = (401, 562, 451, 612)
 RACE_PLAYBACK_CHECKBOX_MOUSE_POS = (426, 587)
 RACE_PLAYBACK_OK_MOUSE_POS = (686, 703)
+# The trainee's own finishing place, drawn big over her portrait once the race
+# has run. Deliberately a centred window rather than the whole game screen: the
+# race broadcast puts its own gold "1st" over the *winner* at the left edge,
+# and that winner is usually somebody else. core/placement.py has the
+# measurements. (380,480)-(700,820) as a bbox.
+RACE_PLACEMENT_REGION = (380, 480, 320, 340)
+# The Details button on the Complete Career screen. Kept as the template that
+# says we are on that screen at all, which it does very well: it matched at
+# exactly (469,584) on all seven real Complete Career frames in shots/, scoring
+# 0.824-1.000, where the Epithet dialog and every other screen tried came in at
+# 0.610 or less.
+#
+# It is *not* a way to the race record, though career 19 and 20 were both spent
+# finding that out. The dialog it opens is titled "Umamusume Details" like the
+# Veteran Roster's, but it is a different dialog: two tabs, Conditions and
+# Skills, no Career Info and no "Races: n  Wins: n" anywhere on it
+# (shots/career_record_no_tab_064155.png, 2026-10-18). The tap is no longer
+# made; core/career_record.py has the story.
+CAREER_END_DETAILS_TEMPLATE = "assets/buttons/career_details_btn.png"
+CAREER_END_DETAILS_MATCH = 0.78
+CAREER_END_DETAILS_MOUSE_POS = (503, 602)
+# The right-hand sidebar, which is a *global* nav - the same seven buttons sit
+# there on the home screen, in the career lobby and on the Complete Career
+# screen - and which only ever swaps the right half of the screen. The left
+# half, Complete Career button and all, is untouched by a tap here, which is
+# what makes probing it at career end safe. Measured off the home screen at
+# 2026-10-18: x 1836, Jukebox y 60, Sparks 225, Log 395, Career Profile 540,
+# Agenda 710, Item Request 865, Menu 990. Log is dead outside a career - the
+# tap lands and nothing happens - so it can only be read from inside one.
+CAREER_END_SIDEBAR_LOG_MOUSE_POS = (1836, 395)
+CAREER_END_SIDEBAR_PROFILE_MOUSE_POS = (1836, 540)
+CAREER_END_SIDE_PANEL_REGION = (1040, 20, 650, 1030)
 # "This will put you at N consecutive races.", raised when the race list is
 # opened on a third race in a row. Measured 2026-09-20: OK is 235x61 centred on
 # (686,702) - the same geometry as the Race Playback OK a line above, one pixel
