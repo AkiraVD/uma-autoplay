@@ -315,17 +315,36 @@ def test_parent_mode_buys_sparks_not_performance():
   try:
     ok("the mode is read", K.parent_mode())
 
-    # 1. Only the top rank of a tier group pays a spark. The ○ is a trap: it is
-    #    cheaper than the ◎ and worth nothing to a parent.
+    # 1. The spark belongs to the tier family, so every rank of it pays - which
+    #    makes the CHEAPEST rank the one a parent wants, and `tier_group` in
+    #    the plan is what stops it paying for two of them. Reading this the
+    #    other way round until 2026-10-19 (only the ◎, and for a gold/white
+    #    pair only the gold) is what left careers with half their points
+    #    destroyed: it accepted 92 of the 282 non-gold skills that really pay.
     ok("a ◎ rank is bought", K.worth_points(BY_NAME["Sapporo Racecourse ◎"]))
-    ok("its ○ rank is not", not K.worth_points(BY_NAME["Sapporo Racecourse ○"]))
+    ok("and so is its cheaper ○ rank", K.worth_points(BY_NAME["Sapporo Racecourse ○"]))
+    ok("which is the cheaper of the two",
+       BY_NAME["Sapporo Racecourse ○"]["cost"] < BY_NAME["Sapporo Racecourse ◎"]["cost"])
     ok("its × rank is not", not K.worth_points(BY_NAME["Sapporo Racecourse ×"]))
+    # The white under a gold is the other half of the same correction, and the
+    # one that cost the most: it is a plain 170-point proc skill, 20 of the 207
+    # veterans carry its spark, and it was refused outright.
+    ok("a white under a gold is bought", K.worth_points(BY_NAME["Corner Recovery ○"]))
 
     # 2. No golds. The same single spark for three to four times the points.
     ok("a gold is refused", not K.worth_points(BY_NAME["Professor of Curvature"]))
     ok("even though it pays a spark", S.inheritable(BY_NAME["Professor of Curvature"]))
+    ok("because the white in its family pays the same one",
+       S.inheritable(BY_NAME["Corner Adept ○"])
+       and S.tier_group(BY_NAME["Corner Adept ○"])
+       == S.tier_group(BY_NAME["Professor of Curvature"]))
 
-    # 3. Aptitude is irrelevant - a skill that can never fire still sparks.
+    # 3. Not everything sparks, which is why the flag is still read. These
+    #    three are the whole of it among the buyable skills.
+    ok("a skill in no factor family is refused",
+       not K.worth_points(BY_NAME["Best day ever"]))
+
+    # 4. Aptitude is irrelevant - a skill that can never fire still sparks.
     ok("aptitudes are not filtered on", K.uma_aptitudes() == (None, None))
     ok("and the tier floor is off", K.usable_here(BY_NAME["Sapporo Racecourse ◎"]))
     ok("which the trials floor would have refused",
@@ -360,9 +379,11 @@ def test_parent_mode_spends_nothing_on_a_skill_that_cannot_spark():
   saved_mode = with_mode("parent")
   try:
     sparks = BY_NAME["Sapporo Racecourse ◎"]
-    no_spark = BY_NAME["Sapporo Racecourse ○"]
+    # Almost everything buyable sparks now that the factor is read per family,
+    # so the counter-example has to be one of the three that genuinely do not.
+    no_spark = BY_NAME["Best day ever"]
     ok("the fixture sparks", S.inheritable(sparks))
-    ok("and its ○ does not", not S.inheritable(no_spark))
+    ok("and the counter-example does not", not S.inheritable(no_spark))
 
     # The fallback's rule, as the loop applies it: parent mode keeps only rows
     # that both read and spark. An unread row has no name to judge, and this is
@@ -380,7 +401,7 @@ def test_parent_mode_spends_nothing_on_a_skill_that_cannot_spark():
     ok("a forced gold that sparks is allowed",
        S.inheritable(gold_spark) and gold_spark.get("rarity") == S.GOLD_RARITY)
     ok("a forced skill that cannot spark is refused by the same test",
-       not S.inheritable(BY_NAME["Ignited Spirit SPD"]))
+       not S.inheritable(BY_NAME["Best day ever"]))
 
     # Every name the live config forces has to survive that guard, or the list
     # quietly shrinks the first time a parent career runs.

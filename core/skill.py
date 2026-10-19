@@ -90,14 +90,27 @@ def plausible_cost(record, shown_cost):
 
   This used to reject any price above the database's `need_skill_point`, on the
   reasoning that a hint only makes a skill cheaper so nothing can exceed its
-  undiscounted cost. **The game disagrees.** Photographed on a live buy screen,
-  "Professor of Curvature" is listed at 306 with a Hint Lvl 3 badge while the
-  database says 180; "On Your Left!" at 342 against 180. The OCR was right and
-  the rule was wrong.
+  undiscounted cost. **The game disagrees**, and the reason is a mechanic the
+  database draws no column for: **a gold is sold bundled with the white beneath
+  it.** Taking the gold takes both, and the one listed price is the pair's,
+  each half discounted by its own hint. Career 25's buy screen, against
+  master.mdb and the white's own listed row, six for six:
 
-  base * (1 - discount) does hold for most skills - Extra Tank, Ramp Up, Tether,
-  Up-Tempo and half a dozen others match to the point - so the database is a
-  good reference and a bad ceiling.
+      Dominator              320 = 160 Dominator        + 160 Tether
+      Iron Will              304 = 144 (-10%)           + 160 Lay Low
+      Professor of Curvature 306 = 126 (-30%)           + 180 Corner Adept O
+      Top Runner             342 = 162 (-10%)           + 180 Leader's Pride
+      Shatterproof           216 = 108 (-10%)           + 108 Tactical Tweak
+      Past My Limits         380 = 180 (-10%)           + 200 Eyes on the Goal
+
+  So the gold's own marginal price is `shown - the white's price`, and the
+  database's figure is that marginal half, not a ceiling the screen broke.
+  base * (1 - discount) still holds exactly for every skill sold alone.
+
+  Parent mode refuses golds whatever the arithmetic says, because the pair is
+  one tier family and pays one white spark between them. Trials mode is where
+  the bundle would change a pick, and it does not price it yet: a gold whose
+  white the plan already wants costs only the difference.
 
   Rejecting those prices was worse than useless: the planner fell back to the
   database's 180 for a skill that costs 306, understating the spend and letting
@@ -174,9 +187,12 @@ def worth_points(record):
   that could never pay out.
 
   Parent farming: it must leave a white spark, and it must not be a gold. A gold
-  pays exactly the same single spark as a 90-point ◎ and costs three to four
-  times as much, so taking one costs two or three sparks that the same points
-  would otherwise have bought.
+  shares its tier family's one factor with the plain white under it - buying
+  "Swinging Maestro" pays the same single "Corner Recovery" spark that Corner
+  Recovery itself pays - and costs three to four times as much, so taking one
+  costs two or three sparks that the same points would otherwise have bought.
+  Nothing is lost by the rule: there is no family whose only buyable
+  non-debuff member is a gold.
   """
   if not record:
     return False
@@ -407,6 +423,16 @@ def buy_planned():
     on_screen.setdefault(base_name(record["name"]), card)
     if worth_points(record):
       offered.setdefault(base_name(record["name"]), card)
+  # Where the points actually go is decided here, by what reaches `offered` -
+  # the knapsack can only spend on what it was handed. Career 21 planned "8 of
+  # 8 offered skills" and destroyed 1107 of 2086 points, and the line that
+  # would have shown why - that the filter had dropped most of the screen - did
+  # not exist. It does now.
+  dropped = len(on_screen) - len(offered)
+  if dropped:
+    debug(f"{dropped} of {len(on_screen)} rows are not candidates"
+          + (" (no white spark, or a gold)" if parent_mode()
+             else " (cannot fire for this Uma)") + ".")
 
   budget = check_skill_pts_for_plan()
   # What the plan is measured against at the end. `budget` itself shrinks as
@@ -475,6 +501,16 @@ def buy_planned():
   spend = sum(c["cost"] for c in chosen)
   info(f"Skill plan buys {len(chosen)} skills for {spend} of {total_budget} points: "
        + ", ".join(f"{c['name']} ({c['cost']})" for c in chosen))
+  # Leftovers are destroyed when the career completes, so a large one is a
+  # fault, not a saving. It means the pool ran out before the budget did -
+  # either the filter is too narrow or the scan missed most of the list.
+  leftover = total_budget - spend
+  cheapest = min((c["cost"] for name, c in on_screen.items()
+                  if name not in wanted), default=None)
+  if cheapest is not None and leftover >= cheapest:
+    warning(f"{leftover} skill points will be destroyed with the career:"
+            f" nothing in the plan's pool costs that little, though a row on"
+            f" screen does ({cheapest}). Check the candidate filter.")
 
   # Sweep more than once. A row can be missed for reasons that have nothing
   # to do with the plan: its name misreads on that pass, or selecting earlier

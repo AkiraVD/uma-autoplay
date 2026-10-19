@@ -289,11 +289,18 @@ def beneficial(skill):
 def inheritable(skill):
   """True when learning this skill leaves a white spark on the finished Uma.
 
-  The flag is master.mdb's own (`masterdb.inheritable_skill_ids`), and it is
-  narrower than it looks: 221 of the 581 skills a career can buy pay a spark,
-  and only the top member of a tier group does. "Right-Handed ◎" pays one,
-  "Right-Handed ○" pays nothing - so a career run to farm a parent cannot just
-  buy whatever is cheapest.
+  The flag is master.mdb's own (`masterdb.inheritable_factor_groups`), and the
+  factor belongs to the **tier family**, not to one rank of it: learning any
+  member pays the same single white spark, named after the family's plain white
+  ("Corner Recovery" whether the Uma bought Corner Recovery or Swinging
+  Maestro). It is wide - 427 of the 430 skills a career can usefully buy carry
+  one - which is why `tier_group` rather than this flag is what stops a plan
+  paying twice for the same spark.
+
+  It is still worth reading rather than assuming, because the three that do not
+  carry one are real (Runaway, Best in Japan, and the unique Best day ever,
+  which pays a *green* spark instead), and because the flag is also what tells a
+  forced buy apart from a wasted one.
 
   Absent means "we could not read the factor table", which is treated as not
   inheritable: a parent-farming plan with no flag at all would otherwise buy the

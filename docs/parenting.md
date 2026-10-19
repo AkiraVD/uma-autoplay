@@ -151,14 +151,20 @@ but the hardest to get SS out of. Grand Concert lands between them on SP.
 ## 5. What this means for this bot
 
 - **`skill.buy_mode = "parent"` is aimed at the right thing.** Maximising the
-  count of inheritable skills is correct, and the `inheritable` filter happens
-  to select mostly ◎ ranks, which share one generation chance (25%), so a flat
-  value of 1 per skill is a fair objective *inside that set*. Two refinements
-  the research suggests: a plain single-rank white rolls 20% against a ◎'s 25%,
-  so `one_spark` could return 0.20/0.25 instead of 1.0 and break ties the right
-  way; and the docstring's "a gold pays the same single white spark" is not
-  quite true - a gold rolls 40%, i.e. 1.6x a ◎ for 3-4x the points. The
-  conclusion (drop the golds) survives, the stated reason does not.
+  count of inheritable skills is correct. What was wrong until 2026-10-19 was
+  the `inheritable` filter under it, and the paragraph this replaces had the
+  error in it: the factor is the **tier family's**, not the top rank's, so
+  every member pays the same one and the ○ is not a trap - it is the cheap way
+  to the same spark. Read per family, 427 of the 430 usefully buyable skills
+  pay, against the 221 the old read found; parent mode's own pool went 92 to
+  282. The cost was a career's whole second half of skill points: career 21
+  planned "8 of 8 offered skills" and destroyed 1107 of 2086.
+  The refinement still open: generation chance is **not** flat across the ranks
+  the plan now chooses between - a plain white rolls 20%, a ◎ 25%, a gold 40% -
+  so `one_spark` could return the rate instead of 1.0 and break ties the right
+  way. It barely moves the buying order (70 points at 20% is 350 a spark,
+  90 at 25% is 360), which is why it is still 1.0; dropping the golds survives
+  on points per spark either way.
 - **Stat caps decide blue eligibility, and `guts: 600` sits exactly on the
   line.** For a parent run, raise every cap to at least ~650 and put the
   intended blue stat over 1100. The current `[Down the Line] Mejiro Ryan` URA
@@ -225,8 +231,12 @@ rules above. The reasoning, so it can be argued with:
   inheritable *golds* (40% generation, against 25% for a ◎), and the
   Burning Spirit tier is the reason the unity burst weights are raised above
   their defaults - 13+ bursts pays a **Burning Spirit**, 9 or fewer pays an
-  **Ignited Spirit**, and Ignited Spirit is `inheritable = False`. Nine bursts
-  and thirteen bursts are the difference between a gold spark and nothing.
+  **Ignited Spirit**. (This said Ignited Spirit was `inheritable = False`; that
+  was the same misread factor flag. It pays a white spark like anything else -
+  eleven of the 207 veterans hold one - so nine bursts and thirteen bursts are
+  the difference between a gold spark and a white one, not between a gold spark
+  and nothing. `Break It Down!` is the real dead entry in the list: it has no
+  career price at all, so it can never be bought here.)
   `Pace Chaser Corners/Straightaways ◎` are there to win the ten races, and
   `Racing Spirit: *` is what the duels exist for.
 - `keep_sparks` is left **empty** on purpose. It outranks the 3★-blue rule and

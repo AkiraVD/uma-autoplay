@@ -192,20 +192,29 @@ where n.category = 47
 """
 
 # A learned skill leaves a white spark on the finished Uma only if it has an
-# inheritance factor, and most skills do not: of the 581 a career can buy, 221
-# carry one. The table draws no join to skill_data - the factor's group id is the
-# skill id with its trailing rank digit cut off - so the link is arithmetic:
-# factor_group_id * 10 + 1 is the skill. Checked against the whole set, 222 of
-# the 235 groups land on a real skill name that way.
+# inheritance factor. `succession_factor` draws no join to skill_data, but its
+# `factor_group_id` is `skill_data.group_id` - the family a skill and its ranks
+# share - so the factor belongs to the **whole family**, not to one member of
+# it. 464 of the 980 named skills sit in one, 427 of the 430 a career can
+# usefully buy.
 #
-# Only the top member of a tier group carries it: "Right-Handed ◎" does,
-# "Right-Handed ○" and "Right-Handed ×" do not. That is what makes the flag worth
-# reading rather than guessing from the glyph - the same fact for the golds, the
-# Racing Spirit skills and the scenario golds, from the game's own data.
+# **This read `factor_group_id * 10 + 1` until 2026-10-19**, i.e. only the top
+# member of each family: "Right-Handed ◎" but not "○", and - because that id is
+# the *gold* in a gold/white pair - "Swinging Maestro" but not "Corner
+# Recovery". The 207 careers in `logs/veterans.json` say otherwise. Of their 807
+# readable white skill sparks, **273 name a skill whose family's top member the
+# Uma never learned**: 20 Corner Recovery, 18 Straightaway Recovery, 16 Focus,
+# 16 Homestretch Haste, each from an Uma holding only the plain white. The
+# family rule explains 807 of the 807; the old one explained 534.
+#
+# What that cost is the whole of parent mode, where this flag is the filter on
+# what may be bought at all: it accepted 92 of the 282 non-gold skills that
+# really pay, so careers ended with half their skill points destroyed unspent
+# (career 21: 1107 of 2086).
 SUCCESSION_SKILL_FACTOR = 4
 
-def inheritable_skill_ids():
-  """Ids of the skills that pay a white spark when learned. set() if unreadable.
+def inheritable_factor_groups():
+  """`skill_data.group_id`s that pay a white spark. set() if unreadable.
 
   Separate from the skill query, and failing soft on its own, so a patch that
   renames or drops succession_factor costs the spark flag rather than every
@@ -222,7 +231,7 @@ def inheritable_skill_ids():
   except sqlite3.Error as e:
     warning(f"Couldn't read the inheritance factors from master.mdb: {e}")
     return set()
-  return {group[0] * 10 + 1 for group in groups}
+  return {group[0] for group in groups}
 
 _career_ranks = None
 
@@ -306,7 +315,7 @@ def skills():
     _skills = []
     return _skills
 
-  inheritable = inheritable_skill_ids()
+  inheritable = inheritable_factor_groups()
   seen = set()
   _skills = []
   for row in rows:
@@ -316,7 +325,7 @@ def skills():
       continue
     seen.add(name)
     record["name"] = name
-    record["inheritable"] = record["id"] in inheritable
+    record["inheritable"] = record["group_id"] in inheritable if record.get("group_id") else False
     _skills.append(record)
 
   info(f"Loaded {len(_skills)} skills from master.mdb, "

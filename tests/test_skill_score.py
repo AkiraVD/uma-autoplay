@@ -201,26 +201,95 @@ def test_the_spark_flag_comes_from_the_game():
   """What a parent-farming career can buy, and why it cannot be guessed.
 
   `inheritable` is master.mdb's own answer to "does learning this leave a white
-  spark", and it is narrow: 221 of the 581 buyable skills pay one. Guessing it
-  from the glyph would be wrong in both directions - "Sympathy" and "Lone Wolf"
-  carry no rank mark and pay a spark, every × pays nothing.
+  spark", and the factor belongs to the **tier family**: any member pays it.
+
+  Every check below was the opposite way round until 2026-10-19, when the flag
+  was read as `factor_group_id * 10 + 1` - the family's top member only. The
+  207 careers in `logs/veterans.json` refuted it: 273 of their 807 white skill
+  sparks name a family whose top member the Uma never learned, including 20
+  Corner Recovery and 16 Focus off Umas holding nothing but the plain white.
+  The cost was parent mode's whole candidate pool, 92 skills where 282 pay.
   """
   if not SKILLS:
     return
   flagged = [s for s in SKILLS if S.inheritable(s)]
-  ok("the factor table is read", 200 < len(flagged) < 300, str(len(flagged)))
+  ok("the factor table is read", 400 < len(flagged) < 520, str(len(flagged)))
   if not have("Sapporo Racecourse ◎", "Sapporo Racecourse ○", "Sapporo Racecourse ×",
-              "Professor of Curvature", "Corner Adept ○", "Racing Spirit: Mood"):
+              "Professor of Curvature", "Corner Adept ○", "Corner Recovery ○",
+              "Swinging Maestro", "Focus", "Racing Spirit: Mood", "Best in Japan"):
     return
-  ok("the ◎ rank of a group pays a spark", S.inheritable(BY_NAME["Sapporo Racecourse ◎"]))
-  ok("the ○ rank does not", not S.inheritable(BY_NAME["Sapporo Racecourse ○"]))
-  ok("the × rank does not", not S.inheritable(BY_NAME["Sapporo Racecourse ×"]))
+  ok("the ◎ rank of a family pays a spark", S.inheritable(BY_NAME["Sapporo Racecourse ◎"]))
+  ok("and so does the ○ rank", S.inheritable(BY_NAME["Sapporo Racecourse ○"]))
+  # The × is in the family and carries the factor too. It never reaches a plan
+  # regardless, because `beneficial` throws the debuffs out first - which is
+  # the filter that belongs on them, not this one.
+  ok("the × rank is held out by beneficial, not by this",
+     S.inheritable(BY_NAME["Sapporo Racecourse ×"])
+     and not S.beneficial(BY_NAME["Sapporo Racecourse ×"]))
   ok("a gold pays one", S.inheritable(BY_NAME["Professor of Curvature"]))
-  ok("its white base does not", not S.inheritable(BY_NAME["Corner Adept ○"]))
+  ok("so does its white base", S.inheritable(BY_NAME["Corner Adept ○"]))
+  ok("the two share one family",
+     S.tier_group(BY_NAME["Corner Adept ○"]) == S.tier_group(BY_NAME["Professor of Curvature"]))
+  # The pair the old rule got backwards in the other direction: here the id it
+  # picked was the *gold*, so the plain white - the one a parent career wants,
+  # and the one 20 veterans got the spark from - was refused.
+  ok("a white under a gold pays one", S.inheritable(BY_NAME["Corner Recovery ○"]))
+  ok("sharing the gold's family",
+     S.tier_group(BY_NAME["Corner Recovery ○"]) == S.tier_group(BY_NAME["Swinging Maestro"]))
+  ok("a family-less white pays one", S.inheritable(BY_NAME["Focus"]))
   # The repo already knew this one from a live career: a Racing Spirit skill
   # becomes a white spark only if it was bought. The database agrees.
   ok("a Racing Spirit skill pays one", S.inheritable(BY_NAME["Racing Spirit: Mood"]))
+  # Wide is not universal, and the flag is still worth reading: three buyable
+  # skills carry no factor at all.
+  ok("and a skill in no factor family pays nothing",
+     not S.inheritable(BY_NAME["Best in Japan"]))
   ok("a missing flag means no", not S.inheritable({"name": "x"}))
+
+def test_every_white_spark_a_veteran_holds_is_explained():
+  """The flag against 207 real careers, which is what caught it being wrong.
+
+  `logs/veterans.json` is the roster scan: per finished career, the skills it
+  learned and the sparks it ended with. A white skill spark can only have come
+  from a skill that career learned, so every one of them must name a family
+  this flag calls inheritable. Skipped when the file is not on this machine -
+  it is a log, not a fixture, and `logs/` is gitignored.
+  """
+  import json
+  import re
+  path = os.path.join("logs", "veterans.json")
+  if not SKILLS or not os.path.exists(path):
+    print("skip  logs/veterans.json not on this machine")
+    return
+  with open(path, encoding="utf-8") as f:
+    umas = json.load(f).get("umas") or []
+  if len(umas) < 50:
+    print(f"skip  only {len(umas)} veterans scanned")
+    return
+
+  def base(name):
+    return re.sub(r"\s+[○◎×]$", "", name).strip().lower()
+
+  families = {}
+  for skill in SKILLS:
+    families.setdefault(base(skill["name"]), skill)
+
+  total, unexplained = 0, []
+  for uma in umas:
+    for spark in uma.get("sparks", []):
+      if spark.get("kind") != "skill":
+        continue
+      record = families.get(base(spark.get("name", "")))
+      # A name that matches no skill at all is an OCR miss on the roster scan,
+      # not a counter-example to anything.
+      if not record:
+        continue
+      total += 1
+      if not S.inheritable(record):
+        unexplained.append(spark["name"])
+  ok("every white skill spark came from a skill the flag accepts",
+     not unexplained, f"{len(unexplained)} of {total}: {sorted(set(unexplained))[:6]}")
+  ok("and there were enough of them to mean something", total > 500, str(total))
 
 def test_one_spark_maximises_count():
   """The parent-farming objective. Every skill is worth exactly one spark."""
@@ -258,6 +327,7 @@ for test in [test_database_present, test_debuffs_are_never_bought,
              test_a_tier_chain_is_one_choice,
              test_plan_respects_its_constraints,
              test_the_spark_flag_comes_from_the_game,
+             test_every_white_spark_a_veteran_holds_is_explained,
              test_one_spark_maximises_count,
              test_no_budget_buys_nothing]:
   print(f"\n-- {test.__name__}")
