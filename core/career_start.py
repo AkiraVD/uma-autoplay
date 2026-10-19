@@ -10,6 +10,14 @@ So the borrow is re-taken, and the card it looks for is whatever was borrowed
 last time, remembered in `logs/career_start_progress.json` and seeded from
 config `career_start.borrow_card` the first time.
 
+That card is somebody else's to offer, and the list showing it is a *draw*
+rather than a roster: the rows change when its Refresh button is pressed. So a
+draw without the wanted card is refreshed and read again, up to
+`career_start.borrow_refresh_max` times (2026-10-18), because the two ways this
+walk stops most often - a lender swapping their support lead, and one sinking
+past the five rows the list shows - both look exactly like that and both can
+come back on the next draw.
+
 This is what stood between the bot and an unattended night. `career_lobby()`
 drives a career perfectly well and then stops dead at the home screen, because
 `CAREER_BUTTON_MOUSE_POS` was pressed in exactly one place and only to resume
@@ -118,6 +126,17 @@ FROZEN_STEPS = 8
 # list that has not loaded, and the second tells the two causes apart: an empty
 # slot clears on the first successful take, a trainee conflict never clears.
 BORROW_ATTEMPTS = 2
+
+# take_borrow's third outcome, beside True and False: the list read perfectly
+# well and the wanted card simply was not on it. Kept apart from False because
+# the two want opposite things - a list that will not read is a reason to stop,
+# while a card that is not on this draw is a reason to press Refresh and look
+# again. See the refresh branch in start().
+MISSING = "missing"
+# After pressing Refresh. The list goes back to the server for it, and the rows
+# redraw in one go rather than streaming in, so this only has to cover the round
+# trip; 2.5s was comfortable on the live press that measured the button.
+REFRESH_SETTLE = 2.5
 # Where the borrowed card is remembered between careers. Under logs/ beside
 # grand_concert_progress.json, for the same reason: it is a running count of
 # what a real run did, not repo data.
@@ -337,7 +356,13 @@ def read_borrow_rows(screen):
   return rows
 
 def take_borrow(screen, wanted):
-  """Tap the row whose card name is `wanted`. True once one was pressed."""
+  """Tap the row whose card name is `wanted`.
+
+  True once a row was pressed. MISSING when the list read and held no such
+  card - the caller decides whether that is worth a Refresh or the end of the
+  walk. False when the list would not read at all, which is not a thing a
+  Refresh fixes.
+  """
   from rapidfuzz import fuzz
   rows = read_borrow_rows(screen)
   if not rows:
@@ -367,7 +392,10 @@ def take_borrow(screen, wanted):
     warning(f"No row on the Borrow Card list reads as '{wanted}'"
             f" (best {best_score}). The list held: {names}."
             " Not taking a different card.")
-    return _fail(f"No lender offers '{wanted}' any more.", screen)
+    # No _fail here: the caller may refresh and ask again, and a reason
+    # recorded per attempt would send the first draw's list to a phone three
+    # draws later. It records the one it gives up on.
+    return MISSING
   text, pos = best
   info(f"Borrowing '{wanted}' from the row reading '{text}'.")
   _click(pos, "Taking the borrowed card.")
@@ -469,6 +497,11 @@ def start():
   info(f"Starting a career: last config, borrowing '{wanted}'.")
   borrows = 0
   takes = 0
+  # Refresh presses spent on the borrow list this walk. Counted apart from
+  # `takes`: that one bounds taps on a row that will not take, and a draw with
+  # no matching row never tapped anything.
+  refreshes = 0
+  refresh_max = max(0, int(getattr(state, "CAREER_START_BORROW_REFRESH", 0) or 0))
   borrowed = False
   pressed_final = False
   # The borrow list's filter is set once per walk, before the list is read.
@@ -538,24 +571,42 @@ def start():
                "Opening the borrow list's Display Settings to set the filter.")
         sleep(1.5)
         continue
-      takes += 1
-      if takes > BORROW_ATTEMPTS:
-        # The row was tapped and the list is still up, so the tap is not
-        # taking. Close it rather than tapping at the same row forever - an
-        # unbounded press on one screen is this bot's oldest failure shape.
+      if takes >= BORROW_ATTEMPTS:
+        # A row was tapped and the list is still up, so the tap is not taking.
+        # Close it rather than tapping at the same row forever - an unbounded
+        # press on one screen is this bot's oldest failure shape.
         warning("The Borrow Card list is still open after"
                 f" {BORROW_ATTEMPTS} attempts; closing it and stopping.")
         _click(constants.BORROW_CLOSE_MOUSE_POS, "Closing the Borrow Card list.")
         return _fail("The Borrow Card list would not close on a tapped row"
                      f" after {BORROW_ATTEMPTS} attempts.", screen)
-      if take_borrow(screen, wanted):
-        borrowed = True
-        sleep(2)
-      else:
-        # take_borrow has already recorded why - the list would not read, or
-        # it does not hold the card - so leave LAST_FAILURE alone here.
+      outcome = take_borrow(screen, wanted)
+      if outcome is MISSING:
+        # The list is a *draw* of what other players are offering, not a fixed
+        # roster: pressing Refresh re-queries it and the rows change. That is
+        # the one thing that can rescue the failure this walk stops on most
+        # often - a lender swapping their support lead, or sinking out of the
+        # five rows the list shows as other people log in - so it is tried
+        # before giving up, as many times as the user allows.
+        if refreshes < refresh_max:
+          refreshes += 1
+          info(f"'{wanted}' is not on this draw of the Borrow Card list;"
+               f" refreshing it ({refreshes} of {refresh_max}).")
+          _click(constants.BORROW_REFRESH_MOUSE_POS,
+                 "Refreshing the Borrow Card list.")
+          sleep(REFRESH_SETTLE)
+          continue
+        _click(constants.BORROW_CLOSE_MOUSE_POS, "Closing the Borrow Card list.")
+        return _fail(f"No lender offers '{wanted}' any more"
+                     + (f", over {refresh_max + 1} draws of the list."
+                        if refresh_max else "."), screen)
+      if not outcome:
+        # The list would not read; take_borrow has recorded why.
         _click(constants.BORROW_CLOSE_MOUSE_POS, "Closing the Borrow Card list.")
         return False
+      takes += 1
+      borrowed = True
+      sleep(2)
       continue
 
     if matches["final_confirmation"]:

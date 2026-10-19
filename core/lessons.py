@@ -683,6 +683,32 @@ _wit_return = None
 # before the purchase is stale afterwards - by 25 to 30 points at low energy.
 _bought_energy = False
 
+# How far short an Energy technique may be and still be worth holding points
+# for. Measured off career 12 (2026-10-15): eleven Energy cards came up over
+# the career and every one went unbought, 7 to 28 points short, while a type
+# takes in 5 to 30 points between visits. A card inside 20 is one or two
+# visits away; one outside it is most of a segment away, and holding for it
+# would starve the board of techniques for nothing.
+ENERGY_REACH_MAX_SHORT = 20
+
+# The Energy technique this board is being held for: (key, name, cost, short).
+#
+# energy_offer never sees this card. It is handed the LEARNABLE cards only, so
+# an Energy card a few points short gets neither "buy" nor "preserve" and
+# nothing protects the points it needs - "preserve" means defer one you can
+# already afford because it would spill, not save up for one you cannot.
+#
+# A Lessons board is several PAGES and choose() only ever sees the one in
+# hand, so the note is kept here, the way the energy cap and the wit return
+# are, and every page of the visit reads it. Career 12 lost Facial-Slimming
+# Massage (Energy +30) by 7 Da: the card sat on page 3, and the very next
+# purchase, on page 2, spent 16 Da.
+#
+# The note is keyed on (year, turn) like _energy_wait, so it lasts the turn. A
+# board survives a visit that buys nothing, so a card still on it is read
+# again next visit and noted again.
+_energy_reach = None
+
 def set_wit_return(value):
   """Publish what a wit training would hand back this turn, or None."""
   global _wit_return
@@ -795,6 +821,50 @@ def energy_offer(learnable, energy, year, segment, on_concert=False):
   if on_concert and _songs.get(segment, 0) < hype_songs_needed(segment):
     return card, "buy"                # no next turn to preserve it for
   return card, "preserve"
+
+
+def _note_energy_reach(cards, points, energy, year, turn):
+  """Note an Energy technique on this board that cannot be bought yet.
+
+  Returns (held, name, short, value): `held` is the points per type to keep
+  back so the card can be afforded, or None when there is nothing worth
+  holding for. See _energy_reach for why this is a module note and not a local.
+
+  The closest card wins when a page offers more than one - points arrive at 5
+  to 30 a type a visit, so reaching one at all beats holding for the biggest.
+
+  `value` is what the card is worth here, priced by technique_value like any
+  other, and it is what makes the hold conditional rather than a reflex: on an
+  empty tank an Energy +30 is worth 24 against a filler technique's 4, and on
+  a full one it is worth 2 and the filler should simply be bought. A card
+  under WASTED_TECHNIQUE_FLOOR is not noted at all.
+  """
+  global _energy_reach
+  key = (year, turn)
+  if _energy_reach and _energy_reach[0] != key:
+    _energy_reach = None
+  if points:
+    for card in cards:
+      if card["kind"] != "technique" or card["learnable"]:
+        continue
+      if not parse_effects(card["effects"]).get("energy"):
+        continue
+      cost = card_cost(card)
+      if not cost:
+        continue
+      short = shortfall(cost, points)
+      if not 0 < short <= ENERGY_REACH_MAX_SHORT:
+        continue
+      worth = technique_value(card, energy)
+      if worth < WASTED_TECHNIQUE_FLOOR:
+        continue
+      if _energy_reach and _energy_reach[3] <= short:
+        continue
+      _energy_reach = (key, card["name"], {k: cost.get(k, 0) for k in POINT_KEYS},
+                       short, worth)
+  if not _energy_reach:
+    return None, "", 0, 0.0
+  return _energy_reach[2], _energy_reach[1], _energy_reach[3], _energy_reach[4]
 
 
 def choose(cards, energy, year, spend_all=False, turn=None, points=None):
@@ -946,6 +1016,30 @@ def choose(cards, energy, year, spend_all=False, turn=None, points=None):
     if not learnable_techs:
       return "none", None, (f"{topped['name']!r} would spill the tank and nothing else is"
                             " learnable; leaving it on the board until it fits")
+
+  # An Energy technique still short of its cost holds the points it needs. A
+  # dent is a VETO here, not a priced cost like the song reserve: the card
+  # cannot be bought at all until its type reaches the cost, so a type one
+  # point under buys nothing, where a song one point under only waits. The
+  # card may be on a page this call cannot see - see _energy_reach.
+  held_energy, reach_name, reach_short, reach_worth = _note_energy_reach(
+      cards, points, energy, year, turn)
+  if held_energy and points and all(card_cost(c) for c in learnable_techs):
+    keeps, blocked = [], []
+    for cand in learnable_techs:
+      side = blocked if extra_deficit(card_cost(cand), points, held_energy) else keeps
+      side.append(cand)
+    # Only hold if the Energy card is worth more than the best card the hold
+    # would refuse. Otherwise the points are better spent now: a type that
+    # never pays in again would hold the board hostage for a card it cannot
+    # reach, and career 12 sat at 9 Vo for two visits because nothing it
+    # trained paid Vo.
+    if blocked and reach_worth > max(technique_value(c, energy) for c in blocked):
+      if not keeps:
+        return "none", None, (f"holding the points for {reach_name!r} (worth"
+                              f" ~{reach_worth:.1f}, {reach_short} short); everything"
+                              " learnable would spend what it needs")
+      learnable_techs = keeps
 
   note = ""
   if songs_done:

@@ -16,6 +16,7 @@ type CareerStart = {
   enabled: boolean;
   borrow_card: string;
   borrow_card_type: string;
+  borrow_refresh_max: number;
   max_consecutive: number;
 };
 
@@ -34,10 +35,18 @@ const CARD_TYPES: [value: string, label: string][] = [
 // Radix Select has no empty-string item, so "any" travels as a sentinel and is
 // mapped back to "" on the way in and out.
 const ANY = "__any__";
+// What reroll_sparks may say. It was a boolean until 2026-10-17; the server
+// still reads the old true/false, and normalises whatever it is handed.
+type RerollMode = "off" | "always" | "undefeated";
+const REROLL_MODES: [RerollMode, string][] = [
+  ["off", "Never"],
+  ["always", "Whenever the blue is under 3★"],
+  ["undefeated", "Only after an undefeated career"],
+];
 type Settings = {
   sleep_time_multiplier: number;
   tp_bottle_floor: number;
-  reroll_sparks: boolean;
+  reroll_sparks: RerollMode;
   restart_on_freeze: boolean;
   career_start: CareerStart;
 };
@@ -45,9 +54,12 @@ type Settings = {
 const EMPTY: Settings = {
   sleep_time_multiplier: 1,
   tp_bottle_floor: 50,
-  reroll_sparks: true,
+  reroll_sparks: "always",
   restart_on_freeze: false,
-  career_start: { enabled: false, borrow_card: "", borrow_card_type: "", max_consecutive: 0 },
+  career_start: {
+    enabled: false, borrow_card: "", borrow_card_type: "",
+    borrow_refresh_max: 3, max_consecutive: 0,
+  },
 };
 const CARD = "bg-card p-6 rounded-xl shadow-lg border border-border/20";
 // Same as the Configuration tab's, and for the same reason: long enough that
@@ -241,15 +253,33 @@ export default function BotSettingsView() {
 
       <div className={CARD}>
         <h3 className="text-xl font-semibold mb-4">Career end</h3>
-        <div className="w-fit">
-          <label htmlFor="reroll-sparks" className="flex gap-2 items-start">
-            <Checkbox id="reroll-sparks" className="mt-1.5" checked={settings.reroll_sparks}
-              onCheckedChange={() => set({ reroll_sparks: !settings.reroll_sparks })} />
-            <span className="text-lg font-medium">Reroll sparks without a 3&#9733; blue?</span>
-          </label>
-          <span className="text-sm text-muted-foreground">
+        <div>
+          <label htmlFor="reroll-sparks" className="block text-lg font-medium">Reroll sparks</label>
+          <Select
+            value={settings.reroll_sparks}
+            onValueChange={(v) => set({ reroll_sparks: v as RerollMode })}
+          >
+            <SelectTrigger id="reroll-sparks" className="w-80 mt-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {REROLL_MODES.map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="block text-sm text-muted-foreground mt-1">
             Costs 30 TP at career end, and the original set stays on offer &mdash; the bot keeps whichever ranks
-            higher. A bottle may be spent to afford it, subject to the floor above.
+            higher. A bottle may be spent to afford it, subject to the floor above. <strong>A 3&#9733; blue is
+            never rerolled</strong>, whichever of these is picked: it is what the career was run for.
+          </span>
+          <span className="block text-sm text-muted-foreground mt-2">
+            <strong>Only after an undefeated career</strong> is for parent farming: a career that won every race
+            hands down the white set worth paying to improve, and one that dropped a race is not worth chasing.
+            The bot reads the placing off each race&apos;s result banner; a race whose banner it never read counts
+            as a loss, so a misread keeps the TP rather than spending it on a guess.
           </span>
         </div>
       </div>
@@ -303,6 +333,20 @@ export default function BotSettingsView() {
               not on it at all &mdash; that is a career that stops saying the card is missing when it is only hidden.
               The bot clears that filter before reading, and narrows it to this type, which makes the list shorter to
               read. <strong>Any</strong> just clears it. Tazuna and the other friend cards are <strong>Pal</strong>.
+            </span>
+          </div>
+
+          <div>
+            <label htmlFor="borrow-refresh" className="block text-lg font-medium">Refreshes before giving up</label>
+            <Input id="borrow-refresh" className="w-24 mt-1" type="number" min={0}
+              value={settings.career_start.borrow_refresh_max}
+              onChange={(e) => setCareer({ borrow_refresh_max: num(e, 0) })} />
+            <span className="block text-sm text-muted-foreground mt-1">
+              The list is a <strong>draw</strong> of what other players are offering, not a fixed roster &mdash; its
+              Refresh button re-queries it and the rows change. When the card is not on a draw the bot presses it and
+              reads again, up to this many times, then stops. That covers both ways this walk usually fails: a lender
+              swapping their support lead, and one sinking past the five rows the list shows as other people log in.
+              <strong> 0</strong> never refreshes.
             </span>
           </div>
 

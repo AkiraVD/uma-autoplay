@@ -189,7 +189,7 @@ def replay_lessons(turns, config, label):
   same = differed = skipped = 0
   misses = []
   saved = (lessons._songs.copy(), dict(lessons._pattern), lessons._energy_cap,
-           lessons._wit_return)
+           lessons._wit_return, lessons._energy_reach)
   try:
     for turn, board in boards:
       if board.get("energy") is None or not board.get("points"):
@@ -205,6 +205,8 @@ def replay_lessons(turns, config, label):
       lessons._songs.update({int(k): v for k, v in by_segment.items()})
       lessons._energy_cap = board.get("cap") or None
       lessons.set_wit_return(board.get("wit_return"))
+      if board is boards[0][1]:
+        lessons._energy_reach = None
       page = board.get("page")
       restore_page = lessons.techs_to_next_page
       if page is not None:
@@ -233,6 +235,7 @@ def replay_lessons(turns, config, label):
     lessons._pattern.update(saved[1])
     lessons._energy_cap = saved[2]
     lessons.set_wit_return(saved[3])
+    lessons._energy_reach = saved[4]
   return same, differed, skipped, misses
 
 
@@ -335,6 +338,11 @@ def main():
                   help="JSON object merged over it for the alt arm")
   ap.add_argument("--show", type=int, default=40,
                   help="how many disagreeing turns to print")
+  ap.add_argument("--alt-flag", default=None, metavar="NAME",
+                  help="a core.logic module flag naming a rule that is not in"
+                       " the config: the base arm replays with it False and the"
+                       " alt arm with it True. For backtesting a new rule the"
+                       " recorded career ran without.")
   a = ap.parse_args()
 
   with open(a.fixture, encoding="utf-8") as f:
@@ -354,6 +362,18 @@ def main():
   perf = sum(1 for t in turns if t.get("performance"))
   print(f"perf    : {perf} turn(s) carry Grand Concert Performance data"
         + ("" if perf else "  (performance_bonus replays as 0.0)"))
+
+  # A rule that is not a config value cannot be reached by --override. The base
+  # arm must replay the career as it actually ran, which is with any new rule
+  # off, or the fidelity figure measures the new rule instead of the replay.
+  if a.alt_flag:
+    import core.logic as logic
+    if not hasattr(logic, a.alt_flag):
+      print(f"core.logic has no flag named {a.alt_flag!r}")
+      return 1
+    setattr(logic, a.alt_flag, False)
+    print(f"flag    : core.logic.{a.alt_flag} is False for the base arm,"
+          " True for the alt arm")
 
   base_rows = replay(turns, base_config, "base")
   same, diff, unknown, worst = fidelity(base_rows)
@@ -379,14 +399,21 @@ def main():
     for row in lmiss[:a.show]:
       print(f"    {row[0]}  career={row[1]:<34} replay={row[2]}")
 
-  if not a.override:
+  if not a.override and not a.alt_flag:
     return 0
 
   alt_config = copy.deepcopy(base_config)
-  alt_config.update(json.loads(a.override))
+  if a.override:
+    alt_config.update(json.loads(a.override))
+  if a.alt_flag:
+    import core.logic as logic
+    setattr(logic, a.alt_flag, True)
   alt_rows = replay(turns, alt_config, "alt")
 
-  print(f"\n--- alt arm: {a.override} ---")
+  what = a.override or ""
+  if a.alt_flag:
+    what = (what + " " if what else "") + f"core.logic.{a.alt_flag}=True"
+  print(f"\n--- alt arm: {what} ---")
   from collections import Counter
   bc = Counter(c or "REST" for _, c in base_rows)
   ac = Counter(c or "REST" for _, c in alt_rows)

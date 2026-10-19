@@ -25,6 +25,13 @@ fake.PRIORITY_WEIGHT = "MEDIUM"
 fake.STAT_CAPS = {"spd": 1400, "sta": 1400, "pwr": 1400, "guts": 400, "wit": 1400}
 fake.CURRENT_YEAR = "Classic Year"
 fake.MAX_FAILURE = 15
+# core/logic.py::gamble_action reads these off state; they live under
+# `gamble_board` in config.json.
+fake.GAMBLE_ENABLED = True
+fake.GAMBLE_CEILING_FAILURE = 60
+fake.GAMBLE_MIN_RAINBOWS = 2
+fake.GAMBLE_MIN_GAIN_POINTS = 45
+fake.GAMBLE_EV_MARGIN = 1.25
 fake.SKIP_TRAINING_ENERGY = 35
 fake.NEVER_REST_ENERGY = 75
 fake.SPIRIT_GAUGE_POINTS = 1.0

@@ -21,6 +21,13 @@ fake.PRIORITY_WEIGHT = "MEDIUM"
 fake.STAT_CAPS = {"spd": 1500, "sta": 500, "pwr": 1200, "guts": 500, "wit": 1100}
 fake.CURRENT_YEAR = "Senior Year"
 fake.MAX_FAILURE = 15
+# core/logic.py::gamble_action reads these off state; they live under
+# `gamble_board` in config.json.
+fake.GAMBLE_ENABLED = True
+fake.GAMBLE_CEILING_FAILURE = 60
+fake.GAMBLE_MIN_RAINBOWS = 2
+fake.GAMBLE_MIN_GAIN_POINTS = 45
+fake.GAMBLE_EV_MARGIN = 1.25
 for name in ("check_current_year", "stat_state", "stat_caps_state",
              "check_energy_level", "check_aptitudes"):
   setattr(fake, name, lambda *a, **k: None)

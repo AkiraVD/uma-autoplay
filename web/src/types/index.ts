@@ -43,6 +43,14 @@ export const UraSchema = z.object({
   keep_sparks: z.array(z.string()),
 });
 
+export const GambleSchema = z.object({
+  enabled: z.boolean(),
+  ceiling_failure: z.number(),
+  min_rainbows: z.number(),
+  min_gain_points: z.number(),
+  ev_margin: z.number(),
+});
+
 export const ConfigSchema = z.object({
   config_name: z.string(),
   trainee: z.string(),
@@ -76,11 +84,14 @@ export const ConfigSchema = z.object({
   event: EventSchema,
   grand_concert: GrandConcertSchema,
   ura: UraSchema.optional(),
+  // Presets saved before the "too good to pass" rule have no gamble_board.
+  gamble_board: GambleSchema.optional(),
 });
 
 export type Stat = z.infer<typeof StatSchema>;
 export type GrandConcert = z.infer<typeof GrandConcertSchema>;
 export type Ura = z.infer<typeof UraSchema>;
+export type Gamble = z.infer<typeof GambleSchema>;
 export type Skill = z.infer<typeof SkillSchema>;
 export type RaceScheduleType = z.infer<typeof RaceScheduleSchema>;
 export type Config = z.infer<typeof ConfigSchema>;

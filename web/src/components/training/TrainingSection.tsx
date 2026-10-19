@@ -6,6 +6,8 @@ import StatCaps from "./StatCaps";
 import { Checkbox } from "../ui/checkbox";
 import Tooltips from "../_c/Tooltips";
 import { URA_FALLBACK } from "../ura/defaults";
+import GambleBoard from "./GambleBoard";
+import { GAMBLE_FALLBACK } from "./defaults";
 import type { Config, UpdateConfigType } from "@/types";
 
 type Props = {
@@ -15,6 +17,7 @@ type Props = {
 
 export default function TrainingSection({ config, updateConfig }: Props) {
   const ura = { ...URA_FALLBACK, ...(config.ura ?? {}) };
+  const gamble = { ...GAMBLE_FALLBACK, ...(config.gamble_board ?? {}) };
   const {
     priority_stat,
     priority_weight,
@@ -69,6 +72,12 @@ export default function TrainingSection({ config, updateConfig }: Props) {
           duel pays a stat, a +4 stat cap, skill points and a Racing Spirit
           hint on top of the training's own gains.
         </Tooltips>
+      </div>
+      <div className="mt-8 border-t border-border/20 pt-6">
+        <GambleBoard
+          gamble={gamble}
+          setGamble={(next) => updateConfig("gamble_board", next)}
+        />
       </div>
       <div className="mt-8">
         <StatCaps

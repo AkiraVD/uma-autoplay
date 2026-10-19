@@ -59,6 +59,13 @@
     "guts": 900,
     "wit": 900
   },
+  "gamble_board": {
+    "enabled": true,
+    "ceiling_failure": 60,
+    "min_rainbows": 2,
+    "min_gain_points": 45,
+    "ev_margin": 1.25
+  },
   "skill": {
     "is_auto_buy_skill": true,
     "buy_mode": "trials",

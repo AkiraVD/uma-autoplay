@@ -159,6 +159,113 @@ def main():
     lessons.set_wit_return(None)
     lessons._energy_cap = None
 
+  # --- an unknown energy reading is NOT neutral ------------------------------
+  # energy_offer takes the card outright rather than testing whether it would
+  # spill, which is the right call when nothing is known - but it means a screen
+  # that hides the energy bar silently disables the spill test. The Schedule
+  # Notification is exactly that screen: over the 2026-10-13 career 35 of 81
+  # Lessons visits read -1, and 2 of the 3 Energy techniques bought all career
+  # were bought blind. career_lobby carries the lobby's last reading for it.
+  try:
+    lessons._energy_cap = 105
+    lessons.set_wit_return(14.5)
+    _card, blind = lessons.energy_offer([tech30], -1, "Classic Year Early Apr", 1)
+    _card, known = lessons.energy_offer([tech30], 70.0, "Classic Year Early Apr", 1)
+    ok("an unknown energy reading takes the card", blind == "buy", str(blind))
+    ok("...where the same card at a known 70 would be preserved",
+       known == "preserve", str(known))
+  finally:
+    lessons.set_wit_return(None)
+    lessons._energy_cap = None
+
+  source = open(os.path.join("core", "execute.py"), encoding="utf-8").read()
+  ok("the Schedule Notification falls back to the lobby's reading",
+     "lessons_energy, lessons_cap = LAST_ENERGY" in source)
+  ok("...and the lobby publishes one to fall back to",
+     "LAST_ENERGY = (energy_level, max_energy)" in source)
+  ok("...and the wit reserve is carried there too",
+     "lessons.set_wit_return(LAST_WIT_RETURN)" in source)
+
+  # --- reaching for an Energy card that cannot be bought yet ----------------
+  #
+  # energy_offer is handed the LEARNABLE cards only, so one a few points short
+  # never reaches it and nothing held the points it needed. Career 12
+  # (2026-10-15) offered eleven Energy cards and bought none of them. The
+  # board below is its Junior Early Nov one, on 31.8 energy, where Relaxing
+  # Body Massage (+30, worth 23.9 there) sat 16 Co short and the visit spent
+  # 10 Co on a technique worth 4.5.
+  #
+  # The hold is PRICED, not a reflex, so these numbers matter: the same card
+  # on 62 energy is worth 11.7, which loses to a Speed +8 at the weights
+  # above, and should lose to it.
+  def card(name, effects, cost, learnable=True):
+    full = {"da": 0, "pa": 0, "vo": 0, "vi": 0, "co": 0}
+    full.update(cost)
+    return {"kind": "technique", "name": name, "effects": effects, "cost": full,
+            "learnable": learnable, "scheduled": False}
+
+  PTS = {"da": 18, "pa": 2, "vo": 27, "vi": 19, "co": 14}
+  LOW, FULL = 31.8, 97.0
+  energy_card = card("Relaxing Body Massage", ["Energy +30"], {"co": 30}, learnable=False)
+  co_filler = card("Watch an Up-and-Coming Idol's Concert", ["Skill Pts +5"], {"co": 10})
+  da_filler = card("Dance Step Intermediate Class", ["Speed +8"], {"da": 16})
+
+  saved_songs = lessons._songs.copy()
+  try:
+    lessons._songs.clear()          # short of the song target: the buying path
+    lessons._energy_cap = 100
+    lessons.set_wit_return(5.0)
+    year, turn = "Junior Year Early Nov", 10
+
+    lessons._energy_reach = None
+    action, _c, why = lessons.choose([energy_card, co_filler], LOW, year, False, turn, PTS)
+    ok("a Co technique is refused while an Energy card is 16 Co short",
+       action == "none" and "Relaxing Body Massage" in why, f"{action}: {why}")
+
+    # The board is several pages and choose() sees one at a time, so the note
+    # has to outlive the page the card was on. This is the one that cost
+    # career 12 the card: it was seen on page 3 and the points went on page 2.
+    lessons._energy_reach = None
+    lessons.choose([energy_card, da_filler], LOW, year, False, turn, PTS)
+    action, _c, why = lessons.choose([co_filler], LOW, year, False, turn, PTS)
+    ok("...and still refused on the next page, where the card is not showing",
+       action == "none" and "Relaxing Body Massage" in why, f"{action}: {why}")
+
+    # A hold is not a blanket stop: another type is still spent.
+    lessons._energy_reach = None
+    action, chosen, why = lessons.choose([energy_card, da_filler, co_filler], LOW,
+                                         year, False, turn, PTS)
+    ok("...but a technique in another type is still bought",
+       action == "learn" and chosen["name"] == da_filler["name"], f"{action}: {why}")
+
+    # Priced, not a reflex: on a near-full tank almost none of the card lands,
+    # and the points are better spent now.
+    lessons._energy_reach = None
+    action, chosen, why = lessons.choose([energy_card, co_filler], FULL,
+                                         year, False, turn, PTS)
+    ok("a nearly full tank buys the filler instead of holding",
+       action == "learn" and chosen["name"] == co_filler["name"], f"{action}: {why}")
+
+    # Out of reach: holding for it would starve the board for a whole segment.
+    far = card("Relaxing Body Massage", ["Energy +30"], {"co": 60}, learnable=False)
+    lessons._energy_reach = None
+    action, chosen, _why = lessons.choose([far, co_filler], LOW, year, False, turn, PTS)
+    ok(f"a card more than {lessons.ENERGY_REACH_MAX_SHORT} short is not held for",
+       action == "learn" and chosen["name"] == co_filler["name"], str(action))
+
+    # The note is the turn's, not the career's.
+    lessons._energy_reach = None
+    lessons.choose([energy_card, da_filler], LOW, year, False, turn, PTS)
+    action, chosen, _why = lessons.choose([co_filler], LOW, year, False, turn - 1, PTS)
+    ok("the hold does not carry into the next turn",
+       action == "learn" and chosen["name"] == co_filler["name"], str(action))
+  finally:
+    lessons._energy_reach = None
+    lessons._energy_cap = None
+    lessons.set_wit_return(None)
+    lessons._songs.clear()
+    lessons._songs.update(saved_songs)
+
   # --- shop reports an energy purchase, because failure % depends on energy --
   ok("a fresh visit starts with no energy purchase recorded",
      lessons.bought_energy() is False)

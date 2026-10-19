@@ -691,12 +691,31 @@ def all_values_equal(dictionary):
 # spills.
 #
 # The anchor is the rest it avoids, not the training it enables. A rest returns
-# about 50 energy and costs one turn, and a turn is worth about one average
-# training - call it 2.5 - so energy is worth about 0.05 a point at the bottom
-# of the tank. Pricing it against the training instead (25 energy buys a 2.0
-# training, so 0.08 a point) double counts: the training spends a turn as well
-# as the energy, and turns are the scarcer resource for most of a career.
-ENERGY_POINTS_EMPTY = 0.05
+# about 50 energy and costs one turn, so the price of a point is the value of
+# that turn over 50.
+#
+# This was 0.05, from a turn worth one *average* training - call it 2.5. The
+# average is the wrong turn to price. Energy does not buy back an average turn:
+# it buys back the best board in the window the tank was empty for. Career 13
+# gave away nine own-type Speed rainbow boards, 328 Speed between them, and
+# every one of them was reached below 38 energy - including the strongest board
+# of the career, worth 25.16, which arrived on 17. A turn worth 4 rather than
+# 2.5 prices the bottom of the tank at 0.08, and that is what is set here.
+#
+# The old note argued the other way: that pricing energy against the training
+# it enables (25 energy buys a 2.0 training, so 0.08 a point) double counts,
+# because the training spends a turn as well as the energy. That is true of the
+# derivation and beside the point of the measurement - the two happen to meet
+# at the same number from opposite directions.
+#
+# This is the lever for everything energy-shaped, not just one rule: it sets
+# what a Recreation outing is worth, the wit facility's energy bonus, what a
+# Lessons Energy technique has to beat, and the bar in rest_beats_training
+# below (at 0.05 that rule fired once in three recorded careers; at 0.08 it
+# fires three to five times each). Replaying cannot judge a change to it - a
+# recorded career hands the replay its own failure percentages, so banked
+# energy buys nothing there - so it moves on live careers only.
+ENERGY_POINTS_EMPTY = 0.08
 ENERGY_POINTS_FULL = 0.01
 # What a full rest returns. Only used to price resting against an outing.
 REST_ENERGY_ESTIMATE = 50
@@ -722,6 +741,52 @@ BOND_POINTS = 0.02
 # How far ahead an outing has to be before it overrides the training decision.
 # Without it the two scores trade places on OCR noise.
 OUTING_MARGIN = 0.15
+# The same idea for a rest. Larger than OUTING_MARGIN because the two are not
+# symmetric: an outing taken on noise still pays stats, bond and mood for the
+# turn, where a rest taken on noise buys nothing but energy.
+REST_MARGIN = 0.3
+# Off switch for the rule below, so tools/career_replay.py can run a recorded
+# career with and without it. Nothing in the bot writes this.
+REST_ON_WEAK_BOARD = True
+
+# ---- "Too good to pass": trading failure odds for an exceptional board ----
+#
+# The failure filter is a hard cutoff, so a three-rainbow Speed board printing
+# +87 Speed is refused at 32% exactly as a one-support board is. That is the
+# wrong comparison. What a risky turn is worth is its expected value,
+# (1 - failure) x gains, weighed against the best thing the turn could
+# otherwise do.
+#
+# Career 13, Classic Early Oct, 28 energy: SPD carried 3 own-type rainbows and
+# +87 Speed at 52% failure, and the bot trained a 0-support WIT at 12% for +4
+# Speed. The gamble was worth 0.48 x 87 = 42 Speed in expectation; the turn
+# banked 4.
+#
+# Why it stays rare, and why the gates sit where they do. Over careers 13 and
+# 14 - 625 facility reads - only 7 carry two or more own rainbows above the
+# failure bar, and only 2 of those sit under the ceiling, so this is worth
+# about one turn a career. Every board the rule has matched so far was Speed.
+#
+# The gains bar is deck-dependent and belongs to the user for that reason: 45 is
+# where an exceptional board starts on the deck careers 13 and 14 ran, and a
+# deck with stronger own-type cards prints more for the same three rainbows, so
+# a build that regularly clears 100 wants the bar raised to match. Set it off
+# what the boards in the log actually print, not off this number.
+#
+# What is NOT priced: a failed training also drops mood, and can injure, which
+# costs turns this comparison cannot see. That is what GAMBLE_EV_MARGIN is for
+# - the gamble has to beat the alternative by a margin rather than merely tie -
+# and why GAMBLE_CEILING_FAILURE is an absolute refusal rather than another
+# term in the sum.
+# The four numbers are the user's, under `gamble_board` in config.json and on
+# the config page's Training tab, because they are a risk appetite rather than a
+# calibration: how good a board has to be, and how bad a failure chance is worth
+# accepting, is a judgement the person running the career makes. Read as
+# state.GAMBLE_* so a config reload reaches them. This flag is not one of them -
+# it is the off switch for tools/career_replay.py's `--alt-flag`, the same as
+# REST_ON_WEAK_BOARD, and nothing in the bot writes it. The config's own
+# `enabled` is what turns the rule off for a run.
+GAMBLE_ON_GREAT_BOARD = True
 
 def energy_points(energy_level, max_energy):
   """Score per point of energy at the current fill level."""
@@ -778,6 +843,195 @@ def outing_score(effects, energy_level, max_energy, mood_index, mood_target, deb
 def rest_score(energy_level, max_energy):
   """What resting is worth, so an outing can be weighed against it."""
   return energy_value(REST_ENERGY_ESTIMATE, energy_level, max_energy)
+
+
+def rest_beats_training(results, key, year, energy_level, max_energy):
+  """Why banking a rest now beats the training just chosen, or None.
+
+  Every other rest the bot takes is reactive: SKIP_TRAINING_ENERGY fires once
+  the tank is already empty, so the energy gets bought on whatever turn happens
+  to come next rather than on a turn that was worth little. Measured over
+  career 13, that cost nine own-type Speed rainbow boards, every one of them
+  reached below 38 energy - including the strongest board of the whole career
+  (Senior Late Jul, score 25.16, arrived on 17). The turn that emptied the tank
+  two turns earlier was a wit training worth 6.91, taken at 33 energy.
+
+  So this is the comparison that was missing: a weak board at mid energy is the
+  cheapest rest the career will be offered, and spending it there is what makes
+  the next strong board affordable. It is the comparison should_recreate
+  already makes for an outing, against the same calibrated energy_value, so it
+  introduces no new scale.
+
+  Everything that already argues against resting still wins, because each is
+  about a turn that does not come again: a burst, summer camp, the end of the
+  career, and the user's own never_rest_energy.
+  """
+  if not key or not REST_ON_WEAK_BOARD:
+    return None
+  data = (results or {}).get(key) or {}
+
+  # The config's own ceiling: above it the user has said a rest is never worth
+  # a turn, whatever the board looks like.
+  if energy_level > state.NEVER_REST_ENERGY:
+    return None
+
+  # A guaranteed success paying several times a normal training is not a weak
+  # board, whatever the scorers made of the rest of it.
+  if has_extreme_burst(data):
+    return None
+
+  # Camp turns and the closing turns do not come again, so energy banked on one
+  # has nothing left to fund. Both have their own rules further down, and this
+  # must not reach around them.
+  if camp_turns_left(year) or career_ending(year):
+    return None
+
+  # Junior is the bond-building year - do_something hands it to
+  # focus_max_friendships, which picks for friendship and not for stats - and
+  # training_value only sees the gains the game printed, so it reads every
+  # Junior board as weak. It is also the year with nothing to bank for: the
+  # boards this rule exists to afford are all Classic and Senior. Replaying
+  # career 13 without this, two of its four rests were Junior Pre-Debut.
+  if "Junior Year" in (year or ""):
+    return None
+
+  value = training_value(results, key)
+  if value is None:
+    # Unknown is not worthless - an unreadable gains strip must not read as a
+    # wasted turn. The same rule should_recreate follows.
+    return None
+
+  # abs() on purpose. Live, `energy_cost` is what check_energy_reserved read off
+  # the bar's dim tail, and it is positive; the recorded careers in
+  # tests/fixtures/careers store the signed figure the log prints (-19). The two
+  # conventions disagree, and a sign flip here would turn a training's cost into
+  # a bonus on exactly the turns this is meant to judge.
+  measured = data.get("energy_cost")
+  spend = abs(measured) if measured is not None else training_cost.cost(key)
+
+  # A facility that spends nothing is never the turn to rest. Wit *returns*
+  # energy, so it already does what the rest was wanted for, and it trains on
+  # top of that - replaying career 13 without this, five of the nine turns the
+  # rule took were wit boards paying 10 to 15 of their own stat, given up for
+  # energy the wit turn would have handed back anyway. The same argument camp
+  # already makes with camp_wit_safe.
+  if spend <= 0:
+    return None
+
+  alternative = value + energy_value(-spend, energy_level, max_energy)
+  banked = rest_score(energy_level, max_energy)
+  if banked <= alternative + REST_MARGIN:
+    return None
+  return (f"the board is worth {alternative:.2f} after its energy cost while a"
+          f" rest banks {banked:.2f} at {energy_level:.0f} energy")
+
+def gamble_action(results, energy_level, max_energy):
+  """The facility whose board is worth its failure chance, or None.
+
+  Returns (key, note), so the caller can say in the log why a turn was taken at
+  a failure chance the config refuses. None leaves the turn to the scorers.
+
+  The energy cost is charged in FULL rather than discounted by the success
+  odds, because a failed training spends the energy too. That is what keeps the
+  rule off an empty tank, which is exactly where these boards show up: failure
+  percentages climb as the bar drains, so the strongest board of a career tends
+  to arrive on the turn least able to afford it.
+  """
+  if not GAMBLE_ON_GREAT_BOARD or not state.GAMBLE_ENABLED:
+    return None
+
+  best = None
+  for key, data in (results or {}).items():
+    # Wit is never the gamble: it costs no energy and hands it back, so it is
+    # already the facility a low tank gives the turn to.
+    if key == "wit":
+      continue
+    failure = int(data.get("failure") or 0)
+    # At or under the bar there is nothing to override, and an Extreme burst
+    # has already forced the failure chance to zero.
+    if failure <= state.MAX_FAILURE or has_extreme_burst(data):
+      continue
+    if failure > state.GAMBLE_CEILING_FAILURE:
+      continue
+    own = (data.get(key) or {}).get("friendship_levels") or {}
+    rainbows = own.get("yellow", 0) + own.get("max", 0)
+    if rainbows < state.GAMBLE_MIN_RAINBOWS:
+      continue
+    # The raw printed stat points, skill excluded, so the gate stays legible
+    # against the numbers on the screen. The comparison below uses the
+    # weighted, headroom-clipped score instead.
+    printed = sum(v for k, v in (data.get("gains") or {}).items()
+                  if k != "skill")
+    if printed < state.GAMBLE_MIN_GAIN_POINTS:
+      continue
+    value = training_value(results, key)
+    if value is None:
+      # Unreadable gains are unknown, not worthless - and a gamble is the last
+      # thing to take on a board that could not be read.
+      continue
+    # A training that cannot be paid for is a stall, not a gamble: the energy
+    # is spent whether or not it succeeds. This is what keeps the rule off an
+    # empty tank, which is where these boards tend to appear - failure
+    # percentages climb as the bar drains.
+    spend = _spend_energy(data, key)
+    if spend > energy_level:
+      continue
+    ev = value * (100 - failure) / 100.0 + energy_value(
+      -spend, energy_level, max_energy)
+    if best is None or ev > best[1]:
+      best = (key, ev, failure, rainbows, printed)
+
+  if not best:
+    return None
+  key, ev, failure, rainbows, printed = best
+
+  # What the turn is otherwise worth: the best board the failure bar allows.
+  #
+  # A rest is deliberately NOT the comparison. This board is gone next turn and
+  # a rest is not, so "bank the energy instead" gives up something the career
+  # will not be offered again for something it can have on any turn - the same
+  # argument the Extreme burst, the camp turns and the closing turns already
+  # make, and the one rest_beats_training is written to stay clear of.
+  #
+  # Measured, that distinction is the whole rule: pricing career 13's Classic
+  # Early Oct board (3 rainbows, +87 Speed, 52%) against a rest rejected it by
+  # 0.1 points, because at ENERGY_POINTS_EMPTY 0.08 a rest on a 28/104 tank
+  # scores 3.06 - about 24 Speed - against the gamble's 3.72. Taking it was
+  # worth 42 Speed in expectation and the turn banked 4, so the comparison
+  # that rejected it was the wrong one.
+  alternative = 0.0
+  alt_label = "nothing else safe"
+  for other, data in results.items():
+    if other == key:
+      continue
+    if (int(data.get("failure") or 0) > state.MAX_FAILURE
+        and not has_extreme_burst(data)):
+      continue
+    other_value = training_value(results, other)
+    if other_value is None:
+      continue
+    net = other_value + energy_value(
+      -_spend_energy(data, other), energy_level, max_energy)
+    if net > alternative:
+      alternative, alt_label = net, other.upper()
+
+  if ev <= alternative * state.GAMBLE_EV_MARGIN:
+    return None
+  return (key, (f"{rainbows} own rainbow(s) and +{printed} printed stat points"
+                f" at {failure}% failure is worth {ev:.2f} in expectation,"
+                f" against {alternative:.2f} for {alt_label}"))
+
+def _spend_energy(data, key):
+  """The energy this facility spends, as a positive number.
+
+  abs() for the same reason rest_beats_training needs it: live, `energy_cost`
+  is what check_energy_reserved read off the bar's dim tail and is positive,
+  while the recorded careers in tests/fixtures/careers store the signed figure
+  the log prints (-19). A sign flip here would turn a cost into a bonus on
+  exactly the turns this is meant to judge.
+  """
+  measured = data.get("energy_cost")
+  return abs(measured) if measured is not None else training_cost.cost(key)
 
 def training_value(results, key):
   """Weighted value of one training, from the gains the game printed.
@@ -1256,6 +1510,17 @@ def do_something(results):
            " Taking it.")
     return prep
 
+  # A board the failure bar refuses but the odds say to take. After camp and
+  # the summer prep, which are about turns whose value is certain, and before
+  # the scorers, because it has to reach around both the failure filter and the
+  # energy floor inside most_support_card.
+  gamble = gamble_action(filtered, energy_level, max_energy)
+  if gamble:
+    gamble_key, why = gamble
+    info(f"Taking {gamble_key.upper()} at a failure chance the"
+         f" {state.MAX_FAILURE}% bar refuses: {why}.")
+    return gamble_key
+
   if "Junior Year" in year:
     result, best_score = focus_max_friendships(filtered)
 
@@ -1293,6 +1558,17 @@ def do_something(results):
         return final
       info(f"{year}: nothing clears the {state.MAX_FAILURE}% failure bar, so"
            " resting rather than risking an injury before the last races.")
+
+  # Last: a training the scorers picked can still be worth less than the energy
+  # the turn would bank. Everything above this point is about a turn that must
+  # not be rested away, so it is decided after all of them and only ever turns a
+  # training into a rest, never the other way round.
+  if result is not None:
+    why = rest_beats_training(filtered, result, year, energy_level, max_energy)
+    if why:
+      info(f"Resting instead of {result.upper()}: {why}.")
+      return None
+
   return result
 
 # helper functions

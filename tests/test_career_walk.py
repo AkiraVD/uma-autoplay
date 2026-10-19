@@ -148,7 +148,7 @@ def test_the_borrow_filter_is_set_before_the_list_is_read():
   for Tazuna - a Pal card - against a list holding four Wit ones."""
   source = open(os.path.join("core", "career_start.py"), encoding="utf-8").read()
   asked = source.index("BORROW_SORT_PILL_MOUSE_POS")
-  taken = source.index("if take_borrow(screen, wanted):")
+  taken = source.index("outcome = take_borrow(screen, wanted)")
   ok("the filter is opened before a row is taken", asked < taken)
   # Asked once per walk, not once per pass: a sort pill that does not open the
   # dialog has to cost one step, never a loop.
@@ -225,6 +225,69 @@ def test_a_card_that_is_not_on_the_list_is_refused():
   short = [t for t, _, _ in rows if len(t) <= 2]
   ok("and the list really does read one-glyph boxes", bool(short),
      ", ".join(repr(t) for t in short))
+
+def test_a_missing_card_is_refreshed_rather_than_refused():
+  """The list is a draw, not a roster. Pressing its Refresh button on
+  2026-10-18 replaced two of the five rows, so a card absent from one draw can
+  be on the next - and the two ways this walk usually fails (a lender swapping
+  their support lead, one sinking past the five rows the list shows) both look
+  exactly like that.
+
+  MISSING has to stay distinct from False: a list that will not read is a
+  reason to stop, and refreshing it would only redraw something unreadable.
+  """
+  path = SCREENS["borrow_card"]
+  if not os.path.exists(path):
+    print("skip  no borrow fixture")
+    return
+  ok("a card the list does not hold reads as MISSING, not as a failure",
+     CS.take_borrow(frame(path), "Kitasan Black") is CS.MISSING)
+  ok("and MISSING is not False", CS.MISSING is not False and bool(CS.MISSING))
+  # No _fail on that path: the reason and the frame are recorded once, by the
+  # caller, on the draw it actually gives up on - not once per draw.
+  source = open(os.path.join("core", "career_start.py"), encoding="utf-8").read()
+  body = source[source.index("def take_borrow("):source.index("def restore_tp(")]
+  ok("take_borrow records no reason for a missing card",
+     body.count("_fail(") == 1 and "would not read" in body)
+
+def test_the_refresh_is_bounded_and_lands_on_the_button():
+  ok("refreshes are bounded by a setting",
+     "borrow_refresh_max" in state.BOT_DEFAULTS["career_start"])
+  ok("which defaults to 3",
+     state.BOT_DEFAULTS["career_start"]["borrow_refresh_max"] == 3)
+  ok("state reads it", hasattr(state, "CAREER_START_BORROW_REFRESH"))
+  x, y = constants.BORROW_REFRESH_MOUSE_POS
+  ok("the button sits inside the dialog", 270 < x < 840 and 180 < y < 910, (x, y))
+  path = SCREENS["borrow_card"]
+  if not os.path.exists(path):
+    print("skip  no borrow fixture")
+    return
+  # It floats *over* the last row, so a press that misses the circle borrows
+  # whatever is under it, and the margin is what makes the point safe rather
+  # than lucky: the face is near-white out to ~22px and the dark ring sits at
+  # 23-25px in every direction, on every frame captured a month apart.
+  pixels = frame(path).convert("RGB")
+  r, g, b = pixels.getpixel((x, y))
+  ok("and on the button's own face", min(r, g, b) > 200, (r, g, b))
+  for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+    near = pixels.getpixel((x + dx * 16, y + dy * 16))
+    ok(f"still face 16px {'xy'[bool(dy)]}{dx + dy:+d}", min(near) > 180, near)
+    ring = [pixels.getpixel((x + dx * d, y + dy * d)) for d in (23, 24, 25)]
+    ok(f"with the border ring just past it, {'xy'[bool(dy)]}{dx + dy:+d}",
+       any(max(p) < 180 for p in ring), ring)
+
+def test_the_two_borrow_counters_are_separate():
+  """A draw with no matching row taps nothing, so it must not spend one of the
+  two taps BORROW_ATTEMPTS allows - or three refreshes would close the list
+  before the third draw was ever read."""
+  source = open(os.path.join("core", "career_start.py"), encoding="utf-8").read()
+  body = source[source.index("def start():"):]
+  ok("the refresh has a counter of its own", "refreshes += 1" in body)
+  ok("and taps have theirs", "takes += 1" in body)
+  # The tap counter is only reached past both failure outcomes.
+  ok("a tap is counted only once a row was really pressed",
+     body.index("outcome = take_borrow(screen, wanted)") < body.index("takes += 1")
+     and body.index("if outcome is MISSING:") < body.index("takes += 1"))
 
 def test_an_enabled_start_button_reads_as_enabled():
   path = SCREENS["support_formation"]
@@ -514,9 +577,11 @@ def test_how_the_bot_runs_is_not_config():
          state.migrate_bot_settings() is True)
       ok("and written to the new file", os.path.exists("bot.json"))
       state.load_bot()
+      # reroll_sparks was a bool until 2026-10-17 and a migrated config still
+      # holds one, so the coercion is part of what this check covers.
       ok("the globals follow it",
          state.CAREER_START_MAX == 3 and state.RESTART_ON_FREEZE is True
-         and state.REROLL_SPARKS is False)
+         and state.REROLL_SPARKS == "off")
       ok("a second call is a no-op once the file exists",
          state.migrate_bot_settings() is False)
       # Saving a partial patch must not wipe the rest.
@@ -558,6 +623,9 @@ if __name__ == "__main__":
   test_a_ticked_specialty_reads_as_ticked()
   test_the_right_row_is_chosen()
   test_a_card_that_is_not_on_the_list_is_refused()
+  test_a_missing_card_is_refreshed_rather_than_refused()
+  test_the_refresh_is_bounded_and_lands_on_the_button()
+  test_the_two_borrow_counters_are_separate()
   test_an_enabled_start_button_reads_as_enabled()
   test_the_remembered_card_beats_the_configured_one()
   test_the_walk_is_bounded_and_off_by_default()

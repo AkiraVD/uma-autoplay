@@ -54,6 +54,13 @@ STAT_CAPS = None
 CURRENT_YEAR = ""
 # The last turn read in the lobby, for paths that act between two lobby reads.
 CURRENT_TURN = None
+# "Too good to pass" - core/logic.py::gamble_action. Defaults repeated here
+# because a preset saved before these existed has no `gamble_board` block.
+GAMBLE_ENABLED = True
+GAMBLE_CEILING_FAILURE = 60
+GAMBLE_MIN_RAINBOWS = 2
+GAMBLE_MIN_GAIN_POINTS = 45
+GAMBLE_EV_MARGIN = 1.25
 SPIRIT_GAUGE_POINTS = 1.0
 SPIRIT_BURST_POINTS = 2.0
 SPIRIT_BURST_EX_POINTS = 3.0
@@ -101,7 +108,9 @@ PARKED_SCENARIOS = {"trackblazer": "Trackblazer"}
 GRAND_CONCERT_SEEN = False
 # Career end. See core/sparks.py.
 MAX_RACE_RETRIES = 1
-REROLL_SPARKS = True
+# When a spark set short of a 3-star blue is worth 30 TP. See core/sparks.py
+# and REROLL_MODES below; this was a bool until 2026-10-17 and still reads one.
+REROLL_SPARKS = "always"
 TP_BOTTLE_FLOOR = 50
 CAREER_START_ENABLED = False
 CAREER_START_BORROW_CARD = ""
@@ -110,6 +119,10 @@ CAREER_START_BORROW_CARD = ""
 # pal/group), or "" to clear the filter and list every card. See
 # core/career_start.py::set_borrow_filter.
 CAREER_START_BORROW_TYPE = ""
+# Times the borrow list may be redrawn with its Refresh button while the wanted
+# card is not on it. The list is a draw of what other players are offering, not
+# a roster. See core/career_start.py::start.
+CAREER_START_BORROW_REFRESH = 3
 CAREER_START_MAX = 0
 RESTART_ON_FREEZE = False
 TELEGRAM_ENABLED = False
@@ -125,6 +138,11 @@ LAST_SPARKS = None
 # the keep rather than at the end of the career, because by then the screen is
 # three dialogs gone.
 LAST_SPARKS_FRAME = None
+# "N of M won", the career's race record as core/placement.py read it. Kept
+# here rather than read off core/execute.py's counters because those are
+# cleared at the Spark Selection screen - which the reroll gate needs them for
+# and which comes *before* the message goes out.
+LAST_RACE_RECORD = None
 # The career the bot is playing, when it started that career itself.
 CAREER_UUID = None
 # The Final Confirmation frame of that career, for the message announcing it.
@@ -143,13 +161,40 @@ CAREERS_STARTED = 0
 # Loading a different preset should not change whether the bot restarts a frozen
 # game or how many careers it may start.
 BOT_FILE = "bot.json"
+# What `reroll_sparks` may say. It was a bool - reroll or don't - until a
+# parent farm wanted a third answer: a career that won every race is the one
+# worth paying 30 TP to re-roll, because the white sparks it hands down are
+# worth more than they are off a career that lost one.
+#
+# None of the three reaches a set that already holds a 3-star blue: that is
+# what the career was run for, and `sparks.worth_rerolling` refuses it first in
+# every mode. The mode only ever decides what to do with a set short of one.
+REROLL_MODES = ("off", "always", "undefeated")
+# The bool this setting used to be. True meant "reroll under a 3-star blue",
+# which is `always`; False meant never.
+REROLL_LEGACY = {True: "always", False: "off"}
+
+def reroll_mode(value):
+  """Coerce a stored `reroll_sparks` to one of REROLL_MODES."""
+  if isinstance(value, bool):
+    return REROLL_LEGACY[value]
+  text = str(value or "").strip().lower()
+  if text in REROLL_MODES:
+    return text
+  # An unreadable value is the one case where guessing costs currency, so it
+  # falls back to the default rather than to the most expensive mode.
+  if text:
+    warning(f"reroll_sparks is '{value}', which is none of"
+            f" {', '.join(REROLL_MODES)}; using 'always'.")
+  return "always"
+
 BOT_DEFAULTS = {
   "sleep_time_multiplier": 1,
   "tp_bottle_floor": 50,
-  "reroll_sparks": True,
+  "reroll_sparks": "always",
   "restart_on_freeze": False,
   "career_start": {"enabled": False, "borrow_card": "", "borrow_card_type": "",
-                   "max_consecutive": 0},
+                   "borrow_refresh_max": 3, "max_consecutive": 0},
 }
 
 MIGRATED_KEYS = ("sleep_time_multiplier", "tp_bottle_floor", "reroll_sparks",
@@ -214,7 +259,7 @@ def load_bot():
   """
   global SLEEP_TIME_MULTIPLIER, TP_BOTTLE_FLOOR, RESTART_ON_FREEZE, REROLL_SPARKS
   global CAREER_START_ENABLED, CAREER_START_BORROW_CARD, CAREER_START_MAX
-  global CAREER_START_BORROW_TYPE
+  global CAREER_START_BORROW_TYPE, CAREER_START_BORROW_REFRESH
   data = None
   try:
     with open(BOT_FILE, "r", encoding="utf-8") as f:
@@ -227,13 +272,14 @@ def load_bot():
   merged = {**BOT_DEFAULTS, **(data or {})}
   SLEEP_TIME_MULTIPLIER = merged.get("sleep_time_multiplier", 1)
   TP_BOTTLE_FLOOR = merged.get("tp_bottle_floor", 50)
-  REROLL_SPARKS = bool(merged.get("reroll_sparks", True))
+  REROLL_SPARKS = reroll_mode(merged.get("reroll_sparks", "always"))
   RESTART_ON_FREEZE = bool(merged.get("restart_on_freeze", False))
   career_start = {**BOT_DEFAULTS["career_start"],
                   **(merged.get("career_start") or {})}
   CAREER_START_ENABLED = bool(career_start.get("enabled", False))
   CAREER_START_BORROW_CARD = career_start.get("borrow_card", "")
   CAREER_START_BORROW_TYPE = career_start.get("borrow_card_type", "")
+  CAREER_START_BORROW_REFRESH = career_start.get("borrow_refresh_max", 3)
   CAREER_START_MAX = career_start.get("max_consecutive", 0)
   return bot_settings()
 
@@ -245,6 +291,7 @@ def bot_settings():
           "career_start": {"enabled": CAREER_START_ENABLED,
                            "borrow_card": CAREER_START_BORROW_CARD,
                            "borrow_card_type": CAREER_START_BORROW_TYPE,
+                           "borrow_refresh_max": CAREER_START_BORROW_REFRESH,
                            "max_consecutive": CAREER_START_MAX}}
 
 def save_bot(data):
@@ -253,6 +300,9 @@ def save_bot(data):
   record = {**current, **(data or {})}
   record["career_start"] = {**current["career_start"],
                             **((data or {}).get("career_start") or {})}
+  # Normalised on the way in, not just on the way out: an old page still posts
+  # the bool, and leaving it in the file means every later read re-guesses it.
+  record["reroll_sparks"] = reroll_mode(record.get("reroll_sparks"))
   with open(BOT_FILE, "w", encoding="utf-8") as f:
     json.dump(record, f, indent=2)
   load_bot()
@@ -344,6 +394,14 @@ def reload_config():
   SKILL_RUN_STYLE = config["skill"].get("skill_run_style") or None
   PRIORITY_EFFECTS_LIST = {i: v for i, v in enumerate(config["priority_weights"])}
   SKIP_TRAINING_ENERGY = config["skip_training_energy"]
+  gamble_config = config.get("gamble_board", {})
+  global GAMBLE_ENABLED, GAMBLE_CEILING_FAILURE, GAMBLE_MIN_RAINBOWS
+  global GAMBLE_MIN_GAIN_POINTS, GAMBLE_EV_MARGIN
+  GAMBLE_ENABLED = gamble_config.get("enabled", True)
+  GAMBLE_CEILING_FAILURE = gamble_config.get("ceiling_failure", 60)
+  GAMBLE_MIN_RAINBOWS = gamble_config.get("min_rainbows", 2)
+  GAMBLE_MIN_GAIN_POINTS = gamble_config.get("min_gain_points", 45)
+  GAMBLE_EV_MARGIN = gamble_config.get("ev_margin", 1.25)
   unity_config = config.get("unity", {})
   global SPIRIT_GAUGE_POINTS, SPIRIT_BURST_POINTS, SPIRIT_BURST_EX_POINTS, BURST_ENABLED_STATS
   SPIRIT_GAUGE_POINTS = unity_config.get("spirit_gauge_points", 1.0)
