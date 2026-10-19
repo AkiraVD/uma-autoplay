@@ -56,8 +56,12 @@ export default function RaceScheduleSection({ config, updateConfig }: Props) {
           <span className="flex items-center gap-2 text-lg font-medium">
             Retries on a lost race
             <Tooltips>
-              Each retry spends an Alarm Clock. A lost goal race ends the career,
-              so 1 is worth it; 0 never retries.
+              Each retry spends an Alarm Clock. A goal that names one race
+              &mdash; "Place top 3 in Kikuka Sho", a URA Finale leg &mdash;
+              retries until it is won whatever this says, because that race
+              runs once and losing it ends the career. This caps the rest, the
+              fan and Result Pts goals another race can still meet. 0 turns
+              retrying off altogether.
             </Tooltips>
           </span>
           <Input className="w-24" type="number" min={0} max={5} value={maxRetries}

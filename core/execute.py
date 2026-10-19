@@ -17,7 +17,7 @@ from rapidfuzz import fuzz
 import core.state as state
 import core.scenarios as scenarios
 from core.state import check_support_card, check_unity_icons, check_failure, check_turn, check_mood, check_current_year, check_criteria, check_skill_pts, check_energy_level, check_energy_reserved, get_race_type, check_status_effects, check_aptitudes, check_credit, check_outing_available, check_recreation_panel, read_log_lines
-from core.logic import do_something, decide_race_for_goal, training_value, should_recreate, has_extreme_burst, set_goal_context, goal_criteria, wit_energy_gain
+from core.logic import do_something, decide_race_for_goal, training_value, should_recreate, has_extreme_burst, set_goal_context, goal_criteria, wit_energy_gain, goal_names_a_race
 
 from utils.log import info, warning, error, debug
 import utils.constants as constants
@@ -2177,7 +2177,8 @@ def career_lobby():
     # Retry goes before Next, but only when the button is actually on screen:
     # a lost goal race ends the career, and career 5 clicked Next past the
     # offer without ever trying again. Each press spends an Alarm Clock, so it
-    # is capped per career and can be turned off.
+    # can be turned off, and it is capped per career unless the goal names the
+    # race - see logic.goal_names_a_race.
     retry_offer = matches["retry"] or matches["try_again"]
     if retry_offer:
       # The Retry offer is the game saying a goal race was lost: it is only
@@ -2185,10 +2186,19 @@ def career_lobby():
       # it the one mid-career event worth a message - either an Alarm Clock is
       # about to be spent, or the run is over and the next hour of training
       # would be spent on a career that cannot finish.
-      retrying = 0 < state.MAX_RACE_RETRIES and RACE_RETRIES < state.MAX_RACE_RETRIES
+      # A named-race goal retries until it is won: that race does not come
+      # again, so the alternative is an hour of training on a career that can
+      # no longer finish, against one Alarm Clock out of hundreds. The cap
+      # still binds every other goal, where another race can meet it, and
+      # max_race_retries = 0 is still off for both.
+      named = goal_names_a_race()
+      retrying = 0 < state.MAX_RACE_RETRIES and (
+        named or RACE_RETRIES < state.MAX_RACE_RETRIES)
       if not RACE_LOST_SENT:
         RACE_LOST_SENT = True
-        plan = (f"Retrying: {RACE_RETRIES + 1} of {state.MAX_RACE_RETRIES}, costs an Alarm Clock"
+        attempt = (f"attempt {RACE_RETRIES + 1}, no limit on a named race"
+                   if named else f"{RACE_RETRIES + 1} of {state.MAX_RACE_RETRIES}")
+        plan = (f"Retrying: {attempt}, costs an Alarm Clock"
                 if retrying else
                 "No retries left, so the career ends here" if state.MAX_RACE_RETRIES
                 else "Retries are switched off, so the career ends here")
@@ -2199,11 +2209,15 @@ def career_lobby():
                     photo=notify.save_frame(screen, "race_lost_"))
       if retrying:
         RACE_RETRIES += 1
+        of = ("no limit, the goal names the race" if named
+              else f"of {state.MAX_RACE_RETRIES} this career")
         if click(boxes=retry_offer,
-                 text=f"Retry offered; taking it ({RACE_RETRIES} of {state.MAX_RACE_RETRIES} this career, costs an Alarm Clock)."):
+                 text=f"Retry offered; taking it ({RACE_RETRIES} {of}, costs an Alarm Clock)."):
           continue
       elif state.MAX_RACE_RETRIES > 0:
-        info(f"Retry offered, but {RACE_RETRIES} retries already used this career; carrying on.")
+        info(f"Retry offered, but {RACE_RETRIES} retries already used this career"
+             f" and the goal names no race ({goal_criteria() or 'goal not read'});"
+             " carrying on.")
     # Before Next: this screen carries no Next at all, and leaving it to the
     # blind-tap fallback is what wedged the run. Its "View Results" sits beside
     # Race, so tapping about is a coin flip on opening the results panel.

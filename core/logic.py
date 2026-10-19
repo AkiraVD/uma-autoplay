@@ -539,6 +539,42 @@ def goal_criteria():
   """
   text = (_goal_context.get("criteria") or "").strip()
   return re.split(r"\s*Entry criteria\b", text, maxsplit=1)[0].strip() or text
+
+# A goal pinned to one race is the only kind a Retry can rescue. That race runs
+# once a career, and losing it ends the run, so an Alarm Clock buys back the
+# career itself. Every other goal shape is met by some later race, or is not
+# decided at a finish line at all - fans, Result Pts, the Climax series rank -
+# so a clock spent on one of their results buys a placing nobody asked for.
+#
+# The **shape** is matched, never the race name. Over every goal string the
+# logs held on 2026-10-19 (2,995 reads across careers 1-25, 87 distinct),
+# three forms name a race and nothing else does: "Place top N in X" and
+# "Place 1st in X", 2,039 reads between them, and "Run in X", another 455.
+# What stays capped is the 501 that name no race at all - fans, Result Pts,
+# the Climax series rank - and none of those is decided at a finish line.
+#
+# The names themselves are too mangled to match
+# against `constants.RACES` - OCR gives "Japan C", "Saudi Arabia RC",
+# "Sprinters $.", "St: Lite Kinen" - and it reads 1st as "Ist" often enough
+# that both spellings are here.
+#
+# "Run in X" counts too, though asking only for a start looks unloseable. The
+# screen is the authority on that, not this rule: the Retry offer is only drawn
+# when the goal has actually failed, so a goal that cannot fail never reaches
+# here and nothing is risked by letting it through. Guessing which named races
+# are safe would only add a way to be wrong.
+_NAMED_RACE_GOAL = re.compile(
+  r"\b(?:place\s+(?:top\s*\d+|1st|ist)|run)\s+in\s+(?!\d+\s+race)\S", re.I)
+
+def goal_names_a_race(criteria=None):
+  """Whether the goal is pinned to one named race.
+
+  Read by the Retry offer, which is the game saying the goal was just lost:
+  a named race retries without limit, anything else is capped by
+  `max_race_retries`.
+  """
+  text = criteria if criteria is not None else goal_criteria()
+  return bool(_NAMED_RACE_GOAL.search(text or ""))
 def set_energy_level(level, max_energy=None):
   """Publish this turn's energy reading for the scorers.
 
